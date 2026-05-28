@@ -19060,10 +19060,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/eth-url-parser@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "@types/eth-url-parser@npm:1.0.0"
-  checksum: 10/b240179388da8a4305891761084ed1d380435e1c2732f6809182e46f2229d4befef0e52edc876019d858530856b15c0b6a720a5c0d9d02d0e8703c8eaacad6e2
+"@types/eth-url-parser@npm:^1.0.3":
+  version: 1.0.3
+  resolution: "@types/eth-url-parser@npm:1.0.3"
+  checksum: 10/f973b71cf12c830375ee3bf6391a0db068dae531e91d9f4b6a17b109721497462997ba753834db8fdf7174886c221fddfb6bc8ff3ae1eab70d25633e0752fbe1
   languageName: node
   linkType: hard
 
@@ -35709,7 +35709,7 @@ __metadata:
     "@tradle/react-native-http": "npm:2.0.1"
     "@types/bnjs4": "npm:@types/bn.js@^4.11.6"
     "@types/bnjs5": "npm:@types/bn.js@^5.2.0"
-    "@types/eth-url-parser": "npm:^1.0.0"
+    "@types/eth-url-parser": "npm:^1.0.3"
     "@types/he": "npm:^1.2.3"
     "@types/i18n-js": "npm:^3.8.4"
     "@types/is-url": "npm:^1.2.30"

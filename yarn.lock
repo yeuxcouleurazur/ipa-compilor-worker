@@ -31938,10 +31938,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"humanize-duration@npm:^3.27.2":
-  version: 3.27.3
-  resolution: "humanize-duration@npm:3.27.3"
-  checksum: 10/25846388ae2e627d88f7fb77798555e9db532a9a718f9656d8bbaee20ca6fab280f3f7d66435248d3a0114b350cb7f638659ecf192ba772b0b2e4a0357a652a8
+"humanize-duration@npm:^3.33.2":
+  version: 3.33.2
+  resolution: "humanize-duration@npm:3.33.2"
+  checksum: 10/ac6bc74b095d53e6ff320126d64c0998de213d0e38d0996f23389603c034c8f825915d4318fc19cfdb0612c4963d72d200da43cd7c28ac865bbf9a61f53418f4
   languageName: node
   linkType: hard
 
@@ -35831,7 +35831,7 @@ __metadata:
     ganache: "npm:^7.9.2"
     he: "npm:^1.2.0"
     https-browserify: "npm:0.0.1"
-    humanize-duration: "npm:^3.27.2"
+    humanize-duration: "npm:^3.33.2"
     husky: "npm:^9.1.7"
     is-url: "npm:^1.2.4"
     jest: "npm:^29.7.0"

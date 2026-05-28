@@ -20890,7 +20890,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@walletconnect/types@npm:2.23.4, @walletconnect/types@npm:^2.23.0":
+"@walletconnect/types@npm:2.23.4":
   version: 2.23.4
   resolution: "@walletconnect/types@npm:2.23.4"
   dependencies:
@@ -20901,6 +20901,20 @@ __metadata:
     "@walletconnect/logger": "npm:3.0.2"
     events: "npm:3.3.0"
   checksum: 10/aeecf95d6fccd9880cdf67860d94399d7055714f77001c347275e8cf1d63a87bdf53403b6a1c5acdfd32d9d77792d00ff9333c3c2aa8d7d0e410643dddee4523
+  languageName: node
+  linkType: hard
+
+"@walletconnect/types@npm:^2.23.9":
+  version: 2.23.9
+  resolution: "@walletconnect/types@npm:2.23.9"
+  dependencies:
+    "@walletconnect/events": "npm:1.0.1"
+    "@walletconnect/heartbeat": "npm:1.2.2"
+    "@walletconnect/jsonrpc-types": "npm:1.0.4"
+    "@walletconnect/keyvaluestorage": "npm:1.1.1"
+    "@walletconnect/logger": "npm:3.0.2"
+    events: "npm:3.3.0"
+  checksum: 10/341f30be23dd5874a4bc31cd1e076b12ec7016f905ea53f60e813929e8219e181be300d416ff2ece3b449cae1661f66232652990c1e6f38bdc41b65ad0c8ecfe
   languageName: node
   linkType: hard
 
@@ -35742,7 +35756,7 @@ __metadata:
     "@viem/anvil": "npm:^0.0.10"
     "@walletconnect/core": "npm:^2.23.0"
     "@walletconnect/react-native-compat": "npm:^2.23.0"
-    "@walletconnect/types": "npm:^2.23.0"
+    "@walletconnect/types": "npm:^2.23.9"
     "@walletconnect/utils": "npm:^2.23.0"
     "@wdio/protocols": "npm:^9.27.0"
     "@welldone-software/why-did-you-render": "npm:^8.0.1"

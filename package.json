@@ -624,7 +624,7 @@
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.1.0",
     "@typescript-eslint/parser": "^8.1.0",
-    "@walletconnect/types": "^2.23.0",
+    "@walletconnect/types": "^2.23.9",
     "@wdio/protocols": "^9.27.0",
     "@welldone-software/why-did-you-render": "^8.0.1",
     "agent-device": "0.14.8",

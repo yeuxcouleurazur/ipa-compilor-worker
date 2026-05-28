@@ -19627,7 +19627,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:*, @types/react@npm:^19.1.0":
+"@types/react@npm:*":
   version: 19.2.14
   resolution: "@types/react@npm:19.2.14"
   dependencies:
@@ -19643,6 +19643,15 @@ __metadata:
     "@types/prop-types": "npm:*"
     csstype: "npm:^3.0.2"
   checksum: 10/4b40a4adf7a59390541dc24059c09d95a777e8e8025fab13d660e1929a88e78efadde8ec94ebd357c5cc80b25590645e81c5b621661700f40496e7833b3d2983
+  languageName: node
+  linkType: hard
+
+"@types/react@npm:^19.2.15":
+  version: 19.2.15
+  resolution: "@types/react@npm:19.2.15"
+  dependencies:
+    csstype: "npm:^3.2.2"
+  checksum: 10/f77447366a94804feea450568f7ebdadc00155457b4c74240972a73601294b09f45cac4e1a28aa97bc01da9ed130bb5fe9a687835d4da6307d457f92530acc3a
   languageName: node
   linkType: hard
 
@@ -35721,7 +35730,7 @@ __metadata:
     "@types/pako": "npm:^2.0.4"
     "@types/prompts": "npm:^2.4.9"
     "@types/qs": "npm:^6.9.15"
-    "@types/react": "npm:^19.1.0"
+    "@types/react": "npm:^19.2.15"
     "@types/react-native-background-timer": "npm:^2.0.0"
     "@types/react-native-elevated-view": "npm:^0.0.4"
     "@types/react-native-material-textfield": "npm:^0.16.5"
@@ -35868,7 +35877,7 @@ __metadata:
     qs: "npm:6.15.2"
     query-string: "npm:^6.12.1"
     randomfill: "npm:^1.0.4"
-    react: "npm:19.1.0"
+    react: "npm:19.2.6"
     react-compiler-runtime: "npm:^19.1.0-rc.2"
     react-dom: "npm:18.2.0"
     react-native: "patch:react-native@npm%3A0.81.5#~/.yarn/patches/react-native-npm-0.81.5-d8232ef145.patch"
@@ -41441,10 +41450,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:19.1.0":
-  version: 19.1.0
-  resolution: "react@npm:19.1.0"
-  checksum: 10/d0180689826fd9de87e839c365f6f361c561daea397d61d724687cae88f432a307d1c0f53a0ee95ddbe3352c10dac41d7ff1ad85530fb24951b27a39e5398db4
+"react@npm:19.2.6":
+  version: 19.2.6
+  resolution: "react@npm:19.2.6"
+  checksum: 10/205f0db93bd6c6485f94471d1c3437ae1d410f322297c76186fe4f658f88a6786bb0805e3cf8f330f24d1daa923b6b610ec63960d2461e9201bca64ca8361db9
   languageName: node
   linkType: hard
 

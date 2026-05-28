@@ -608,7 +608,7 @@
     "@types/node": "^20.12.8",
     "@types/pako": "^2.0.4",
     "@types/prompts": "^2.4.9",
-    "@types/qs": "^6.9.15",
+    "@types/qs": "^6.15.1",
     "@types/react": "^19.1.0",
     "@types/react-native-background-timer": "^2.0.0",
     "@types/react-native-elevated-view": "^0.0.4",

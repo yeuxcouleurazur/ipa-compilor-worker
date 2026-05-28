@@ -14083,16 +14083,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@shopify/flash-list@npm:2.0.3":
-  version: 2.0.3
-  resolution: "@shopify/flash-list@npm:2.0.3"
-  dependencies:
-    tslib: "npm:2.8.1"
+"@shopify/flash-list@npm:2.3.1":
+  version: 2.3.1
+  resolution: "@shopify/flash-list@npm:2.3.1"
   peerDependencies:
     "@babel/runtime": "*"
     react: "*"
     react-native: "*"
-  checksum: 10/5078d3779cfba5f286c73e1802ea78ecc337c3ae847b32f74af0de3bb38b2b96a759b1a0e04a5fd328387b31a57a436468bd022daec9af246ca2615d8ff3e44a
+  checksum: 10/133ff614d37ef46187eb2bc8375405b1c5442b342aa273cd3ee902f6ba9159d87c0d54f237fb87a2876fa14922b85f7311840611638aae1f5c4fa3c47dd2a4dc
   languageName: node
   linkType: hard
 
@@ -35694,7 +35692,7 @@ __metadata:
     "@sentry/core": "npm:~8.54.0"
     "@sentry/react": "npm:~8.54.0"
     "@sentry/react-native": "npm:~7.2.0"
-    "@shopify/flash-list": "npm:2.0.3"
+    "@shopify/flash-list": "npm:2.3.1"
     "@solana/addresses": "npm:2.0.0"
     "@storybook/addon-controls": "npm:^7.5.1"
     "@storybook/addon-ondevice-controls": "npm:^6.5.6"
@@ -45331,7 +45329,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:2.8.1, tslib@npm:^2, tslib@npm:^2.0.0, tslib@npm:^2.0.1, tslib@npm:^2.0.3, tslib@npm:^2.1.0, tslib@npm:^2.3.0, tslib@npm:^2.4.0, tslib@npm:^2.4.1, tslib@npm:^2.5.0, tslib@npm:^2.5.3, tslib@npm:^2.6.2, tslib@npm:^2.8.0":
+"tslib@npm:^2, tslib@npm:^2.0.0, tslib@npm:^2.0.1, tslib@npm:^2.0.3, tslib@npm:^2.1.0, tslib@npm:^2.3.0, tslib@npm:^2.4.0, tslib@npm:^2.4.1, tslib@npm:^2.5.0, tslib@npm:^2.5.3, tslib@npm:^2.6.2, tslib@npm:^2.8.0":
   version: 2.8.1
   resolution: "tslib@npm:2.8.1"
   checksum: 10/3e2e043d5c2316461cb54e5c7fe02c30ef6dccb3384717ca22ae5c6b5bc95232a6241df19c622d9c73b809bea33b187f6dbc73030963e29950c2141bc32a79f7

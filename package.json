@@ -392,7 +392,7 @@
     "@sentry/core": "~8.54.0",
     "@sentry/react": "~8.54.0",
     "@sentry/react-native": "~7.2.0",
-    "@shopify/flash-list": "2.0.3",
+    "@shopify/flash-list": "2.3.1",
     "@solana/addresses": "2.0.0",
     "@tanstack/react-query": "^4.43.0",
     "@tommasini/react-native-scrollable-tab-view": "patch:@tommasini/react-native-scrollable-tab-view@npm%3A1.1.1#~/.yarn/patches/@tommasini-react-native-scrollable-tab-view-npm-1.1.1-153a9df479.patch",

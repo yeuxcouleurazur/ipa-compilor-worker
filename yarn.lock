@@ -7183,28 +7183,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@json-schema-tools/dereferencer@npm:1.5.1":
-  version: 1.5.1
-  resolution: "@json-schema-tools/dereferencer@npm:1.5.1"
-  dependencies:
-    "@json-schema-tools/reference-resolver": "npm:^1.2.1"
-    "@json-schema-tools/traverse": "npm:^1.7.5"
-    fast-safe-stringify: "npm:^2.0.7"
-  checksum: 10/1852b6249916014ea0554c993d15fe2a32bfbbfe160d0effc720d41a5252c7cdbd7c37f77f2728c085d9024b3cd077bb7f7e774b8fb88ac1eb3359e069177b02
-  languageName: node
-  linkType: hard
-
-"@json-schema-tools/dereferencer@npm:1.5.4":
-  version: 1.5.4
-  resolution: "@json-schema-tools/dereferencer@npm:1.5.4"
-  dependencies:
-    "@json-schema-tools/reference-resolver": "npm:^1.2.4"
-    "@json-schema-tools/traverse": "npm:^1.7.8"
-    fast-safe-stringify: "npm:^2.0.7"
-  checksum: 10/2dc01d1d9208cc63af81b680dcd0e46716fe60123c38fc37051041fc2d704ce5f71554fdfbd0cb96845ff2f44c6108ac16d710fcf7cd51ffbe08812b1bee8779
-  languageName: node
-  linkType: hard
-
 "@json-schema-tools/dereferencer@npm:1.5.5":
   version: 1.5.5
   resolution: "@json-schema-tools/dereferencer@npm:1.5.5"
@@ -7234,7 +7212,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@json-schema-tools/meta-schema@npm:^1.6.10, @json-schema-tools/meta-schema@npm:^1.7.5":
+"@json-schema-tools/meta-schema@npm:^1.7.5":
   version: 1.7.5
   resolution: "@json-schema-tools/meta-schema@npm:1.7.5"
   checksum: 10/707dc3a285c26c37d00f418e9d0ef8a2ad1c23d4936ad5aab0ce94c9ae36a7a6125c4ca5048513af64b7e6e527b5472a1701d1f709c379acdd7ad12f6409d2cd
@@ -7251,7 +7229,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@json-schema-tools/reference-resolver@npm:^1.2.1, @json-schema-tools/reference-resolver@npm:^1.2.4, @json-schema-tools/reference-resolver@npm:^1.2.6":
+"@json-schema-tools/reference-resolver@npm:^1.2.4, @json-schema-tools/reference-resolver@npm:^1.2.6":
   version: 1.2.6
   resolution: "@json-schema-tools/reference-resolver@npm:1.2.6"
   dependencies:
@@ -7261,7 +7239,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@json-schema-tools/traverse@npm:^1.10.4, @json-schema-tools/traverse@npm:^1.7.5, @json-schema-tools/traverse@npm:^1.7.8":
+"@json-schema-tools/traverse@npm:^1.10.4, @json-schema-tools/traverse@npm:^1.7.8":
   version: 1.10.4
   resolution: "@json-schema-tools/traverse@npm:1.10.4"
   checksum: 10/0027bc90df01c5eeee0833e722b7320b53be8b5ce3f4e0e4a6e45713a38e6f88f21aba31e3dd973093ef75cd21a40c07fe8f112da8f49a7919b1c0e44c904d20
@@ -11511,10 +11489,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@open-rpc/examples@npm:^1.6.1":
-  version: 1.7.0
-  resolution: "@open-rpc/examples@npm:1.7.0"
-  checksum: 10/b1c9730965051971f049a8728434e7ec2cd1c45546861dfd207fa3c915aae12db9ada5242d78c86ed8ea3d6c3f8c49dbac3a28155a9af1cfee0344817847b73e
+"@open-rpc/examples@npm:^1.7.2":
+  version: 1.7.2
+  resolution: "@open-rpc/examples@npm:1.7.2"
+  checksum: 10/01929e1139bc811f9a86224d1320c2502f45707b0bddd5551f84ae1b99431846fb7a50c70db1203f1cdb2473ad8964eb16ab685c1894abdc42ca7ce882dd5c05
   languageName: node
   linkType: hard
 
@@ -11547,54 +11525,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@open-rpc/mock-server@npm:^1.7.5":
-  version: 1.7.5
-  resolution: "@open-rpc/mock-server@npm:1.7.5"
+"@open-rpc/mock-server@npm:^1.7.8":
+  version: 1.7.8
+  resolution: "@open-rpc/mock-server@npm:1.7.8"
   dependencies:
-    "@open-rpc/examples": "npm:^1.6.1"
-    "@open-rpc/schema-utils-js": "npm:1.16.1"
-    "@open-rpc/server-js": "npm:1.9.3"
+    "@open-rpc/examples": "npm:^1.7.2"
+    "@open-rpc/schema-utils-js": "npm:^2.0.2"
+    "@open-rpc/server-js": "npm:^1.9.5"
     commander: "npm:^6.1.0"
     lodash: "npm:^4.17.19"
   bin:
     open-rpc-mock-server: build/cli.js
-  checksum: 10/f80d3d51b4aeca498c38eca21cbe85e1840c4d5709d3d71781eac54c2ad79cd2c18da81c92c561baefd00f822d9d1f9c198c0e9e3cb2ffa9e2587f93ee0f28a3
-  languageName: node
-  linkType: hard
-
-"@open-rpc/schema-utils-js@npm:1.15.0":
-  version: 1.15.0
-  resolution: "@open-rpc/schema-utils-js@npm:1.15.0"
-  dependencies:
-    "@json-schema-tools/dereferencer": "npm:1.5.1"
-    "@json-schema-tools/meta-schema": "npm:^1.6.10"
-    "@json-schema-tools/reference-resolver": "npm:^1.2.1"
-    "@open-rpc/meta-schema": "npm:1.14.2"
-    ajv: "npm:^6.10.0"
-    detect-node: "npm:^2.0.4"
-    fast-safe-stringify: "npm:^2.0.7"
-    fs-extra: "npm:^9.0.0"
-    is-url: "npm:^1.2.4"
-    isomorphic-fetch: "npm:^3.0.0"
-  checksum: 10/88a9d27cdf77af13890f763c2aef660c15cc6a274268ae92b626ed7dab1cb4d1bf1bfc8470c49ef97c4cf40fb8e53aa4c95c27d17de5dfdbbffa0847bf79e3a9
-  languageName: node
-  linkType: hard
-
-"@open-rpc/schema-utils-js@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@open-rpc/schema-utils-js@npm:1.16.1"
-  dependencies:
-    "@json-schema-tools/dereferencer": "npm:1.5.4"
-    "@json-schema-tools/meta-schema": "npm:1.6.19"
-    "@json-schema-tools/reference-resolver": "npm:1.2.4"
-    "@open-rpc/meta-schema": "npm:1.14.2"
-    ajv: "npm:^6.10.0"
-    detect-node: "npm:^2.0.4"
-    fast-safe-stringify: "npm:^2.0.7"
-    fs-extra: "npm:^9.0.0"
-    is-url: "npm:^1.2.4"
-    isomorphic-fetch: "npm:^3.0.0"
-  checksum: 10/090f77ea88cb6b292631e6635659127eff0b975e8985f67d2e7d5364c3e0ea847f202fede814b3ef6fd6b4257adc20673ce0aa76b4e914d06cb758c8330e388d
+  checksum: 10/b93125ec4b4e77faa79ab2378648ada4a5a25c7ffe54761234a85a9336996533c3010b35a63b0f1df0a5cdcf42275bf97d3f5ea712e53a4eeafa8089f2d3b245
   languageName: node
   linkType: hard
 
@@ -11613,6 +11555,25 @@ __metadata:
     is-url: "npm:^1.2.4"
     isomorphic-fetch: "npm:^3.0.0"
   checksum: 10/4ba6b8c5606e3910f1b54f8b1519c4f4c78b7d2dfda023ef709ff59d9294f6cb46bf88093aa6159823173f5ba9183ee2b4e4dee8988fac7d5a7eb806b9cdae4a
+  languageName: node
+  linkType: hard
+
+"@open-rpc/schema-utils-js@npm:^2.0.2":
+  version: 2.2.1
+  resolution: "@open-rpc/schema-utils-js@npm:2.2.1"
+  dependencies:
+    "@json-schema-tools/dereferencer": "npm:^1.6.3"
+    "@json-schema-tools/meta-schema": "npm:^1.7.5"
+    "@json-schema-tools/reference-resolver": "npm:^1.2.6"
+    "@open-rpc/spec-types": "npm:0.0.2"
+    "@open-rpc/specification-extension-spec": "npm:^1.0.2"
+    ajv: "npm:^6.10.0"
+    detect-node: "npm:^2.0.4"
+    fast-safe-stringify: "npm:^2.0.7"
+    fs-extra: "npm:^10.1.0"
+    is-url: "npm:^1.2.4"
+    isomorphic-fetch: "npm:^3.0.0"
+  checksum: 10/8ac30b3880e57638af8c75e8cc130cb97237bbd55c4cae0948c5e1dbf01e6c639caa0515fa8eacb4b350f5410a9f02f47617244249c6231bc550b791478ee515
   languageName: node
   linkType: hard
 
@@ -11635,11 +11596,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@open-rpc/server-js@npm:1.9.3":
-  version: 1.9.3
-  resolution: "@open-rpc/server-js@npm:1.9.3"
+"@open-rpc/server-js@npm:^1.9.5":
+  version: 1.10.1
+  resolution: "@open-rpc/server-js@npm:1.10.1"
   dependencies:
-    "@open-rpc/schema-utils-js": "npm:1.15.0"
+    "@open-rpc/schema-utils-js": "npm:^2.0.2"
     body-parser: "npm:^1.19.0"
     connect: "npm:^3.7.0"
     cors: "npm:^2.8.5"
@@ -11647,7 +11608,23 @@ __metadata:
     lodash: "npm:^4.17.19"
     node-ipc: "npm:9.1.1"
     ws: "npm:^8.0.0"
-  checksum: 10/27005f6a782f99892989a5e6df8d7d5ce00aa83f09f009d5826a19fe3d8c2d65ea51613a0d10ae4f798774279c4b5dd204aa5cf57eb657d7c74c9bb3a317d77e
+  checksum: 10/dafc05304e648cea566bb9763a7b5b38c3be9b5204d4f73156221362d4667c0580003f2502bffede60de1dbc25a045e9277b45b7228ddcc154e7182ae52d9123
+  languageName: node
+  linkType: hard
+
+"@open-rpc/spec-types@npm:0.0.2":
+  version: 0.0.2
+  resolution: "@open-rpc/spec-types@npm:0.0.2"
+  dependencies:
+    "@open-rpc/spec": "npm:1.4.1"
+  checksum: 10/e2698a458df89fa4a538b9773438cbe057e9514a2b298c7e4357ca1a13921d7ac8fc559048ec047d3e664292ae43ff598b57d19e73b237cb0793ab186222f333
+  languageName: node
+  linkType: hard
+
+"@open-rpc/spec@npm:1.4.1":
+  version: 1.4.1
+  resolution: "@open-rpc/spec@npm:1.4.1"
+  checksum: 10/6e6679a1b85039a724f9938b1840a020f75428b2ef899704ce7a964e16024be620b97d467a7e5d69b56a735026db62c465b841c3c349034e60ba243e9aae2db5
   languageName: node
   linkType: hard
 
@@ -35660,7 +35637,7 @@ __metadata:
     "@noble/hashes": "npm:1.8.0"
     "@notifee/react-native": "npm:^9.0.0"
     "@octokit/rest": "npm:^21.0.0"
-    "@open-rpc/mock-server": "npm:^1.7.5"
+    "@open-rpc/mock-server": "npm:^1.7.8"
     "@open-rpc/schema-utils-js": "npm:^1.16.2"
     "@open-rpc/test-coverage": "npm:^2.2.2"
     "@playwright/test": "npm:^1.57.0"

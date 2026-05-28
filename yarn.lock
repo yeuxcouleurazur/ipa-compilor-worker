@@ -35885,7 +35885,7 @@ __metadata:
     react-native-confirmation-code-field: "npm:^7.6.1"
     react-native-crypto: "npm:2.2.1"
     react-native-default-preference: "npm:^1.4.3"
-    react-native-device-info: "npm:^9.0.2"
+    react-native-device-info: "npm:^15.0.2"
     react-native-elevated-view: "npm:0.0.6"
     react-native-fade-in-image: "npm:1.4.1"
     react-native-fast-crypto: "patch:react-native-fast-crypto@npm%3A2.2.0#~/.yarn/patches/react-native-fast-crypto-npm-2.2.0-57b8a8a01a.patch"
@@ -40372,12 +40372,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-device-info@npm:^9.0.2":
-  version: 9.0.2
-  resolution: "react-native-device-info@npm:9.0.2"
+"react-native-device-info@npm:^15.0.2":
+  version: 15.0.2
+  resolution: "react-native-device-info@npm:15.0.2"
   peerDependencies:
     react-native: "*"
-  checksum: 10/20406ca60d2141dc7105af7bcdc9c722f09b9bf3e600dcd579e77803edfa80bc558254b533f94e92e40332e5fe0d33ab88d2e22ead75aeabb92a51f6d48935ec
+  checksum: 10/9f945a16bd1aebefc60868e22552375bc630eb98d5505d8cdc847d7841a226540408e7ea174cbb4eb5bfec17235eaca731d154082f64e4935e2a4d2e0244b39b
   languageName: node
   linkType: hard
 

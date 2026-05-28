@@ -13280,20 +13280,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-navigation/bottom-tabs@npm:^6.5.0":
-  version: 6.6.1
-  resolution: "@react-navigation/bottom-tabs@npm:6.6.1"
+"@react-navigation/bottom-tabs@npm:^7.16.2":
+  version: 7.16.2
+  resolution: "@react-navigation/bottom-tabs@npm:7.16.2"
   dependencies:
-    "@react-navigation/elements": "npm:^1.3.31"
+    "@react-navigation/elements": "npm:^2.9.19"
     color: "npm:^4.2.3"
-    warn-once: "npm:^0.1.0"
+    sf-symbols-typescript: "npm:^2.1.0"
   peerDependencies:
-    "@react-navigation/native": ^6.0.0
-    react: "*"
+    "@react-navigation/native": ^7.2.5
+    react: ">= 18.2.0"
     react-native: "*"
-    react-native-safe-area-context: ">= 3.0.0"
-    react-native-screens: ">= 3.0.0"
-  checksum: 10/572f67c1ea26ac52a0c599064957ec6ac5cd0eee810d2e3cd5b4f4beb1016fbd5c5e8eb54c4d62836e1afe90c5ef922b31a288f41e0c442123dcfc417aa8fd7f
+    react-native-safe-area-context: ">= 4.0.0"
+    react-native-screens: ">= 4.0.0"
+  checksum: 10/e190d2e3d8bb47aea0390e1caefffc2ae292d0508cd4b38467a007dae0603f888d18ee7b1949ca2c4caa257ed7d34aef6a9c2459f70a6af144f3b3daf30d3b22
   languageName: node
   linkType: hard
 
@@ -13322,6 +13322,26 @@ __metadata:
     react-native: "*"
     react-native-safe-area-context: ">= 3.0.0"
   checksum: 10/379b3657300f9ab8043979f1ecaea95dce96253903db8d6954468e39dc7cf0710cc08345fa6625071a1505b6442a395e0e20bde39c0b997fd90fea370275fc08
+  languageName: node
+  linkType: hard
+
+"@react-navigation/elements@npm:^2.9.19":
+  version: 2.9.19
+  resolution: "@react-navigation/elements@npm:2.9.19"
+  dependencies:
+    color: "npm:^4.2.3"
+    use-latest-callback: "npm:^0.2.4"
+    use-sync-external-store: "npm:^1.5.0"
+  peerDependencies:
+    "@react-native-masked-view/masked-view": ">= 0.2.0"
+    "@react-navigation/native": ^7.2.5
+    react: ">= 18.2.0"
+    react-native: "*"
+    react-native-safe-area-context: ">= 4.0.0"
+  peerDependenciesMeta:
+    "@react-native-masked-view/masked-view":
+      optional: true
+  checksum: 10/2f0d46e86c8004efa0a73acf627842b9174feac7d59471357f130290a6ee7c01721585f661e28a32c17edd635aa0f8cd4895522c4c2a21c06ddd7e1722b23cc7
   languageName: node
   linkType: hard
 
@@ -35682,7 +35702,7 @@ __metadata:
     "@react-native/eslint-config": "npm:^0.82.0"
     "@react-native/metro-config": "npm:0.81.5"
     "@react-native/typescript-config": "npm:0.76.9"
-    "@react-navigation/bottom-tabs": "npm:^6.5.0"
+    "@react-navigation/bottom-tabs": "npm:^7.16.2"
     "@react-navigation/native": "npm:^6.1.0"
     "@react-navigation/native-stack": "npm:^6.0.0"
     "@react-navigation/stack": "npm:^6.3.0"
@@ -43043,6 +43063,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"sf-symbols-typescript@npm:^2.1.0":
+  version: 2.2.0
+  resolution: "sf-symbols-typescript@npm:2.2.0"
+  checksum: 10/8623e148bf86151692d3ccb3149122c091b256162a39f4c4f78472811ffe92e3c77a83841a7381a5dc0bc6505ebb73e7ca8901cb077004872d7ee1cb4e5be9d4
+  languageName: node
+  linkType: hard
+
 "sha.js@npm:^2.3.6, sha.js@npm:^2.4.0, sha.js@npm:^2.4.11, sha.js@npm:^2.4.8":
   version: 2.4.12
   resolution: "sha.js@npm:2.4.12"
@@ -46278,7 +46305,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"use-latest-callback@npm:^0.2.1":
+"use-latest-callback@npm:^0.2.1, use-latest-callback@npm:^0.2.4":
   version: 0.2.6
   resolution: "use-latest-callback@npm:0.2.6"
   peerDependencies:
@@ -46338,7 +46365,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"use-sync-external-store@npm:^1.0.0, use-sync-external-store@npm:^1.6.0":
+"use-sync-external-store@npm:^1.0.0, use-sync-external-store@npm:^1.5.0, use-sync-external-store@npm:^1.6.0":
   version: 1.6.0
   resolution: "use-sync-external-store@npm:1.6.0"
   peerDependencies:

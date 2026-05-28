@@ -380,7 +380,7 @@
     "@react-native/babel-preset": "0.76.9",
     "@react-native/eslint-config": "^0.82.0",
     "@react-native/typescript-config": "0.76.9",
-    "@react-navigation/bottom-tabs": "^6.5.0",
+    "@react-navigation/bottom-tabs": "^7.16.2",
     "@react-navigation/native": "^6.1.0",
     "@react-navigation/native-stack": "^6.0.0",
     "@react-navigation/stack": "^6.3.0",

@@ -9842,14 +9842,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/react-native-actionsheet@npm:2.4.2":
-  version: 2.4.2
-  resolution: "@metamask/react-native-actionsheet@npm:2.4.2"
+"@metamask/react-native-actionsheet@npm:2.4.3":
+  version: 2.4.3
+  resolution: "@metamask/react-native-actionsheet@npm:2.4.3"
   peerDependencies:
     prop-types: ">=15.4.0"
     react: ">=15.4.0"
     react-native: "*"
-  checksum: 10/9045a93b5e6fc47c46e4a7fd5600cbe451b7786be6ae0999b0b79e8d52da7aeccb1b823e2ebbd7e44687db6115fce7dd6cf61af6ac7ccbc4362ede537f32774e
+  checksum: 10/6e5342fe9a96021a03e36cde1f292f17fbb85fcfb967732085965f1a29ba45fc532b7f88e5da8b5a8733b6de6923ded3f3e7e0f1d7e21c4bf1358fb0078542f8
   languageName: node
   linkType: hard
 
@@ -35619,7 +35619,7 @@ __metadata:
     "@metamask/ramps-controller": "npm:^13.3.1"
     "@metamask/react-data-query": "npm:^0.2.0"
     "@metamask/react-native-acm": "patch:@metamask/react-native-acm@npm%3A1.2.0#~/.yarn/patches/@metamask-react-native-acm-npm-1.2.0-944bf863eb.patch"
-    "@metamask/react-native-actionsheet": "npm:2.4.2"
+    "@metamask/react-native-actionsheet": "npm:2.4.3"
     "@metamask/react-native-button": "patch:@metamask/react-native-button@npm%3A3.0.0#~/.yarn/patches/@metamask-react-native-button-npm-3.0.0-05f357e85a.patch"
     "@metamask/react-native-payments": "patch:@metamask/react-native-payments@npm%3A2.0.2#~/.yarn/patches/@metamask-react-native-payments-npm-2.0.2-4ddc5f9862.patch"
     "@metamask/react-native-search-api": "npm:1.0.1"

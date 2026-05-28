@@ -35915,7 +35915,7 @@ __metadata:
     react-native-qrcode-svg: "npm:6.3.21"
     react-native-quick-base64: "patch:react-native-quick-base64@npm%3A2.2.0#~/.yarn/patches/react-native-quick-base64-npm-2.2.0-9083eb316a.patch"
     react-native-quick-crypto: "patch:react-native-quick-crypto@npm%3A0.7.15#~/.yarn/patches/react-native-quick-crypto-npm-0.7.15-85c4f4892e.patch"
-    react-native-randombytes: "npm:^3.5.3"
+    react-native-randombytes: "npm:^3.6.2"
     react-native-reanimated: "npm:3.19.0"
     react-native-release-profiler: "npm:^0.4.4"
     react-native-render-html: "npm:^6.3.4"
@@ -40810,13 +40810,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-randombytes@npm:^3.5.3":
-  version: 3.6.1
-  resolution: "react-native-randombytes@npm:3.6.1"
+"react-native-randombytes@npm:^3.6.2":
+  version: 3.6.2
+  resolution: "react-native-randombytes@npm:3.6.2"
   dependencies:
     buffer: "npm:^4.9.1"
     sjcl: "npm:^1.0.3"
-  checksum: 10/45dc34a39a54595c63e0113cb6329d0ddef019a2591f089a5ab91cb9c804355e98b1505e9f363e59b1ca45530b25d756244c62f115d9c461fff4068495ff94a7
+  checksum: 10/290b3501681a52086179dd0d444847fa2977fe8f06da244abbf0a4177a9cac271f7c3481c9534f9f552c57d0a37c45ac6d353bd86d54788cd9b9c2718c9729af
   languageName: node
   linkType: hard
 

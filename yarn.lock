@@ -8256,7 +8256,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/chain-agnostic-permission@npm:^1.2.1, @metamask/chain-agnostic-permission@npm:^1.5.0, @metamask/chain-agnostic-permission@npm:^1.6.1":
+"@metamask/chain-agnostic-permission@npm:^1.5.0, @metamask/chain-agnostic-permission@npm:^1.6.1":
   version: 1.6.1
   resolution: "@metamask/chain-agnostic-permission@npm:1.6.1"
   dependencies:
@@ -8335,7 +8335,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/controller-utils@npm:^11.14.1, @metamask/controller-utils@npm:^11.15.0, @metamask/controller-utils@npm:^11.19.0, @metamask/controller-utils@npm:^11.20.0":
+"@metamask/controller-utils@npm:^11.15.0, @metamask/controller-utils@npm:^11.19.0, @metamask/controller-utils@npm:^11.20.0":
   version: 11.20.0
   resolution: "@metamask/controller-utils@npm:11.20.0"
   dependencies:
@@ -8538,17 +8538,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/eip1193-permission-middleware@npm:^1.0.2":
-  version: 1.0.2
-  resolution: "@metamask/eip1193-permission-middleware@npm:1.0.2"
+"@metamask/eip1193-permission-middleware@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "@metamask/eip1193-permission-middleware@npm:2.0.1"
   dependencies:
-    "@metamask/chain-agnostic-permission": "npm:^1.2.1"
-    "@metamask/controller-utils": "npm:^11.14.1"
-    "@metamask/json-rpc-engine": "npm:^10.1.1"
-    "@metamask/permission-controller": "npm:^12.0.0"
-    "@metamask/utils": "npm:^11.8.1"
+    "@metamask/chain-agnostic-permission": "npm:^1.6.1"
+    "@metamask/controller-utils": "npm:^12.0.0"
+    "@metamask/json-rpc-engine": "npm:^10.5.0"
+    "@metamask/permission-controller": "npm:^13.1.1"
+    "@metamask/utils": "npm:^11.9.0"
     lodash: "npm:^4.17.21"
-  checksum: 10/c9e3271c342a9ac80b64b6997f4283d47b3d3ed0347f24a9b1d7d26c7fcbdb171395f7e2116fb04e4fadb81c46ad12c8ce0eb6fc30f9bd203e1f20082b76e804
+  checksum: 10/6b21c016ed5a5a3b6cf3dd70b49632f2ea9efb8704193125e22e69b9756ccf3c2d9c42af2de1c785bdf1f978d6a48fcdcf0933f38415ffa463a705fb324793b6
   languageName: node
   linkType: hard
 
@@ -35556,7 +35556,7 @@ __metadata:
     "@metamask/design-tokens": "npm:^8.4.0"
     "@metamask/earn-controller": "npm:^12.1.0"
     "@metamask/eip-5792-middleware": "npm:^2.0.0"
-    "@metamask/eip1193-permission-middleware": "npm:^1.0.2"
+    "@metamask/eip1193-permission-middleware": "npm:^2.0.1"
     "@metamask/ens-resolver-snap": "npm:^1.2.0"
     "@metamask/eslint-config-typescript": "npm:^13.0.0"
     "@metamask/eslint-plugin-design-tokens": "npm:^1.0.0"

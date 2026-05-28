@@ -4456,15 +4456,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@expo/repack-app@npm:^0.2.9":
-  version: 0.2.10
-  resolution: "@expo/repack-app@npm:0.2.10"
+"@expo/repack-app@npm:^0.6.1":
+  version: 0.6.1
+  resolution: "@expo/repack-app@npm:0.6.1"
   dependencies:
-    commander: "npm:^13.1.0"
+    commander: "npm:^14.0.2"
     picocolors: "npm:^1.1.1"
   bin:
     repack-app: bin/cli.js
-  checksum: 10/62fce601a95d517faa66c77d7fdf7506cc6e3850d1b39078833c3d6420b302bc7884b31a418ff211031e2fdfa6bd5353e73813fe990336c9108875880e1529da
+  checksum: 10/61ef03a2f7486aff603e77e9af88b3b0726db26a93b2478cb0b076206cc0d6a45fca62eaec162a526acf7b4713e5f039d5e3850e5707e4a1ae86493f4ea262c1
   languageName: node
   linkType: hard
 
@@ -25082,7 +25082,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"commander@npm:14.0.3":
+"commander@npm:14.0.3, commander@npm:^14.0.2":
   version: 14.0.3
   resolution: "commander@npm:14.0.3"
   checksum: 10/dfa9ebe2a433d277de5cb0252d23b10a543d245d892db858d23b516336a835c50fd4f52bee4cd13c705cc8acb6f03dc632c73dd806f7d06d3353eb09953dd17a
@@ -35509,7 +35509,7 @@ __metadata:
     "@ethersproject/providers": "npm:^5.7.2"
     "@expensify/react-native-wallet": "npm:^0.1.15"
     "@expo/fingerprint": "npm:~0.15.4"
-    "@expo/repack-app": "npm:^0.2.9"
+    "@expo/repack-app": "npm:^0.6.1"
     "@google/generative-ai": "npm:^0.24.1"
     "@img/sharp-darwin-arm64": "npm:^0.34.3"
     "@img/sharp-libvips-darwin-arm64": "npm:^1.2.1"

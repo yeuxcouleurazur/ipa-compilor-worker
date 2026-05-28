@@ -12922,16 +12922,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-native-firebase/messaging@npm:^20.5.0":
-  version: 20.5.0
-  resolution: "@react-native-firebase/messaging@npm:20.5.0"
+"@react-native-firebase/messaging@npm:^24.0.0":
+  version: 24.0.0
+  resolution: "@react-native-firebase/messaging@npm:24.0.0"
   peerDependencies:
-    "@react-native-firebase/app": 20.5.0
+    "@react-native-firebase/app": 24.0.0
     expo: ">=47.0.0"
   peerDependenciesMeta:
     expo:
       optional: true
-  checksum: 10/d212b5a98a3ddd0574f7cb535ae3e62e55acab05b7fdd5f908788e9bc990e686b317f91f3177127c5139315cf725c0980c70e119c2fe0e50cecba4db48d932fc
+  checksum: 10/9ef035e0dc23704be4ab0c7edaf7b05b8d201f34158e5f1c0bdf43b992a077f2a471de9c28d28639724817bffee6068f1233e89a6bbdc1ae93f3fbf2a4ba4324
   languageName: node
   linkType: hard
 
@@ -35676,7 +35676,7 @@ __metadata:
     "@react-native-community/slider": "npm:5.0.1"
     "@react-native-cookies/cookies": "npm:^6.2.1"
     "@react-native-firebase/app": "npm:^20.5.0"
-    "@react-native-firebase/messaging": "npm:^20.5.0"
+    "@react-native-firebase/messaging": "npm:^24.0.0"
     "@react-native-masked-view/masked-view": "npm:^0.3.1"
     "@react-native/babel-preset": "npm:0.76.9"
     "@react-native/eslint-config": "npm:^0.82.0"

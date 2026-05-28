@@ -375,7 +375,7 @@
     "@react-native-community/slider": "5.0.1",
     "@react-native-cookies/cookies": "^6.2.1",
     "@react-native-firebase/app": "^20.5.0",
-    "@react-native-firebase/messaging": "^20.5.0",
+    "@react-native-firebase/messaging": "^24.0.0",
     "@react-native-masked-view/masked-view": "^0.3.1",
     "@react-native/babel-preset": "0.76.9",
     "@react-native/eslint-config": "^0.82.0",

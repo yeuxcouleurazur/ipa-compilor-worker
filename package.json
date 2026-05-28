@@ -303,7 +303,7 @@
     "@metamask/metamask-eth-abis": "3.1.1",
     "@metamask/mobile-wallet-protocol-core": "^0.4.0",
     "@metamask/mobile-wallet-protocol-wallet-client": "^0.3.0",
-    "@metamask/money-account-balance-service": "^1.0.0",
+    "@metamask/money-account-balance-service": "^1.0.2",
     "@metamask/money-account-controller": "^0.2.0",
     "@metamask/money-account-upgrade-controller": "^2.0.0",
     "@metamask/multichain-account-service": "^8.0.1",

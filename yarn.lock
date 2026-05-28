@@ -9294,21 +9294,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/money-account-balance-service@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "@metamask/money-account-balance-service@npm:1.0.0"
+"@metamask/money-account-balance-service@npm:^1.0.2":
+  version: 1.0.2
+  resolution: "@metamask/money-account-balance-service@npm:1.0.2"
   dependencies:
     "@ethersproject/contracts": "npm:^5.7.0"
     "@ethersproject/providers": "npm:^5.7.0"
-    "@metamask/base-data-service": "npm:^0.1.1"
-    "@metamask/controller-utils": "npm:^11.20.0"
+    "@metamask/base-data-service": "npm:^0.1.2"
+    "@metamask/controller-utils": "npm:^12.1.0"
     "@metamask/messenger": "npm:^1.2.0"
     "@metamask/metamask-eth-abis": "npm:^3.1.1"
-    "@metamask/network-controller": "npm:^30.1.0"
-    "@metamask/remote-feature-flag-controller": "npm:^4.2.0"
+    "@metamask/network-controller": "npm:^32.0.0"
+    "@metamask/remote-feature-flag-controller": "npm:^4.2.1"
     "@metamask/superstruct": "npm:^3.1.0"
     "@metamask/utils": "npm:^11.9.0"
-  checksum: 10/d6b9c863bfe21ad6ccce01434d97be3d6667b2ff686fe6ecfe7a592024b270b78ee3358419d570438f9f5a5bc6df56b776bcfdef2c85e1ecc35a668ed2bf484e
+  checksum: 10/d90c2250c40a3718ec62322eb731533b95d61b5ceb4518ff871f404ee701885eb546c1fde0af8e6406c78b3bd76b30b6bd4256176138c8224c6c26fea614f150
   languageName: node
   linkType: hard
 
@@ -35594,7 +35594,7 @@ __metadata:
     "@metamask/mobile-provider": "npm:^3.0.0"
     "@metamask/mobile-wallet-protocol-core": "npm:^0.4.0"
     "@metamask/mobile-wallet-protocol-wallet-client": "npm:^0.3.0"
-    "@metamask/money-account-balance-service": "npm:^1.0.0"
+    "@metamask/money-account-balance-service": "npm:^1.0.2"
     "@metamask/money-account-controller": "npm:^0.2.0"
     "@metamask/money-account-upgrade-controller": "npm:^2.0.0"
     "@metamask/multichain-account-service": "npm:^8.0.1"

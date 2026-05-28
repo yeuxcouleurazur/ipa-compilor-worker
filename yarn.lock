@@ -35922,7 +35922,7 @@ __metadata:
     react-native-safe-area-context: "npm:~5.6.0"
     react-native-screens: "npm:~4.16.0"
     react-native-sensors: "patch:react-native-sensors@npm%3A5.3.0#~/.yarn/patches/react-native-sensors-npm-5.3.0-318d1d324d.patch"
-    react-native-share: "npm:7.3.7"
+    react-native-share: "npm:12.3.1"
     react-native-size-matters: "npm:0.4.0"
     react-native-skeleton-placeholder: "npm:^5.0.0"
     react-native-step-indicator: "npm:^1.0.3"
@@ -40928,10 +40928,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-share@npm:7.3.7":
-  version: 7.3.7
-  resolution: "react-native-share@npm:7.3.7"
-  checksum: 10/e7cc767504e9b4c8b7eb7f8b8d8ce3236d4e726651e8613eaab2f569fb925201914a70eedc820f902f3e58bd34ae970c084da6af4dbb23f68015e2fe748c3c6f
+"react-native-share@npm:12.3.1":
+  version: 12.3.1
+  resolution: "react-native-share@npm:12.3.1"
+  checksum: 10/9ddd8048cc31b664df95215bcc4d29e406b63eee9137f41dbe4da3d2e078fffd6d8733bfc9492a7abc1fea51aab5a5058540249f4431a52f24c43fbcd34aa9b6
   languageName: node
   linkType: hard
 

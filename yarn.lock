@@ -7856,13 +7856,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/app-metadata-controller@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "@metamask/app-metadata-controller@npm:2.0.0"
+"@metamask/app-metadata-controller@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "@metamask/app-metadata-controller@npm:2.0.1"
   dependencies:
-    "@metamask/base-controller": "npm:^9.0.0"
-    "@metamask/messenger": "npm:^0.3.0"
-  checksum: 10/4d5dd9ad75dcb066176339ba806cc382a2e38f1dfecacde8a6dc474f26f352aa6c46cee5363ea0ad39a77d18991432caf82fffb37e02c8300aded6ff3786e609
+    "@metamask/base-controller": "npm:^9.0.1"
+    "@metamask/messenger": "npm:^1.0.0"
+  checksum: 10/4382ffffddb9e8fb7d0a98671d934e5fa154a2dcd2e4daa3c6d10e078abaceb9f7950bb85e9b29e4c82bf6fb9274f03d0a6f2ed510f1ae249833438e64a720ad
   languageName: node
   linkType: hard
 
@@ -35529,7 +35529,7 @@ __metadata:
     "@metamask/address-book-controller": "npm:^7.1.2"
     "@metamask/ai-controllers": "npm:0.6.3"
     "@metamask/analytics-controller": "npm:^1.0.0"
-    "@metamask/app-metadata-controller": "npm:^2.0.0"
+    "@metamask/app-metadata-controller": "npm:^2.0.1"
     "@metamask/approval-controller": "npm:^9.0.0"
     "@metamask/assets-controller": "npm:^8.0.1"
     "@metamask/assets-controllers": "npm:^108.1.0"

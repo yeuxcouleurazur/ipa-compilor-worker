@@ -9208,7 +9208,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/logging-controller@npm:^8.0.0, @metamask/logging-controller@npm:^8.0.1":
+"@metamask/logging-controller@npm:^8.0.1":
   version: 8.0.1
   resolution: "@metamask/logging-controller@npm:8.0.1"
   dependencies:
@@ -9217,6 +9217,18 @@ __metadata:
     "@metamask/messenger": "npm:^1.0.0"
     uuid: "npm:^8.3.2"
   checksum: 10/6789bd696613eb4bba648034d8f47fb68a3462d2070d5ef20b58f6a2f017627ffda01cd50511cfde83c4132c811c9f39dfc7d07919cc4b7348dc0ac1d71cfeb9
+  languageName: node
+  linkType: hard
+
+"@metamask/logging-controller@npm:^8.0.2":
+  version: 8.0.2
+  resolution: "@metamask/logging-controller@npm:8.0.2"
+  dependencies:
+    "@metamask/base-controller": "npm:^9.1.0"
+    "@metamask/controller-utils": "npm:^12.0.0"
+    "@metamask/messenger": "npm:^1.2.0"
+    uuid: "npm:^8.3.2"
+  checksum: 10/6dc5a9b4d643c427c2c95d5618975d98933314fb3e1ec11fed87e966332648cbb2e5725d8cde76111b619fd2a5dc76b4596a8d214b02227dae446625b4ecdb34
   languageName: node
   linkType: hard
 
@@ -35587,7 +35599,7 @@ __metadata:
     "@metamask/keyring-sdk": "npm:^2.0.2"
     "@metamask/keyring-snap-client": "npm:^9.0.2"
     "@metamask/keyring-utils": "npm:^3.2.0"
-    "@metamask/logging-controller": "npm:^8.0.0"
+    "@metamask/logging-controller": "npm:^8.0.2"
     "@metamask/message-signing-snap": "npm:^1.1.2"
     "@metamask/messenger": "npm:^1.2.0"
     "@metamask/metamask-eth-abis": "npm:3.1.1"

@@ -2187,14 +2187,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@config-plugins/detox@npm:^9.0.0":
-  version: 9.0.0
-  resolution: "@config-plugins/detox@npm:9.0.0"
+"@config-plugins/detox@npm:^11.0.0":
+  version: 11.0.0
+  resolution: "@config-plugins/detox@npm:11.0.0"
   dependencies:
     expo-build-properties: "npm:^0.13.1"
   peerDependencies:
-    expo: ^52
-  checksum: 10/ec85ce5144c2499558e0e2fd3314c5914a6fec23b31e7cc7414ebb858e5a42c65fbb76eba0cf2a90f0f4924d18af334085c0acf73fd93b274906da57eb941294
+    expo: ^53
+  checksum: 10/bbdb0fe5cbe5f7742bcdc926eefdc7402e717bde976af40042f4192ed95ede4c610fca3d48380dbd5148e0a1e3bc7ad67294059a8321a3fa58b1c9825c23714f
   languageName: node
   linkType: hard
 
@@ -35500,7 +35500,7 @@ __metadata:
     "@babel/register": "npm:^7.24.6"
     "@babel/runtime": "npm:^7.25.0"
     "@braze/react-native-sdk": "patch:@braze/react-native-sdk@npm%3A19.1.0#~/.yarn/patches/@braze-react-native-sdk-npm-19.1.0-076-reactmoduleinfo.patch"
-    "@config-plugins/detox": "npm:^9.0.0"
+    "@config-plugins/detox": "npm:^11.0.0"
     "@consensys/native-ramps-sdk": "npm:^2.1.7"
     "@consensys/on-ramp-sdk": "npm:2.1.12"
     "@craftzdog/react-native-buffer": "npm:^6.1.0"

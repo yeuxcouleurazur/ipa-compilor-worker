@@ -1,0 +1,223 @@
+// Third party dependencies
+import React, { useRef, useEffect } from 'react';
+import { render, act, waitFor } from '@testing-library/react-native';
+
+// External dependencies.
+import Text from '../../../../Texts/Text';
+
+// Internal dependencies
+import BottomSheetDialog from './BottomSheetDialog';
+import { BottomSheetDialogRef } from './BottomSheetDialog.types';
+import { Platform } from 'react-native';
+
+jest.mock('react-native', () => {
+  const actualRN = jest.requireActual('react-native');
+  return {
+    ...actualRN,
+    Platform: {
+      ...actualRN.Platform,
+      OS: 'ios',
+    },
+  };
+});
+
+jest.mock('@react-navigation/native', () => {
+  const actualNav = jest.requireActual('@react-navigation/native');
+  return {
+    ...actualNav,
+    useNavigation: () => ({
+      navigate: jest.fn(),
+    }),
+  };
+});
+
+describe('BottomSheetDialog', () => {
+  it('should render correctly', () => {
+    const wrapper = render(<BottomSheetDialog />);
+    expect(wrapper.toJSON()).toBeDefined();
+  });
+  it('should render the component with children', () => {
+    const { getByText } = render(
+      <BottomSheetDialog>
+        <Text>Test Child</Text>
+      </BottomSheetDialog>,
+    );
+    expect(getByText('Test Child')).toBeOnTheScreen();
+  });
+  it('should call onOpen when onOpenDialog ref is called', async () => {
+    const onOpenMock = jest.fn();
+    const TestComponent = () => {
+      const ref = useRef<BottomSheetDialogRef>(null);
+
+      useEffect(() => {
+        if (ref.current) {
+          ref.current?.onOpenDialog();
+        }
+      }, []);
+
+      return (
+        <BottomSheetDialog ref={ref} onOpen={onOpenMock}>
+          <Text>Test Child</Text>
+        </BottomSheetDialog>
+      );
+    };
+
+    render(<TestComponent />);
+
+    await waitFor(() => {
+      expect(onOpenMock).toHaveBeenCalled();
+    });
+  });
+
+  it('should call onClose when onCloseDialog ref is called', async () => {
+    Platform.OS = 'ios';
+
+    const onCloseMock = jest.fn();
+    const TestComponent = () => {
+      const ref = useRef<BottomSheetDialogRef>(null);
+
+      useEffect(() => {
+        if (ref.current) {
+          ref.current?.onCloseDialog();
+        }
+      }, []);
+
+      return (
+        <BottomSheetDialog ref={ref} onClose={onCloseMock}>
+          <Text>Test Child</Text>
+        </BottomSheetDialog>
+      );
+    };
+
+    render(<TestComponent />);
+
+    await waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalled();
+    });
+  });
+  it('calls onClose only once when onCloseDialog is invoked twice rapidly', async () => {
+    const onCloseMock = jest.fn();
+    const TestComponent = () => {
+      const ref = useRef<BottomSheetDialogRef>(null);
+
+      useEffect(() => {
+        if (ref.current) {
+          ref.current?.onCloseDialog();
+          ref.current?.onCloseDialog();
+        }
+      }, []);
+
+      return (
+        <BottomSheetDialog ref={ref} onClose={onCloseMock}>
+          <Text>Test Child</Text>
+        </BottomSheetDialog>
+      );
+    };
+
+    render(<TestComponent />);
+    await waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('allows closing again after re-opening', async () => {
+    const onCloseMock = jest.fn();
+    const onOpenMock = jest.fn();
+    const TestComponent = () => {
+      const ref = useRef<BottomSheetDialogRef>(null);
+
+      useEffect(() => {
+        if (ref.current) {
+          ref.current?.onCloseDialog();
+          ref.current?.onOpenDialog();
+          ref.current?.onCloseDialog();
+        }
+      }, []);
+
+      return (
+        <BottomSheetDialog ref={ref} onClose={onCloseMock} onOpen={onOpenMock}>
+          <Text>Test Child</Text>
+        </BottomSheetDialog>
+      );
+    };
+
+    render(<TestComponent />);
+    await waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalledTimes(2);
+    });
+  });
+  it('calls onClose only once when onCloseDialog is invoked twice rapidly', async () => {
+    const onCloseMock = jest.fn();
+    const TestComponent = () => {
+      const ref = useRef<BottomSheetDialogRef>(null);
+
+      useEffect(() => {
+        if (ref.current) {
+          ref.current?.onCloseDialog();
+          ref.current?.onCloseDialog();
+        }
+      }, []);
+
+      return (
+        <BottomSheetDialog ref={ref} onClose={onCloseMock}>
+          <Text>Test Child</Text>
+        </BottomSheetDialog>
+      );
+    };
+
+    render(<TestComponent />);
+    await waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('allows closing again after re-opening', async () => {
+    const onCloseMock = jest.fn();
+    const onOpenMock = jest.fn();
+    const TestComponent = () => {
+      const ref = useRef<BottomSheetDialogRef>(null);
+
+      useEffect(() => {
+        if (ref.current) {
+          ref.current?.onCloseDialog();
+          ref.current?.onOpenDialog();
+          ref.current?.onCloseDialog();
+        }
+      }, []);
+
+      return (
+        <BottomSheetDialog ref={ref} onClose={onCloseMock} onOpen={onOpenMock}>
+          <Text>Test Child</Text>
+        </BottomSheetDialog>
+      );
+    };
+
+    render(<TestComponent />);
+    await waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalledTimes(2);
+    });
+  });
+  //   Note: Add Gesture tests when react-native-gesture-handler gets updated
+
+  describe('panGestureHandlerProps', () => {
+    it('passes props to the PanGestureHandler via panGestureHandlerProps', () => {
+      const { getByTestId } = render(
+        <BottomSheetDialog
+          panGestureHandlerProps={{ testID: 'pan-gesture-handler' }}
+        >
+          <Text>Test Child</Text>
+        </BottomSheetDialog>,
+      );
+      expect(getByTestId('pan-gesture-handler')).toBeOnTheScreen();
+    });
+
+    it('renders normally when panGestureHandlerProps is undefined', () => {
+      const { getByText } = render(
+        <BottomSheetDialog panGestureHandlerProps={undefined}>
+          <Text>No Handler Props</Text>
+        </BottomSheetDialog>,
+      );
+      expect(getByText('No Handler Props')).toBeOnTheScreen();
+    });
+  });
+});

@@ -1,0 +1,533 @@
+import React, { useRef, useMemo, useState, useCallback } from 'react';
+import {
+  View,
+  Image,
+  TouchableOpacity,
+  ImageSourcePropType,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { captureRef } from 'react-native-view-shot';
+import Share from 'react-native-share';
+import { useSelector } from 'react-redux';
+import ScrollableTabView from '@tommasini/react-native-scrollable-tab-view';
+import { strings } from '../../../../../../locales/i18n';
+import Text, {
+  TextColor,
+  TextVariant,
+} from '../../../../../component-library/components/Texts/Text';
+import {
+  Button,
+  ButtonVariant,
+  ButtonSize,
+  IconName as DSIconName,
+} from '@metamask/design-system-react-native';
+import {
+  IconName,
+  IconColor,
+} from '../../../../../component-library/components/Icons/Icon';
+import ButtonIcon, {
+  ButtonIconSizes,
+} from '../../../../../component-library/components/Buttons/ButtonIcon';
+import { useStyles } from '../../../../../component-library/hooks';
+import { selectReferralCode } from '../../../../../reducers/rewards/selectors';
+import { selectPerpsRewardsReferralCodeEnabledFlag } from '../../selectors/featureFlags';
+import PerpsTokenLogo from '../../components/PerpsTokenLogo';
+import RewardsReferralCodeTag from '../../../Rewards/components/RewardsReferralCodeTag';
+import {
+  formatPerpsFiat,
+  parseCurrencyString,
+  PRICE_RANGES_UNIVERSAL,
+} from '../../utils/formatUtils';
+import MetaMaskLogo from '../../../../../images/branding/metamask-name.png';
+import NegativePnlCharacter1 from '../../../../../images/negative_pnl_character_1_3x.png';
+import NegativePnlCharacter2 from '../../../../../images/negative_pnl_character_2_3x.png';
+import PositivePnlCharacter2 from '../../../../../images/positive_pnl_character_2_3x.png';
+import PositivePnlCharacter3 from '../../../../../images/positive_pnl_character_3_3x.png';
+import {
+  PERPS_CONSTANTS,
+  PERPS_EVENT_PROPERTY,
+  PERPS_EVENT_VALUE,
+  getPerpsDisplaySymbol,
+  type Position,
+} from '@metamask/perps-controller';
+import { darkTheme } from '@metamask/design-tokens';
+import styleSheet from './PerpsHeroCardView.styles';
+import Logger from '../../../../../util/Logger';
+import { usePerpsEventTracking } from '../../hooks/usePerpsEventTracking';
+import { MetaMetricsEvents } from '../../../../../core/Analytics';
+import { buildReferralUrl } from '../../../Rewards/utils';
+import { usePerpsToasts } from '../../hooks';
+import { ShareOpenResult } from 'react-native-share/lib/typescript/types';
+import {
+  PerpsHeroCardViewSelectorsIDs,
+  getPerpsHeroCardViewSelector,
+} from '../../Perps.testIds';
+import { useReferralDetails } from '../../../Rewards/hooks/useReferralDetails';
+import { ensureError } from '../../../../../util/errorUtils';
+
+// To add a new card, add the image to the array.
+const CARD_IMAGES: { image: ImageSourcePropType; id: number; name: string }[] =
+  [
+    { image: PositivePnlCharacter2, id: 0, name: 'Positive PNL Character 2' },
+    { image: NegativePnlCharacter1, id: 1, name: 'Negative PNL Character 1' },
+    { image: PositivePnlCharacter3, id: 2, name: 'Positive PNL Character 3' },
+    { image: NegativePnlCharacter2, id: 3, name: 'Negative PNL Character 2' },
+  ];
+
+const PerpsHeroCardView: React.FC = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const viewShotRefs = useRef<(View | null)[]>(
+    Array.from({ length: CARD_IMAGES.length }, () => null),
+  );
+  const [currentTab, setCurrentTab] = useState(0);
+  const [isSharing, setIsSharing] = useState(false);
+
+  const params = route.params as {
+    position: Position;
+    marketPrice?: string;
+    source?: string;
+  };
+  const { position, marketPrice, source } = params;
+
+  const rewardsReferralCode = useSelector(selectReferralCode);
+  const isReferralEnabled = useSelector(
+    selectPerpsRewardsReferralCodeEnabledFlag,
+  );
+
+  // Fetch referral details to ensure code is available for display
+  useReferralDetails();
+
+  // Gate referral code behind feature flag
+  const effectiveReferralCode = isReferralEnabled ? rewardsReferralCode : null;
+
+  const { track } = usePerpsEventTracking();
+
+  const { showToast, PerpsToastOptions } = usePerpsToasts();
+
+  const data = useMemo(() => {
+    const isLong = Number.parseFloat(position.size) >= 0;
+    const direction = isLong ? 'long' : 'short';
+    const pnlValue = Number.parseFloat(position.unrealizedPnl);
+    const roeValue = Number.parseFloat(position.returnOnEquity || '0') * 100;
+    const entryPrice = position.entryPrice;
+
+    const marketPriceParsed = parseCurrencyString(marketPrice ?? '');
+
+    return {
+      asset: position.symbol,
+      direction,
+      leverage: position.leverage.value,
+      pnl: pnlValue,
+      roe: roeValue,
+      entryPrice,
+      markPrice: formatPerpsFiat(marketPriceParsed ?? '', {
+        ranges: PRICE_RANGES_UNIVERSAL,
+      }),
+      isLong,
+    };
+  }, [
+    position.size,
+    position.unrealizedPnl,
+    position.returnOnEquity,
+    position.entryPrice,
+    position.symbol,
+    position.leverage.value,
+    marketPrice,
+  ]);
+
+  const handleTabChange = useCallback((obj: { i: number }) => {
+    setCurrentTab(obj.i);
+  }, []);
+
+  // Track PnL hero card screen viewed
+  // Determine entry point: asset_screen or close_toast
+  const entryPoint =
+    source === PERPS_EVENT_VALUE.SOURCE.CLOSE_TOAST
+      ? PERPS_EVENT_VALUE.SOURCE.CLOSE_TOAST
+      : PERPS_EVENT_VALUE.SOURCE.PERP_ASSET_SCREEN;
+
+  usePerpsEventTracking({
+    eventName: MetaMetricsEvents.PERPS_SCREEN_VIEWED,
+    properties: {
+      [PERPS_EVENT_PROPERTY.SCREEN_TYPE]:
+        PERPS_EVENT_VALUE.SCREEN_TYPE.PNL_HERO_CARD,
+      [PERPS_EVENT_PROPERTY.ASSET]: position.symbol,
+      [PERPS_EVENT_PROPERTY.DIRECTION]:
+        data.direction === 'long'
+          ? PERPS_EVENT_VALUE.DIRECTION.LONG
+          : PERPS_EVENT_VALUE.DIRECTION.SHORT,
+      [PERPS_EVENT_PROPERTY.SOURCE]: entryPoint,
+      [PERPS_EVENT_PROPERTY.PNL_DOLLAR]: data.pnl,
+      [PERPS_EVENT_PROPERTY.PNL_PERCENT]: data.roe,
+    },
+  });
+
+  // Track DISPLAY_HERO_CARD UI interaction (spec requirement)
+  // Source indicates where user tapped to display the card: open_position or position_close_toast
+  usePerpsEventTracking({
+    eventName: MetaMetricsEvents.PERPS_UI_INTERACTION,
+    properties: {
+      [PERPS_EVENT_PROPERTY.INTERACTION_TYPE]:
+        PERPS_EVENT_VALUE.INTERACTION_TYPE.DISPLAY_HERO_CARD,
+      [PERPS_EVENT_PROPERTY.ASSET]: position.symbol,
+      [PERPS_EVENT_PROPERTY.DIRECTION]:
+        data.direction === 'long'
+          ? PERPS_EVENT_VALUE.DIRECTION.LONG
+          : PERPS_EVENT_VALUE.DIRECTION.SHORT,
+      [PERPS_EVENT_PROPERTY.SOURCE]: entryPoint,
+      [PERPS_EVENT_PROPERTY.PNL_DOLLAR]: data.pnl,
+      [PERPS_EVENT_PROPERTY.PNL_PERCENT]: data.roe,
+    },
+  });
+
+  const { styles } = useStyles(styleSheet, {
+    isLong: data.isLong,
+    hasReferralCode: Boolean(effectiveReferralCode),
+  });
+
+  const handleClose = () => {
+    navigation.goBack();
+  };
+
+  const pnlSign = data.pnl >= 0 ? '+' : '';
+  const pnlDisplay = `${pnlSign}${data.roe.toFixed(2)}%`;
+  const directionText =
+    data.direction.charAt(0).toUpperCase() + data.direction.slice(1);
+  const directionBadgeText = data.leverage
+    ? `${directionText} ${data.leverage}x`
+    : directionText;
+
+  const carouselCards = useMemo(
+    () =>
+      CARD_IMAGES.map(({ image, id: imageId }, index) => (
+        <View
+          key={imageId}
+          ref={(ref) => {
+            viewShotRefs.current[index] = ref;
+          }}
+          style={styles.cardContainer}
+          testID={getPerpsHeroCardViewSelector.cardContainer(index)}
+        >
+          {/* Background Image */}
+          <Image
+            source={image}
+            style={styles.backgroundImage}
+            resizeMode="contain"
+          />
+
+          {/* Top Row: Logo + Referral Tag */}
+          <View style={styles.heroCardTopRow}>
+            <Image
+              source={MetaMaskLogo}
+              style={styles.metamaskLogo}
+              resizeMode="contain"
+            />
+          </View>
+
+          {/* Asset Info Row */}
+          <View style={styles.heroCardAssetRow}>
+            <View style={styles.assetIcon}>
+              <PerpsTokenLogo symbol={data.asset} size={14.5} />
+            </View>
+            <Text
+              variant={TextVariant.BodySMMedium}
+              style={styles.assetName}
+              testID={getPerpsHeroCardViewSelector.assetSymbol(index)}
+            >
+              {getPerpsDisplaySymbol(data.asset)}
+            </Text>
+            <View
+              style={styles.directionBadge}
+              testID={getPerpsHeroCardViewSelector.directionBadge(index)}
+            >
+              <Text
+                variant={TextVariant.BodyXSMedium}
+                style={styles.directionBadgeText}
+                testID={getPerpsHeroCardViewSelector.directionBadgeText(index)}
+              >
+                {directionBadgeText}
+              </Text>
+            </View>
+          </View>
+
+          <View
+            style={
+              effectiveReferralCode
+                ? undefined
+                : styles.referralCodeContentContainer
+            }
+          >
+            {/* P&L Percentage */}
+            <Text
+              variant={TextVariant.DisplayLG}
+              style={data.roe >= 0 ? styles.pnlPositive : styles.pnlNegative}
+              testID={getPerpsHeroCardViewSelector.pnlText(index)}
+            >
+              {pnlDisplay}
+            </Text>
+
+            {/* Price Rows Container */}
+            <View style={styles.priceRowsContainer}>
+              {/* Entry Price */}
+              <View style={styles.priceRow}>
+                <View style={styles.priceLabelContainer}>
+                  <Text
+                    style={styles.priceLabel}
+                    variant={TextVariant.BodySMMedium}
+                  >
+                    {/* Intentionally not using i18n string */}
+                    Entry
+                  </Text>
+                </View>
+                <Text
+                  style={styles.priceValue}
+                  variant={TextVariant.BodySMMedium}
+                >
+                  {formatPerpsFiat(data.entryPrice, {
+                    ranges: PRICE_RANGES_UNIVERSAL,
+                  })}
+                </Text>
+              </View>
+
+              {/* Mark Price */}
+              <View style={styles.priceRow}>
+                <View style={styles.priceLabelContainer}>
+                  <Text
+                    style={styles.priceLabel}
+                    variant={TextVariant.BodySMMedium}
+                  >
+                    {/* Intentionally not using i18n  */}
+                    Mark
+                  </Text>
+                </View>
+
+                <Text
+                  style={styles.priceValue}
+                  variant={TextVariant.BodySMMedium}
+                >
+                  {data.markPrice}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {effectiveReferralCode && (
+            <>
+              <View
+                style={styles.referralCodeTagContainer}
+                testID={getPerpsHeroCardViewSelector.referralCodeTag(index)}
+              >
+                <RewardsReferralCodeTag
+                  referralCode={effectiveReferralCode}
+                  backgroundColor={darkTheme.colors.background.mutedHover}
+                  fontColor={darkTheme.colors.accent04.light}
+                />
+              </View>
+              <Text
+                variant={TextVariant.BodyXS}
+                style={styles.referralCodeText}
+              >
+                {strings('perps.pnl_hero_card.referral_code_text')}
+              </Text>
+            </>
+          )}
+        </View>
+      )),
+    [
+      styles,
+      effectiveReferralCode,
+      data.asset,
+      data.roe,
+      data.entryPrice,
+      data.markPrice,
+      directionBadgeText,
+      pnlDisplay,
+    ],
+  );
+
+  const captureCard = async (): Promise<string | null> => {
+    try {
+      const currentRef = viewShotRefs.current[currentTab];
+      if (currentRef) {
+        const uri = await captureRef(currentRef, {
+          format: 'png',
+          quality: 1,
+        });
+        return uri;
+      }
+      return null;
+    } catch (error) {
+      Logger.error(ensureError(error, 'PerpsHeroCardView.captureCard'), {
+        tags: { feature: PERPS_CONSTANTS.FeatureName },
+        context: { name: 'PerpsHeroCardView.captureCard', data: {} },
+      });
+      return null;
+    }
+  };
+
+  const handleShare = async () => {
+    setIsSharing(true);
+    const imageSelected = CARD_IMAGES[currentTab].name;
+
+    const sharedEventProperties = {
+      [PERPS_EVENT_PROPERTY.INTERACTION_TYPE]:
+        PERPS_EVENT_VALUE.INTERACTION_TYPE.SHARE_PNL_HERO_CARD,
+      [PERPS_EVENT_PROPERTY.SCREEN_NAME]:
+        PERPS_EVENT_VALUE.SCREEN_NAME.PERPS_HERO_CARD,
+      [PERPS_EVENT_PROPERTY.ASSET]: data.asset,
+      [PERPS_EVENT_PROPERTY.DIRECTION]: data.direction,
+      [PERPS_EVENT_PROPERTY.LEVERAGE]: data.leverage,
+      [PERPS_EVENT_PROPERTY.PNL_PERCENT]: pnlDisplay,
+      [PERPS_EVENT_PROPERTY.IMAGE_SELECTED]: imageSelected,
+      [PERPS_EVENT_PROPERTY.TAB_NUMBER]: currentTab,
+    };
+
+    let result: ShareOpenResult | null = null;
+
+    try {
+      const imageUri = await captureCard();
+      if (imageUri) {
+        track(MetaMetricsEvents.PERPS_UI_INTERACTION, {
+          ...sharedEventProperties,
+          [PERPS_EVENT_PROPERTY.STATUS]: PERPS_EVENT_VALUE.STATUS.INITIATED,
+        });
+
+        const message = effectiveReferralCode
+          ? strings('perps.pnl_hero_card.share_message_with_referral_code', {
+              asset: data.asset,
+              code: effectiveReferralCode,
+              link: buildReferralUrl(effectiveReferralCode),
+            })
+          : strings('perps.pnl_hero_card.share_message_without_referral_code', {
+              asset: data.asset,
+            });
+
+        result = await Share.open({
+          failOnCancel: false,
+          url: imageUri,
+          message,
+          // File mime type (required for sharing file with Instagram)
+          type: 'image/png',
+        });
+
+        if (result?.success) {
+          track(MetaMetricsEvents.PERPS_UI_INTERACTION, {
+            ...sharedEventProperties,
+            [PERPS_EVENT_PROPERTY.STATUS]: PERPS_EVENT_VALUE.STATUS.SUCCESS,
+          });
+          showToast(PerpsToastOptions.contentSharing.pnlHeroCard.shareSuccess);
+        }
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+
+      track(MetaMetricsEvents.PERPS_UI_INTERACTION, {
+        ...sharedEventProperties,
+        [PERPS_EVENT_PROPERTY.STATUS]: PERPS_EVENT_VALUE.STATUS.FAILED,
+        [PERPS_EVENT_PROPERTY.ERROR_MESSAGE]: errorMessage,
+      });
+
+      // Don't show error toast if user dismissed the share dialog
+      if (!result?.success && !result?.dismissedAction) {
+        showToast(PerpsToastOptions.contentSharing.pnlHeroCard.shareFailed);
+      }
+
+      Logger.error(ensureError(error, 'PerpsHeroCardView.handleShare'), {
+        tags: { feature: PERPS_CONSTANTS.FeatureName },
+        context: { name: 'PerpsHeroCardView.handleShare', data: {} },
+      });
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  return (
+    <SafeAreaView
+      style={styles.safeAreaContainer}
+      edges={['top', 'bottom']}
+      testID={PerpsHeroCardViewSelectorsIDs.CONTAINER}
+    >
+      {/* Header */}
+      <View style={styles.header} testID={PerpsHeroCardViewSelectorsIDs.HEADER}>
+        <View style={styles.closeButton} />
+        <Text
+          variant={TextVariant.HeadingMD}
+          color={TextColor.Default}
+          style={styles.headerTitle}
+          testID={PerpsHeroCardViewSelectorsIDs.HEADER_TITLE}
+        >
+          {strings('perps.pnl_hero_card.header_title')}
+        </Text>
+        <TouchableOpacity
+          onPress={handleClose}
+          style={styles.closeButton}
+          testID={PerpsHeroCardViewSelectorsIDs.CLOSE_BUTTON}
+        >
+          <ButtonIcon
+            size={ButtonIconSizes.Md}
+            iconName={IconName.Close}
+            iconColor={IconColor.Default}
+            onPress={handleClose}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <View
+        style={styles.carouselWrapper}
+        testID={PerpsHeroCardViewSelectorsIDs.CAROUSEL_WRAPPER}
+      >
+        {/* Carousel */}
+        {/* ScrollableTabView fills empty space by default, we need to constrain it  */}
+        <View
+          style={styles.carousel}
+          testID={PerpsHeroCardViewSelectorsIDs.CAROUSEL}
+        >
+          <ScrollableTabView
+            renderTabBar={() => <View />}
+            onChangeTab={handleTabChange}
+            initialPage={0}
+            prerenderingSiblingsNumber={1}
+          >
+            {carouselCards}
+          </ScrollableTabView>
+        </View>
+
+        <View
+          style={styles.carouselDotIndicator}
+          testID={PerpsHeroCardViewSelectorsIDs.DOT_INDICATOR}
+        >
+          {CARD_IMAGES.map(({ id: imageId }, dotIndex) => (
+            <View
+              key={imageId}
+              style={[
+                styles.progressDot,
+                currentTab === dotIndex && styles.progressDotActive,
+              ]}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Footer Button */}
+      <View style={styles.footerButtonContainer}>
+        <Button
+          variant={ButtonVariant.Primary}
+          size={ButtonSize.Lg}
+          isFullWidth
+          startIconName={isSharing ? undefined : DSIconName.Share}
+          onPress={handleShare}
+          isLoading={isSharing}
+          isDisabled={isSharing}
+          testID={PerpsHeroCardViewSelectorsIDs.SHARE_BUTTON}
+        >
+          {strings('perps.pnl_hero_card.share_button')}
+        </Button>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+export default PerpsHeroCardView;

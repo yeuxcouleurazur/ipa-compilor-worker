@@ -1,0 +1,461 @@
+import {
+  Box,
+  ButtonSize as ButtonSizeHero,
+  Text,
+  TextColor,
+  TextVariant,
+} from '@metamask/design-system-react-native';
+import { useTailwind } from '@metamask/design-system-twrnc-preset';
+import {
+  RouteProp,
+  StackActions,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { ActivityIndicator, Image, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { PredictCashOutSelectorsIDs } from '../../Predict.testIds';
+import { strings } from '../../../../../../locales/i18n';
+import ButtonHero from '../../../../../component-library/components-temp/Buttons/ButtonHero';
+import BottomSheetHeader from '../../../../../component-library/components/BottomSheets/BottomSheetHeader';
+import Button, {
+  ButtonSize,
+  ButtonVariants,
+  ButtonWidthTypes,
+} from '../../../../../component-library/components/Buttons/Button';
+import { Skeleton } from '../../../../../component-library/components-temp/Skeleton';
+import { useStyles } from '../../../../../component-library/hooks/useStyles';
+import Engine from '../../../../../core/Engine';
+import { TraceName } from '../../../../../util/trace';
+import {
+  PredictEventValues,
+  PredictTradeStatus,
+} from '../../constants/eventNames';
+import { usePredictMeasurement } from '../../hooks/usePredictMeasurement';
+import { usePredictOrderPreview } from '../../hooks/usePredictOrderPreview';
+import { usePredictPlaceOrder } from '../../hooks/usePredictPlaceOrder';
+import { Side } from '../../types';
+import {
+  PredictNavigationParamList,
+  PredictSellPreviewProps,
+} from '../../types/navigation';
+import {
+  formatCents,
+  formatPercentage,
+  formatPositionSize,
+  formatPrice,
+  getCashoutInfoText,
+} from '../../utils/format';
+import PredictOrderRetrySheet from '../../components/PredictOrderRetrySheet';
+import { usePredictOrderRetry } from '../../hooks/usePredictOrderRetry';
+import styleSheet from './PredictSellPreview.styles';
+import { PREDICT_SELL_PREVIEW_TEST_IDS } from './PredictSellPreview.testIds';
+
+const PredictSellPreview = (props: PredictSellPreviewProps) => {
+  const tw = useTailwind();
+  const { styles } = useStyles(styleSheet, {});
+  const { goBack, dispatch } = useNavigation();
+  const route =
+    useRoute<RouteProp<PredictNavigationParamList, 'PredictSellPreview'>>();
+
+  const isSheetMode = props.mode === 'sheet';
+  const { market, position, outcome, entryPoint } = isSheetMode
+    ? props
+    : route.params;
+  const onClose = isSheetMode ? props.onClose : undefined;
+
+  const { icon, title, initialValue, size } = position;
+
+  const outcomeGroupTitle = outcome?.groupItemTitle ?? '';
+  const outcomeTitle = title;
+  const outcomeToken = outcome?.tokens.find(
+    (t) => t.id === position.outcomeTokenId,
+  );
+  const outcomeSideText = outcomeToken?.title ?? position.outcome;
+
+  const analyticsProperties = useMemo(
+    () => ({
+      marketId: market?.id,
+      marketTitle: market?.title,
+      marketCategory: market?.category,
+      marketTags: market?.tags,
+      entryPoint:
+        entryPoint || PredictEventValues.ENTRY_POINT.PREDICT_MARKET_DETAILS,
+      transactionType: PredictEventValues.TRANSACTION_TYPE.MM_PREDICT_SELL,
+      liquidity: market?.liquidity,
+      volume: outcome?.volume,
+      sharePrice: position?.price,
+      marketType:
+        market?.outcomes?.length === 1
+          ? PredictEventValues.MARKET_TYPE.BINARY
+          : PredictEventValues.MARKET_TYPE.MULTI_OUTCOME,
+      outcome: position?.outcome?.toLowerCase(),
+      marketSlug: market?.slug,
+      gameId: market?.game?.id,
+      gameStartTime: market?.game?.startTime,
+      gameLeague: market?.game?.league,
+      gameStatus: market?.game?.status,
+      gamePeriod: market?.game?.period,
+      gameClock: market?.game?.elapsed,
+    }),
+    [market, position, outcome, entryPoint],
+  );
+
+  const {
+    placeOrder,
+    isLoading,
+    result,
+    error: placeOrderError,
+    isOrderNotFilled,
+    resetOrderNotFilled,
+  } = usePredictPlaceOrder();
+
+  const {
+    preview,
+    error: previewError,
+    isLoading: isPreviewLoading,
+  } = usePredictOrderPreview({
+    marketId: position.marketId,
+    outcomeId: position.outcomeId,
+    outcomeTokenId: position.outcomeTokenId,
+    side: Side.SELL,
+    size: position.amount,
+    positionId: position.id,
+    autoRefreshTimeout: 1000,
+  });
+
+  const {
+    retrySheetRef,
+    retrySheetVariant,
+    isRetrying,
+    handleRetryWithBestPrice,
+  } = usePredictOrderRetry({
+    preview,
+    placeOrder,
+    analyticsProperties,
+    isOrderNotFilled,
+    resetOrderNotFilled,
+  });
+
+  // Track screen load performance (position data + preview)
+  usePredictMeasurement({
+    traceName: TraceName.PredictSellPreviewView,
+    conditions: [!!position, !!preview, !!market],
+    debugContext: {
+      marketId: market?.id,
+      hasPosition: !!position,
+      hasPreview: !!preview,
+    },
+  });
+
+  const errorMessage = isOrderNotFilled
+    ? undefined
+    : (previewError ?? placeOrderError);
+
+  // Track Predict Trade Transaction with initiated status when screen mounts
+  useEffect(() => {
+    const controller = Engine.context.PredictController;
+
+    controller.trackPredictOrderEvent({
+      status: PredictTradeStatus.INITIATED,
+      analyticsProperties,
+      sharePrice: position?.price,
+      amountUsd: position?.amount,
+      pnl: position?.percentPnl, // PnL as percentage for sell orders
+    });
+    // eslint-disable-next-line react-compiler/react-compiler
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (result?.success) {
+      if (isSheetMode) {
+        onClose?.();
+      } else {
+        dispatch(StackActions.pop());
+      }
+    }
+  }, [dispatch, result, isSheetMode, onClose]);
+
+  // Use preview data if available, fallback to position data on error or when preview is unavailable
+  const currentValue = preview
+    ? preview.minAmountReceived
+    : position.currentValue;
+  const currentPrice = preview?.sharePrice ?? 0;
+  const { avgPrice } = position;
+
+  // Recalculate PnL based on preview data
+  const cashPnl = useMemo(
+    () => currentValue - initialValue,
+    [currentValue, initialValue],
+  );
+
+  const percentPnl = useMemo(
+    () => (initialValue > 0 ? (cashPnl / initialValue) * 100 : 0),
+    [cashPnl, initialValue],
+  );
+
+  const signal = useMemo(() => {
+    if (cashPnl === 0) {
+      return '';
+    }
+    return cashPnl > 0 ? '+' : '-';
+  }, [cashPnl]);
+
+  const onCashOut = useCallback(async () => {
+    if (!preview) return;
+
+    await placeOrder({
+      analyticsProperties,
+      preview,
+    });
+  }, [preview, placeOrder, analyticsProperties]);
+
+  const renderCashOutButton = () => {
+    if (isLoading) {
+      return (
+        <Button
+          label={
+            <Box twClassName="flex-row items-center gap-1">
+              <ActivityIndicator size="small" />
+              <Text
+                variant={TextVariant.BodyLg}
+                twClassName="font-medium"
+                color={TextColor.PrimaryInverse}
+              >
+                {`${strings('predict.order.cashing_out_loading')}`}
+              </Text>
+            </Box>
+          }
+          variant={ButtonVariants.Primary}
+          size={ButtonSize.Lg}
+          onPress={onCashOut}
+          width={ButtonWidthTypes.Full}
+          style={tw.style('opacity-50')}
+          disabled
+        />
+      );
+    }
+
+    return (
+      <ButtonHero
+        testID={PredictCashOutSelectorsIDs.SELL_PREVIEW_CASH_OUT_BUTTON}
+        disabled={!preview || isLoading}
+        onPress={onCashOut}
+        style={{
+          ...styles.cashOutButton,
+        }}
+        isLoading={isLoading}
+        size={ButtonSizeHero.Lg}
+      >
+        <Text
+          variant={TextVariant.BodyMd}
+          style={tw.style('text-white font-medium')}
+        >
+          {strings('predict.cash_out')}
+        </Text>
+      </ButtonHero>
+    );
+  };
+
+  const Wrapper = isSheetMode ? Box : SafeAreaView;
+  const wrapperProps = isSheetMode
+    ? { twClassName: 'bg-background-default' }
+    : { style: tw.style('flex-1 bg-background-default') };
+
+  return (
+    <Wrapper {...wrapperProps}>
+      {!isSheetMode && (
+        <BottomSheetHeader onClose={() => goBack()}>
+          <Text variant={TextVariant.HeadingMd}>
+            {strings('predict.cash_out')}
+          </Text>
+        </BottomSheetHeader>
+      )}
+      <View
+        testID={PredictCashOutSelectorsIDs.CONTAINER}
+        style={isSheetMode ? tw.style('flex-col') : styles.container}
+      >
+        {!isSheetMode && (
+          <View style={styles.cashOutContainer}>
+            {isPreviewLoading ? (
+              <Box twClassName="items-center gap-2">
+                <Skeleton
+                  width={200}
+                  height={74}
+                  style={tw.style('rounded-lg')}
+                  testID={PREDICT_SELL_PREVIEW_TEST_IDS.VALUE_SKELETON}
+                />
+                <Skeleton
+                  width={180}
+                  height={24}
+                  style={tw.style('rounded-md')}
+                  testID={PREDICT_SELL_PREVIEW_TEST_IDS.PRICE_SKELETON}
+                />
+                <Skeleton
+                  width={150}
+                  height={24}
+                  style={tw.style('rounded-md')}
+                  testID={PREDICT_SELL_PREVIEW_TEST_IDS.PNL_SKELETON}
+                />
+              </Box>
+            ) : (
+              <>
+                <Text
+                  style={styles.currentValue}
+                  variant={TextVariant.BodyMd}
+                  twClassName="font-medium"
+                >
+                  {formatPrice(currentValue, { maximumDecimals: 2 })}
+                </Text>
+                <Text
+                  variant={TextVariant.BodyMd}
+                  twClassName="font-medium"
+                  color={TextColor.TextAlternative}
+                >
+                  {strings('predict.at_price_per_share', {
+                    size: formatPositionSize(size, {
+                      minimumDecimals: 2,
+                      maximumDecimals: 2,
+                    }),
+                    price: formatCents(currentPrice),
+                  })}
+                </Text>
+                <Text
+                  style={styles.percentPnl}
+                  twClassName="font-medium"
+                  color={
+                    percentPnl > 0
+                      ? TextColor.SuccessDefault
+                      : TextColor.ErrorDefault
+                  }
+                  variant={TextVariant.BodyMd}
+                >
+                  {`${signal}${formatPrice(Math.abs(cashPnl), {
+                    maximumDecimals: 2,
+                  })} (${formatPercentage(percentPnl)})`}
+                </Text>
+              </>
+            )}
+          </View>
+        )}
+        <View
+          style={[
+            styles.bottomContainer,
+            isSheetMode && tw.style('border-t-0'),
+          ]}
+        >
+          {errorMessage && (
+            <Text
+              variant={TextVariant.BodySm}
+              color={TextColor.ErrorDefault}
+              style={tw.style('text-center')}
+            >
+              {errorMessage}
+            </Text>
+          )}
+          {!isSheetMode && (
+            <Box twClassName="flex-row items-center gap-4">
+              <Box twClassName="w-10 h-10 self-start mt-1">
+                <Image source={{ uri: icon }} style={styles.positionIcon} />
+              </Box>
+              <Box twClassName="flex-col gap-1 flex-1">
+                <Text variant={TextVariant.HeadingSm}>{outcomeTitle}</Text>
+                <Text
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  variant={TextVariant.BodySm}
+                  twClassName="font-medium"
+                  color={TextColor.TextAlternative}
+                >
+                  {getCashoutInfoText({
+                    initialValue,
+                    avgPrice,
+                    outcomeSideText,
+                    outcomeGroupTitle,
+                  })}
+                </Text>
+              </Box>
+            </Box>
+          )}
+          {isSheetMode && (
+            <Box twClassName="items-center gap-2 py-4">
+              {isPreviewLoading ? (
+                <>
+                  <Skeleton
+                    width={160}
+                    height={48}
+                    style={tw.style('rounded-lg')}
+                  />
+                  <Skeleton
+                    width={180}
+                    height={20}
+                    style={tw.style('rounded-md')}
+                  />
+                  <Skeleton
+                    width={120}
+                    height={20}
+                    style={tw.style('rounded-md')}
+                  />
+                </>
+              ) : (
+                <>
+                  <Text
+                    variant={TextVariant.HeadingLg}
+                    twClassName="font-medium"
+                  >
+                    {formatPrice(currentValue, { maximumDecimals: 2 })}
+                  </Text>
+                  <Text
+                    variant={TextVariant.BodyMd}
+                    twClassName="font-medium"
+                    color={TextColor.TextAlternative}
+                  >
+                    {strings('predict.at_price_per_share', {
+                      size: formatPositionSize(size, {
+                        minimumDecimals: 2,
+                        maximumDecimals: 2,
+                      }),
+                      price: formatCents(currentPrice),
+                    })}
+                  </Text>
+                  <Text
+                    twClassName="font-bold"
+                    color={
+                      percentPnl > 0
+                        ? TextColor.SuccessDefault
+                        : TextColor.ErrorDefault
+                    }
+                    variant={TextVariant.BodyMd}
+                  >
+                    {`${signal}${formatPrice(Math.abs(cashPnl), {
+                      maximumDecimals: 2,
+                    })} (${formatPercentage(percentPnl)})`}
+                  </Text>
+                </>
+              )}
+            </Box>
+          )}
+          <View style={styles.cashOutButtonContainer}>
+            {renderCashOutButton()}
+            <Text variant={TextVariant.BodyXs} style={styles.cashOutButtonText}>
+              {strings('predict.cash_out_info')}
+            </Text>
+          </View>
+        </View>
+      </View>
+      <PredictOrderRetrySheet
+        ref={retrySheetRef}
+        variant={retrySheetVariant}
+        sharePrice={preview?.sharePrice ?? position?.price ?? 0}
+        side={Side.SELL}
+        onRetry={handleRetryWithBestPrice}
+        onDismiss={resetOrderNotFilled}
+        isRetrying={isRetrying}
+      />
+    </Wrapper>
+  );
+};
+
+export default PredictSellPreview;

@@ -1,0 +1,852 @@
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  TouchableOpacity,
+  View,
+  Modal,
+  StyleSheet,
+  ViewStyle,
+} from 'react-native';
+import { useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
+import type { Theme } from '@metamask/design-tokens';
+import { strings } from '../../../../../locales/i18n';
+import { useStyles } from '../../../../component-library/hooks';
+import AppConstants from '../../../../core/AppConstants';
+import Routes from '../../../../constants/navigation/Routes';
+import { createWebviewNavDetails } from '../../../Views/SimpleWebview';
+import { TokenOverviewSelectorsIDs } from '../../AssetOverview/TokenOverview.testIds';
+import {
+  TimePeriod,
+  TokenPrice,
+} from '../../../hooks/useTokenHistoricalPrices';
+import { TokenI } from '../../Tokens/types';
+import { usePerpsActions } from '../hooks/usePerpsActions';
+import {
+  PERPS_EVENT_PROPERTY,
+  PERPS_EVENT_VALUE,
+} from '@metamask/perps-controller';
+import { usePerpsPositionForAsset } from '../../Perps/hooks/usePerpsPositionForAsset';
+import { selectPerpsEligibility } from '../../Perps/selectors/perpsController';
+import { useComplianceGate } from '../../Compliance';
+import { selectSelectedInternalAccountAddress } from '../../../../selectors/accountsController';
+import PerpsBottomSheetTooltip from '../../Perps/components/PerpsBottomSheetTooltip';
+import { usePerpsEventTracking } from '../../Perps/hooks/usePerpsEventTracking';
+import { MetaMetricsEvents } from '../../../../core/Analytics/MetaMetrics.events';
+import PerpsPositionCard from '../../Perps/components/PerpsPositionCard';
+import Price from '../../AssetOverview/Price';
+import Balance from '../../AssetOverview/Balance';
+import TokenDetails from '../../AssetOverview/TokenDetails';
+import { TokenDetailsActions } from './TokenDetailsActions';
+import AssetOverviewClaimBonus from '../../Earn/components/AssetOverviewClaimBonus';
+import MoneyConvertStablecoins from '../../Money/components/MoneyConvertStablecoins/MoneyConvertStablecoins';
+import { MONEY_EVENTS_CONSTANTS } from '../../Money/constants/moneyEvents';
+import { isTokenEligibleForMerklRewards } from '../../Earn/components/MerklRewards/hooks/useMerklRewards';
+import { isMusdToken } from '../../Earn/constants/musd';
+import {
+  selectIsMusdConversionFlowEnabledFlag,
+  selectMerklCampaignClaimingEnabledFlag,
+} from '../../Earn/selectors/featureFlags';
+import { useMusdConversionEligibility } from '../../Earn/hooks/useMusdConversionEligibility';
+import PerpsDiscoveryBanner from '../../Perps/components/PerpsDiscoveryBanner';
+import { isTokenTrustworthyForPerps } from '../../Perps/constants/perpsConfig';
+import { selectTokenOverviewAdvancedChartEnabled } from '../../../../selectors/featureFlagController/tokenOverviewAdvancedChart';
+import useTokenBuyability from '../../Ramp/hooks/useTokenBuyability';
+import {
+  MarketInsightsEntryCard,
+  MarketInsightsEntryCardSkeleton,
+  useMarketInsights,
+  selectMarketInsightsEnabled,
+} from '../../MarketInsights';
+import { isCaipAssetType, type Hex } from '@metamask/utils';
+import { formatAddressToAssetId } from '@metamask/bridge-controller';
+import type { TokenSecurityData } from '@metamask/assets-controllers';
+import SecurityTrustEntryCard from '../../SecurityTrust/components/SecurityTrustEntryCard/SecurityTrustEntryCard';
+import type { TokenDetailsRouteParams } from '../constants/constants';
+import { getResultTypeConfig } from '../../SecurityTrust/utils/securityUtils';
+import {
+  Box,
+  BoxFlexDirection,
+  BoxAlignItems,
+  Icon,
+  IconSize,
+  FontWeight,
+  Text,
+  TextColor,
+  TextVariant,
+} from '@metamask/design-system-react-native';
+import { SecurityBanner } from './SecurityBanner';
+import Badge, {
+  BadgeVariant,
+} from '../../../../component-library/components/Badges/Badge';
+import { AvatarSize } from '../../../../component-library/components/Avatars/Avatar/Avatar.types';
+import BadgeWrapper, {
+  BadgePosition,
+} from '../../../../component-library/components/Badges/BadgeWrapper';
+import AssetLogo from '../../Assets/components/AssetLogo/AssetLogo';
+import { NetworkBadgeSource } from '../../AssetOverview/Balance/Balance';
+///: BEGIN:ONLY_INCLUDE_IF(tron)
+import TronEnergyBandwidthDetail from '../../AssetOverview/TronEnergyBandwidthDetail/TronEnergyBandwidthDetail';
+import TronAssetOverviewSection from './TronAssetOverviewSection';
+import { isTronNativeToken } from '../utils/isTronNativeToken';
+///: END:ONLY_INCLUDE_IF
+import MarketClosedActionButton from '../../AssetOverview/MarketClosedActionButton';
+import { IconName as ComponentLibraryIconName } from '../../../../component-library/components/Icons/Icon';
+import { useRWAToken } from '../../Bridge/hooks/useRWAToken';
+import { BridgeToken } from '../../Bridge/types';
+import StockBadge from '../../shared/StockBadge/StockBadge';
+import { useAnalytics } from '../../../hooks/useAnalytics/useAnalytics';
+import {
+  endTrace,
+  trace,
+  TraceName,
+  TraceOperation,
+} from '../../../../util/trace';
+
+const styleSheet = (params: { theme: Theme }) => {
+  const { theme } = params;
+  const { colors } = theme;
+  return StyleSheet.create({
+    warningWrapper: {
+      paddingHorizontal: 16,
+      marginBottom: 20,
+    } as ViewStyle,
+    warning: {
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.warning.default,
+      backgroundColor: colors.warning.muted,
+      padding: 20,
+    } as ViewStyle,
+    tokenDetailsWrapper: {
+      marginBottom: 20,
+      paddingHorizontal: 16,
+    } as ViewStyle,
+    marketInsightsWrapper: {
+      paddingTop: 16,
+    } as ViewStyle,
+    perpsPositionCardContainer: {
+      paddingHorizontal: 16,
+      paddingTop: 24,
+    } as ViewStyle,
+    marketClosedActionButtonContainer: {
+      marginBottom: 8,
+    },
+    securityTrustWrapper: {
+      marginTop: 20,
+      marginBottom: 20,
+      paddingHorizontal: 16,
+    } as ViewStyle,
+  });
+};
+
+export interface AssetOverviewContentProps {
+  // Asset
+  token: TokenDetailsRouteParams;
+
+  // Balance data
+  balance: string | number | undefined;
+  mainBalance: string;
+  secondaryBalance: string | undefined;
+
+  // Price data
+  currentPrice: number;
+  priceDiff: number;
+  comparePrice: number;
+  prices: TokenPrice[];
+  isLoading: boolean;
+
+  timePeriod: TimePeriod;
+  setTimePeriod: (period: TimePeriod) => void;
+  chartNavigationButtons: TimePeriod[];
+
+  // Feature flags
+  isPerpsEnabled: boolean;
+
+  // Currency
+  currentCurrency: string;
+
+  // Actions
+  onBuy: () => void;
+  onSend: () => Promise<void>;
+  onReceive: () => void;
+
+  // Tron-specific
+  stakedTrxAsset?: TokenI;
+  inLockPeriodBalance?: string;
+  readyForWithdrawalBalance?: string;
+  /**
+   * Stable callback from TokenDetails route wrapper. Payload includes
+   * `severity` from `securityData?.resultType` so the parent callback identity
+   * does not change when security loads (avoids market-insights effect loops).
+   */
+  onMarketInsightsDisplayResolved?: (params: {
+    isDisplayed: boolean;
+    severity: string | undefined;
+  }) => void;
+  onMarketInsightsDisclaimerPress?: () => void;
+
+  // Security & Trust
+  /** Resolved security data owned by the parent (TokenDetails). */
+  securityData?: TokenSecurityData | null;
+  /** Whether security data is still being fetched. */
+  isSecurityDataLoading?: boolean;
+  /** Whether the security data fetch failed. Hides the card when true. */
+  hasSecurityDataError?: boolean;
+
+  // Ambient price color A/B test
+  onPriceDirectionChange?: (isPositive: boolean) => void;
+  useAmbientColor?: boolean;
+}
+
+/**
+ * AssetOverviewContent composes all UI sections for the token details view.
+ * This component receives all data via props and renders:
+ * - Price section with chart
+ * - Chart navigation buttons
+ * - Action buttons (Buy, Swap, Send, Receive)
+ * - Balance display
+ * - Merkl rewards section
+ * - Perps discovery banner
+ * - Token details (contract, decimals, etc.)
+ */
+const AssetOverviewContent: React.FC<AssetOverviewContentProps> = ({
+  token,
+  balance,
+  mainBalance,
+  secondaryBalance,
+  currentPrice,
+  priceDiff,
+  comparePrice,
+  prices,
+  isLoading,
+  timePeriod,
+  setTimePeriod,
+  chartNavigationButtons,
+  isPerpsEnabled,
+  currentCurrency,
+  onBuy,
+  onSend,
+  onReceive,
+  stakedTrxAsset,
+  inLockPeriodBalance,
+  readyForWithdrawalBalance,
+  onMarketInsightsDisplayResolved,
+  onMarketInsightsDisclaimerPress,
+  securityData,
+  isSecurityDataLoading = false,
+  hasSecurityDataError = false,
+  onPriceDirectionChange,
+  useAmbientColor,
+}) => {
+  const { styles } = useStyles(styleSheet, {});
+  const navigation = useNavigation();
+  const resetNavigationLockRef = useRef<(() => void) | null>(null);
+  const { isTokenTradingOpen, isStockToken } = useRWAToken();
+  const { trackEvent, createEventBuilder } = useAnalytics();
+  const tronNativeToken = isTronNativeToken(token) ? token : null;
+
+  const {
+    hasPerpsMarket,
+    marketData,
+    isLoading: isPerpsLoading,
+    handlePerpsAction,
+  } = usePerpsActions({
+    symbol: isPerpsEnabled ? token.symbol : null,
+    fromTokenDetails: true,
+    transactionActiveAbTests: token.transactionActiveAbTests,
+  });
+
+  const isEligible = useSelector(selectPerpsEligibility);
+  const [isEligibilityModalVisible, setIsEligibilityModalVisible] =
+    useState(false);
+  const { track } = usePerpsEventTracking();
+
+  // Compliance gate
+  const selectedAddress = useSelector(selectSelectedInternalAccountAddress);
+  const { gate } = useComplianceGate(selectedAddress ?? '');
+
+  const closeEligibilityModal = useCallback(() => {
+    setIsEligibilityModalVisible(false);
+    resetNavigationLockRef.current?.();
+  }, []);
+
+  const handleLongPress = useCallback(
+    () =>
+      gate(async () => {
+        if (!isEligible) {
+          track(MetaMetricsEvents.PERPS_SCREEN_VIEWED, {
+            [PERPS_EVENT_PROPERTY.SCREEN_TYPE]:
+              PERPS_EVENT_VALUE.SCREEN_TYPE.GEO_BLOCK_NOTIF,
+            [PERPS_EVENT_PROPERTY.SOURCE]:
+              PERPS_EVENT_VALUE.SOURCE.ASSET_DETAIL_SCREEN,
+          });
+          setIsEligibilityModalVisible(true);
+          return;
+        }
+        handlePerpsAction?.('long');
+      }).finally(() => {
+        // Release the TokenDetailsActions nav lock whenever gate() settles
+        // without navigating (compliance block modal or geo-block tooltip).
+        // Safe no-op if handlePerpsAction navigated since the focus/state
+        // listeners also clear the lock.
+        resetNavigationLockRef.current?.();
+      }),
+    [gate, isEligible, track, handlePerpsAction],
+  );
+
+  const handleShortPress = useCallback(
+    () =>
+      gate(async () => {
+        if (!isEligible) {
+          track(MetaMetricsEvents.PERPS_SCREEN_VIEWED, {
+            [PERPS_EVENT_PROPERTY.SCREEN_TYPE]:
+              PERPS_EVENT_VALUE.SCREEN_TYPE.GEO_BLOCK_NOTIF,
+            [PERPS_EVENT_PROPERTY.SOURCE]:
+              PERPS_EVENT_VALUE.SOURCE.ASSET_DETAIL_SCREEN,
+          });
+          setIsEligibilityModalVisible(true);
+          return;
+        }
+        handlePerpsAction?.('short');
+      }).finally(() => {
+        resetNavigationLockRef.current?.();
+      }),
+    [gate, isEligible, track, handlePerpsAction],
+  );
+
+  const { isBuyable, isLoading: isBuyableLoading } = useTokenBuyability(token);
+
+  const isButtonsLoading = isBuyableLoading || isPerpsLoading;
+
+  // Check if user has a position for this asset (only if perps is enabled and market exists)
+  const { position: perpsPosition, isLoading: isPerpsPositionLoading } =
+    usePerpsPositionForAsset(
+      isPerpsEnabled && hasPerpsMarket ? token.symbol : null,
+    );
+
+  const isTokenTrustworthy = isTokenTrustworthyForPerps(token);
+
+  const showPerpsSection =
+    isPerpsEnabled &&
+    hasPerpsMarket &&
+    Boolean(marketData) &&
+    isTokenTrustworthy &&
+    !isPerpsPositionLoading;
+
+  const isMarketInsightsEnabled = useSelector(selectMarketInsightsEnabled);
+
+  const isMerklClaimingEnabled = useSelector(
+    selectMerklCampaignClaimingEnabledFlag,
+  );
+  const isTokenEligibleForMerklClaim = useMemo(
+    () =>
+      isMerklClaimingEnabled &&
+      isTokenEligibleForMerklRewards(
+        token.chainId as Hex,
+        token.address as Hex | undefined,
+      ),
+    [isMerklClaimingEnabled, token.chainId, token.address],
+  );
+
+  const isMusdConversionFlowEnabled = useSelector(
+    selectIsMusdConversionFlowEnabledFlag,
+  );
+  const { isEligible: isMusdGeoEligible } = useMusdConversionEligibility();
+  const showMusdConvertSection =
+    isMusdToken(token.address) &&
+    isMusdConversionFlowEnabled &&
+    isMusdGeoEligible;
+
+  const securityConfig = useMemo(
+    () => getResultTypeConfig(securityData?.resultType),
+    [securityData?.resultType],
+  );
+
+  const handleSecurityBadgePress = useCallback(() => {
+    if (
+      !securityData?.resultType ||
+      securityData.resultType === 'Benign' ||
+      !securityConfig.icon ||
+      !securityConfig.iconColor ||
+      !securityConfig.sheetTitle ||
+      !securityConfig.getSheetDescription
+    ) {
+      return;
+    }
+
+    // For Verified tokens, use badge icon (VerifiedFilled) instead of tag icon (SecurityTick)
+    const isVerified = securityData.resultType === 'Verified';
+    const displayIcon =
+      isVerified && securityConfig.badge
+        ? securityConfig.badge.icon
+        : securityConfig.icon;
+    const displayIconColor =
+      isVerified && securityConfig.badge
+        ? securityConfig.badge.iconColor
+        : securityConfig.iconColor;
+
+    navigation.navigate(Routes.MODAL.ROOT_MODAL_FLOW, {
+      screen: Routes.MODAL.SECURITY_BADGE_BOTTOM_SHEET,
+      params: {
+        icon: displayIcon,
+        iconColor: displayIconColor,
+        title: securityConfig.sheetTitle,
+        description: securityConfig.getSheetDescription(token.symbol),
+        source: 'badge',
+        severity: securityData.resultType,
+        tokenAddress: token.address,
+        tokenSymbol: token.symbol,
+        chainId: token.chainId,
+        features: securityData.features,
+      },
+    });
+  }, [
+    securityData,
+    securityConfig,
+    token.symbol,
+    token.address,
+    token.chainId,
+    navigation,
+  ]);
+
+  const networkBadgeSource = token.chainId
+    ? NetworkBadgeSource(token.chainId as Hex)
+    : undefined;
+
+  const marketInsightsCaip19Id = useMemo(() => {
+    if (!isMarketInsightsEnabled) {
+      return null;
+    }
+
+    try {
+      if (isCaipAssetType(token.address)) {
+        return token.address;
+      }
+
+      if (!token.chainId) {
+        return null;
+      }
+
+      return formatAddressToAssetId(token.address, token.chainId) ?? null;
+    } catch {
+      return null;
+    }
+  }, [isMarketInsightsEnabled, token.address, token.chainId]);
+  const {
+    report: marketInsightsReport,
+    timeAgo: marketInsightsTimeAgo,
+    isLoading: isMarketInsightsLoading,
+  } = useMarketInsights(marketInsightsCaip19Id, isMarketInsightsEnabled);
+
+  useEffect(() => {
+    const severity = securityData?.resultType;
+    if (!isMarketInsightsEnabled) {
+      onMarketInsightsDisplayResolved?.({ isDisplayed: false, severity });
+      return;
+    }
+    if (isMarketInsightsLoading) {
+      return;
+    }
+    if (!marketInsightsReport && marketInsightsCaip19Id) {
+      // No report available — cancel the orphaned trace that was started during render
+      endTrace({
+        name: TraceName.MarketInsightsEntryCardLoad,
+        id: marketInsightsCaip19Id,
+      });
+    }
+    onMarketInsightsDisplayResolved?.({
+      isDisplayed: Boolean(marketInsightsReport),
+      severity,
+    });
+  }, [
+    onMarketInsightsDisplayResolved,
+    isMarketInsightsEnabled,
+    isMarketInsightsLoading,
+    marketInsightsReport,
+    marketInsightsCaip19Id,
+    securityData?.resultType,
+  ]);
+
+  // Start the entry card trace synchronously during render so it is registered
+  // in the trace map before any child useEffect (where endTrace fires) runs.
+  // Using a ref guard ensures we only start one trace per unique asset.
+  const entryCardTraceStartedRef = useRef<string | null>(null);
+  if (
+    isMarketInsightsEnabled &&
+    marketInsightsCaip19Id &&
+    entryCardTraceStartedRef.current !== marketInsightsCaip19Id
+  ) {
+    entryCardTraceStartedRef.current = marketInsightsCaip19Id;
+    trace({
+      name: TraceName.MarketInsightsEntryCardLoad,
+      op: TraceOperation.MarketInsightsLoad,
+      id: marketInsightsCaip19Id,
+    });
+  }
+
+  const goToBrowserUrl = (url: string) => {
+    const [screen, params] = createWebviewNavDetails({
+      url,
+    });
+    navigation.navigate(screen, params as Record<string, unknown>);
+  };
+
+  const handleMarketInsightsPress = useCallback(() => {
+    if (marketInsightsCaip19Id) {
+      trace({
+        name: TraceName.MarketInsightsViewLoad,
+        op: TraceOperation.MarketInsightsLoad,
+      });
+      const event = createEventBuilder(MetaMetricsEvents.MARKET_INSIGHTS_OPENED)
+        .addProperties({
+          caip19: marketInsightsCaip19Id,
+          source: 'token_details',
+          ...(marketInsightsReport && {
+            asset_symbol: marketInsightsReport.asset,
+            digest_id: marketInsightsReport.digestId,
+          }),
+        })
+        .build();
+      trackEvent(event);
+    }
+
+    // Compute actual percentage from available price data (always defined)
+    const percentChange =
+      comparePrice > 0 ? (priceDiff / comparePrice) * 100 : 0;
+
+    navigation.navigate(Routes.MARKET_INSIGHTS.VIEW, {
+      assetSymbol: token.symbol,
+      assetIdentifier: marketInsightsCaip19Id,
+      tokenImageUrl: token.image || token.logo,
+      pricePercentChange: percentChange,
+      token,
+      source: 'token_details',
+    });
+  }, [
+    navigation,
+    trackEvent,
+    createEventBuilder,
+    token,
+    marketInsightsCaip19Id,
+    marketInsightsReport,
+    priceDiff,
+    comparePrice,
+  ]);
+
+  const handlePerpsDiscoveryPress = useCallback(() => {
+    if (marketData) {
+      navigation.navigate(Routes.PERPS.ROOT, {
+        screen: Routes.PERPS.MARKET_DETAILS,
+        params: {
+          market: marketData,
+          source: PERPS_EVENT_VALUE.SOURCE.ASSET_DETAIL_SCREEN,
+        },
+      });
+    }
+  }, [marketData, navigation]);
+
+  const renderWarning = () => (
+    <View style={styles.warningWrapper}>
+      <TouchableOpacity
+        onPress={() => goToBrowserUrl(AppConstants.URLS.TOKEN_BALANCE)}
+      >
+        <View style={styles.warning}>
+          <Text variant={TextVariant.BodyMd}>
+            {strings('asset_overview.were_unable')} {token.symbol}{' '}
+            {strings('asset_overview.balance')}{' '}
+            <Text variant={TextVariant.BodyMd} color={TextColor.PrimaryDefault}>
+              {strings('asset_overview.troubleshooting_missing')}
+            </Text>{' '}
+            {strings('asset_overview.for_help')}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const handleMarketClosedButtonPress = () => {
+    navigation.navigate(Routes.BRIDGE.MODALS.ROOT, {
+      screen: Routes.BRIDGE.MODALS.MARKET_CLOSED_MODAL,
+    });
+  };
+
+  const shouldShowMarketInsights =
+    isMarketInsightsEnabled &&
+    Boolean(marketInsightsCaip19Id) &&
+    (Boolean(marketInsightsReport) || isMarketInsightsLoading);
+
+  return (
+    <Box twClassName="pt-[2px]" testID={TokenOverviewSelectorsIDs.CONTAINER}>
+      {token.hasBalanceError ? (
+        renderWarning()
+      ) : (
+        <View>
+          {securityData &&
+            (securityData.resultType === 'Malicious' ||
+              securityData.resultType === 'Warning' ||
+              securityData.resultType === 'Spam') && (
+              <SecurityBanner
+                securityConfig={securityConfig}
+                backgroundClass={
+                  securityData.resultType === 'Malicious'
+                    ? 'bg-error-muted'
+                    : 'bg-warning-muted'
+                }
+                titleFontWeight={
+                  securityData.resultType === 'Malicious'
+                    ? FontWeight.Bold
+                    : FontWeight.Medium
+                }
+                testID={
+                  securityData.resultType === 'Malicious'
+                    ? 'security-banner-malicious'
+                    : 'security-banner-warning'
+                }
+                title={
+                  securityData.resultType === 'Malicious'
+                    ? strings('security_trust.malicious_token_title')
+                    : undefined
+                }
+                description={
+                  securityData.resultType === 'Malicious'
+                    ? strings('security_trust.malicious_token_description', {
+                        symbol: token.symbol,
+                      })
+                    : strings('security_trust.suspicious_token_description', {
+                        symbol: token.symbol,
+                      })
+                }
+                className="mx-4 mb-3 gap-4"
+                onPress={handleSecurityBadgePress}
+              />
+            )}
+
+          {/* Token icon + name row */}
+          <Box
+            flexDirection={BoxFlexDirection.Row}
+            alignItems={BoxAlignItems.Center}
+            twClassName="gap-4 py-2 pl-4 pr-[16px]"
+          >
+            <BadgeWrapper
+              badgePosition={BadgePosition.BottomRight}
+              badgeElement={
+                networkBadgeSource ? (
+                  <Badge
+                    variant={BadgeVariant.Network}
+                    imageSource={networkBadgeSource}
+                    size={AvatarSize.Xs}
+                  />
+                ) : undefined
+              }
+            >
+              <AssetLogo asset={token} />
+            </BadgeWrapper>
+
+            <Box twClassName="min-w-0 flex-1">
+              <Box
+                flexDirection={BoxFlexDirection.Row}
+                alignItems={BoxAlignItems.Center}
+                twClassName="max-w-full min-w-0 gap-1.5 self-stretch"
+              >
+                <Box twClassName="min-w-0 shrink grow-0">
+                  <Text
+                    variant={TextVariant.HeadingMd}
+                    color={TextColor.TextDefault}
+                    numberOfLines={1}
+                  >
+                    {token.name || token.symbol}
+                  </Text>
+                </Box>
+                {securityData?.resultType === 'Verified' &&
+                  securityConfig.badge && (
+                    <Box twClassName="shrink-0 pb-[2px]">
+                      <TouchableOpacity
+                        onPress={handleSecurityBadgePress}
+                        testID="security-badge-verified"
+                      >
+                        <Icon
+                          name={securityConfig.badge.icon}
+                          size={IconSize.Md}
+                          color={securityConfig.badge.iconColor}
+                        />
+                      </TouchableOpacity>
+                    </Box>
+                  )}
+                {!token.name && isStockToken(token as BridgeToken) && (
+                  <Box twClassName="shrink-0">
+                    <StockBadge token={token as BridgeToken} />
+                  </Box>
+                )}
+              </Box>
+              {token.name ? (
+                <Box
+                  flexDirection={BoxFlexDirection.Row}
+                  alignItems={BoxAlignItems.Center}
+                  twClassName="gap-1"
+                >
+                  <Text
+                    variant={TextVariant.BodyMd}
+                    color={TextColor.TextAlternative}
+                    fontWeight={FontWeight.Medium}
+                    numberOfLines={1}
+                  >
+                    {token.ticker || token.symbol}
+                  </Text>
+                  {isStockToken(token as BridgeToken) && (
+                    <StockBadge token={token as BridgeToken} />
+                  )}
+                </Box>
+              ) : null}
+            </Box>
+          </Box>
+
+          <Price
+            asset={token}
+            prices={prices}
+            timePeriod={timePeriod}
+            chartNavigationButtons={chartNavigationButtons}
+            setTimePeriod={setTimePeriod}
+            priceDiff={priceDiff}
+            currentCurrency={currentCurrency}
+            currentPrice={currentPrice}
+            comparePrice={comparePrice}
+            isLoading={isLoading}
+            onPriceDirectionChange={onPriceDirectionChange}
+            useAmbientColor={useAmbientColor}
+          />
+          {!isTokenTradingOpen(token as BridgeToken) && (
+            <View style={styles.marketClosedActionButtonContainer}>
+              <MarketClosedActionButton
+                iconName={ComponentLibraryIconName.Info}
+                label={strings('asset_overview.market_closed')}
+                onPress={handleMarketClosedButtonPress}
+              />
+            </View>
+          )}
+          <TokenDetailsActions
+            hasPerpsMarket={hasPerpsMarket}
+            hasBalance={Boolean(balance) && balance !== '0'}
+            isBuyable={isBuyable}
+            isNativeCurrency={token.isETH || token.isNative || false}
+            token={token}
+            onBuy={onBuy}
+            onLong={handlePerpsAction ? handleLongPress : undefined}
+            onShort={handlePerpsAction ? handleShortPress : undefined}
+            onSend={onSend}
+            onReceive={onReceive}
+            isLoading={isButtonsLoading}
+            resetNavigationLockRef={resetNavigationLockRef}
+          />
+          {shouldShowMarketInsights ? (
+            <View style={styles.marketInsightsWrapper}>
+              {marketInsightsReport ? (
+                <MarketInsightsEntryCard
+                  report={marketInsightsReport}
+                  timeAgo={marketInsightsTimeAgo}
+                  onPress={handleMarketInsightsPress}
+                  onDisclaimerPress={onMarketInsightsDisclaimerPress}
+                  caip19Id={marketInsightsCaip19Id ?? undefined}
+                  source="token_details"
+                  testID="market-insights-entry-card"
+                />
+              ) : (
+                <MarketInsightsEntryCardSkeleton />
+              )}
+            </View>
+          ) : null}
+          {
+            ///: BEGIN:ONLY_INCLUDE_IF(tron)
+            tronNativeToken && <TronEnergyBandwidthDetail />
+            ///: END:ONLY_INCLUDE_IF
+          }
+          {balance != null && (
+            <Balance
+              asset={token}
+              mainBalance={mainBalance}
+              secondaryBalance={secondaryBalance}
+            />
+          )}
+          {isTokenEligibleForMerklClaim && (
+            <AssetOverviewClaimBonus asset={token} />
+          )}
+          {showMusdConvertSection && (
+            <MoneyConvertStablecoins
+              location={MONEY_EVENTS_CONSTANTS.EVENT_LOCATIONS.ASSET_DETAIL}
+            />
+          )}
+          {
+            ///: BEGIN:ONLY_INCLUDE_IF(tron)
+            tronNativeToken && (
+              <TronAssetOverviewSection
+                token={tronNativeToken}
+                stakedTrxAsset={stakedTrxAsset}
+                inLockPeriodBalance={inLockPeriodBalance}
+                readyForWithdrawalBalance={readyForWithdrawalBalance}
+              />
+            )
+            ///: END:ONLY_INCLUDE_IF
+          }
+          {showPerpsSection && perpsPosition && (
+            <View style={styles.perpsPositionCardContainer}>
+              <Text variant={TextVariant.HeadingMd} twClassName="mb-2">
+                {strings('asset_overview.perps_position')}
+              </Text>
+              <PerpsPositionCard
+                position={perpsPosition}
+                compact
+                onPress={handlePerpsDiscoveryPress}
+                testID={TokenOverviewSelectorsIDs.PERPS_POSITION_CARD}
+              />
+            </View>
+          )}
+          {showPerpsSection && !perpsPosition && marketData && (
+            <PerpsDiscoveryBanner
+              symbol={marketData.symbol}
+              maxLeverage={marketData.maxLeverage}
+              onPress={handlePerpsDiscoveryPress}
+              testID={TokenOverviewSelectorsIDs.PERPS_DISCOVERY_BANNER}
+            />
+          )}
+          <View style={styles.tokenDetailsWrapper}>
+            <TokenDetails asset={token} />
+          </View>
+          {!hasSecurityDataError &&
+            (isSecurityDataLoading || securityData?.resultType) && (
+              <View style={styles.securityTrustWrapper}>
+                <SecurityTrustEntryCard
+                  securityData={securityData ?? null}
+                  isLoading={isSecurityDataLoading}
+                  token={token as TokenDetailsRouteParams}
+                />
+              </View>
+            )}
+          {isEligibilityModalVisible && (
+            <View>
+              <Modal
+                visible
+                transparent
+                animationType="none"
+                statusBarTranslucent
+              >
+                <PerpsBottomSheetTooltip
+                  isVisible
+                  onClose={closeEligibilityModal}
+                  contentKey="geo_block"
+                  testID="token-details-geo-block-tooltip"
+                />
+              </Modal>
+            </View>
+          )}
+        </View>
+      )}
+    </Box>
+  );
+};
+
+export default AssetOverviewContent;

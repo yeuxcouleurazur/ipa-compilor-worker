@@ -1,0 +1,130 @@
+/**
+ * Predict navigation parameters
+ */
+
+import { ParamListBase } from '@react-navigation/native';
+import {
+  PredictActivityItem,
+  PredictCategory,
+  PredictMarket,
+  PredictOutcome,
+  PredictOutcomeToken,
+  PredictPosition,
+  PredictSeries,
+} from '.';
+import { PredictEventValues } from '../constants/eventNames';
+import type { TransactionActiveAbTestEntry } from '../../../../util/transactions/transaction-active-ab-test-attribution-registry';
+import type { PredictWorldCupTabKey } from '../constants/worldCupTabs';
+
+export type PredictEntryPoint =
+  | typeof PredictEventValues.ENTRY_POINT.CAROUSEL
+  | typeof PredictEventValues.ENTRY_POINT.PREDICT_FEED
+  | typeof PredictEventValues.ENTRY_POINT.PREDICT_MARKET_DETAILS
+  | typeof PredictEventValues.ENTRY_POINT.SEARCH
+  | typeof PredictEventValues.ENTRY_POINT.HOMEPAGE_POSITIONS
+  | typeof PredictEventValues.ENTRY_POINT.HOMEPAGE_NEW_PREDICTION
+  | typeof PredictEventValues.ENTRY_POINT.HOMEPAGE_BALANCE
+  | typeof PredictEventValues.ENTRY_POINT.HOMEPAGE_FEATURED_CAROUSEL
+  | typeof PredictEventValues.ENTRY_POINT.HOMEPAGE_FEATURED_LIST
+  | typeof PredictEventValues.ENTRY_POINT.MAIN_TRADE_BUTTON
+  | typeof PredictEventValues.ENTRY_POINT.BACKGROUND
+  | typeof PredictEventValues.ENTRY_POINT.TRENDING_SEARCH
+  | typeof PredictEventValues.ENTRY_POINT.TRENDING
+  | typeof PredictEventValues.ENTRY_POINT.HOME_SECTION
+  | typeof PredictEventValues.ENTRY_POINT.EXPLORE;
+
+/** Predict market list parameters */
+export interface PredictMarketListParams {
+  entryPoint?: PredictEntryPoint;
+  tab?: PredictCategory;
+  query?: string;
+  transactionActiveAbTests?: TransactionActiveAbTestEntry[];
+}
+
+/** Predict market details parameters */
+export interface PredictMarketDetailsParams {
+  marketId?: string;
+  series?: PredictSeries;
+  seriesId?: string;
+  seriesRecurrence?: string;
+  entryPoint?: PredictEntryPoint;
+  title?: string;
+  image?: string;
+  isGame?: boolean;
+  transactionActiveAbTests?: TransactionActiveAbTestEntry[];
+}
+
+/** Predict World Cup feed parameters */
+export interface PredictWorldCupParams {
+  entryPoint?: string;
+  initialTab?: PredictWorldCupTabKey;
+  transactionActiveAbTests?: TransactionActiveAbTestEntry[];
+}
+
+/** Predict activity detail parameters */
+export interface PredictActivityDetailParams {
+  activity: PredictActivityItem;
+}
+
+/** Predict add funds modal parameters */
+export interface PredictAddFundsModalParams {
+  /** When true, deposit() is called immediately on mount — skipping the explanation UI. */
+  autoDeposit?: boolean;
+}
+
+/** Predict buy preview parameters */
+export interface PredictBuyPreviewParams {
+  market: PredictMarket;
+  outcome: PredictOutcome;
+  outcomeToken: PredictOutcomeToken;
+  entryPoint?: PredictEntryPoint;
+  transactionActiveAbTests?: TransactionActiveAbTestEntry[];
+  /**
+   * When true, the beforeRemove listener in PredictBuyPreview will fire
+   * trackBetslipDismissed for swipe/hardware-back dismissals. Only set by
+   * PredictPreviewSheetProvider when disableBottomSheet is active — keeps the
+   * analytics change scoped to the new HomepageDiscoveryTabs flow and avoids
+   * changing event volume for the pre-existing flagless screen-mode path.
+   */
+  trackSwipeDismiss?: boolean;
+}
+
+/** Predict sell preview parameters */
+export interface PredictSellPreviewParams {
+  market: PredictMarket;
+  position: PredictPosition;
+  outcome: PredictOutcome;
+  entryPoint?: PredictEntryPoint;
+}
+
+/** Props for rendering PredictBuyPreview inside a BottomSheet */
+export interface PredictBuyPreviewContentProps extends PredictBuyPreviewParams {
+  onClose: () => void;
+}
+
+/** Props for rendering PredictSellPreview inside a BottomSheet */
+export interface PredictSellPreviewContentProps
+  extends PredictSellPreviewParams {
+  onClose: () => void;
+}
+
+/** Discriminated union props for PredictBuyPreview / PredictBuyWithAnyToken */
+export type PredictBuyPreviewProps =
+  | ({ mode: 'sheet' } & PredictBuyPreviewContentProps)
+  | { mode?: never };
+
+/** Discriminated union props for PredictSellPreview */
+export type PredictSellPreviewProps =
+  | ({ mode: 'sheet' } & PredictSellPreviewContentProps)
+  | { mode?: never };
+
+export interface PredictNavigationParamList extends ParamListBase {
+  Predict: undefined;
+  PredictMarketList: PredictMarketListParams;
+  PredictMarketDetails: PredictMarketDetailsParams;
+  PredictWorldCup: PredictWorldCupParams | undefined;
+  PredictSellPreview: PredictSellPreviewParams;
+  PredictBuyPreview: PredictBuyPreviewParams;
+  PredictActivityDetail: PredictActivityDetailParams;
+  PredictAddFundsSheet: PredictAddFundsModalParams;
+}

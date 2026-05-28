@@ -1,0 +1,264 @@
+import { useCallback } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import Routes from '../../../../constants/navigation/Routes';
+import type { PerpsNavigationParamList } from '../types/navigation';
+import {
+  PERPS_CONSTANTS,
+  PERPS_EVENT_PROPERTY,
+  PERPS_EVENT_VALUE,
+  type PerpsMarketData,
+  type Position,
+  type Order,
+} from '@metamask/perps-controller';
+import { usePerpsTrading } from './usePerpsTrading';
+import usePerpsToasts from './usePerpsToasts';
+import { usePerpsEventTracking } from './usePerpsEventTracking';
+import { MetaMetricsEvents } from '../../../../core/Analytics';
+import Logger from '../../../../util/Logger';
+import { ensureError } from '../../../../util/errorUtils';
+import {
+  withPendingTransactionActiveAbTests,
+  type TransactionActiveAbTestEntry,
+} from '../../../../util/transactions/transaction-active-ab-test-attribution-registry';
+import { CONFIRMATION_HEADER_CONFIG } from '../constants/perpsConfig';
+
+/**
+ * Navigation handler result interface
+ */
+export interface PerpsNavigationHandlers {
+  // Main app navigation
+  navigateToWallet: () => void;
+  navigateToBrowser: () => void;
+  navigateToActions: () => void;
+  navigateToActivity: () => void;
+  navigateToRewards: () => void;
+
+  // Perps-specific navigation
+  navigateToMarketDetails: (
+    market: PerpsMarketData,
+    source?: string,
+    transactionActiveAbTests?: TransactionActiveAbTestEntry[],
+  ) => void;
+  navigateToHome: (source?: string) => void;
+  navigateToMarketList: (
+    params?: PerpsNavigationParamList['PerpsMarketListView'],
+  ) => void;
+  navigateToOrder: (params: PerpsNavigationParamList['PerpsOrder']) => void;
+  navigateToTutorial: (
+    params?: PerpsNavigationParamList['PerpsTutorial'],
+  ) => void;
+  navigateToAdjustMargin: (position: Position, mode: 'add' | 'remove') => void;
+  navigateToClosePosition: (position: Position, source?: string) => void;
+  navigateToOrderDetails: (order: Order) => void;
+
+  // Utility navigation
+  navigateBack: () => void;
+  canGoBack: boolean;
+}
+
+/**
+ * usePerpsNavigation Hook
+ *
+ * Centralized navigation handlers for Perps views
+ * Provides consistent navigation patterns across all Perps components
+ *
+ * Features:
+ * - Main app navigation (wallet, browser, activity, etc.)
+ * - Perps-specific navigation (market details, home, list)
+ * - Back navigation with canGoBack check
+ * - Rewards/Settings toggle based on feature flag
+ *
+ * @example
+ * ```tsx
+ * const {
+ *   navigateToMarketDetails,
+ *   navigateBack,
+ *   canGoBack
+ * } = usePerpsNavigation();
+ *
+ * const handleMarketPress = (market: PerpsMarketData) => {
+ *   navigateToMarketDetails(market, 'home_screen');
+ * };
+ * ```
+ *
+ * @returns Object containing all navigation handler functions
+ */
+export const usePerpsNavigation = (): PerpsNavigationHandlers => {
+  const navigation = useNavigation();
+
+  // Main app navigation handlers
+  const navigateToWallet = useCallback(() => {
+    navigation.navigate(Routes.WALLET.HOME, {
+      screen: Routes.WALLET.TAB_STACK_FLOW,
+      params: {
+        screen: Routes.WALLET_VIEW,
+      },
+    });
+  }, [navigation]);
+
+  const navigateToBrowser = useCallback(() => {
+    navigation.navigate(Routes.BROWSER.HOME, {
+      screen: Routes.BROWSER.VIEW,
+    });
+  }, [navigation]);
+
+  const navigateToActions = useCallback(() => {
+    navigation.navigate(Routes.MODAL.ROOT_MODAL_FLOW, {
+      screen: Routes.MODAL.WALLET_ACTIONS,
+    });
+  }, [navigation]);
+
+  const navigateToActivity = useCallback(() => {
+    navigation.navigate(Routes.PERPS.ACTIVITY, {
+      redirectToPerpsTransactions: true,
+      showBackButton: true,
+    });
+  }, [navigation]);
+
+  const navigateToRewards = useCallback(() => {
+    navigation.navigate(Routes.REWARDS_VIEW);
+  }, [navigation]);
+
+  // Perps-specific navigation handlers
+  const navigateToMarketDetails = useCallback(
+    (
+      market: PerpsMarketData,
+      source?: string,
+      transactionActiveAbTests?: TransactionActiveAbTestEntry[],
+    ) => {
+      navigation.navigate(Routes.PERPS.MARKET_DETAILS, {
+        market,
+        source,
+        ...(transactionActiveAbTests?.length
+          ? { transactionActiveAbTests }
+          : {}),
+      });
+    },
+    [navigation],
+  );
+
+  const navigateToHome = useCallback(
+    (source?: string) => {
+      navigation.navigate(Routes.PERPS.PERPS_HOME, {
+        source,
+      });
+    },
+    [navigation],
+  );
+
+  const navigateToMarketList = useCallback(
+    (params?: PerpsNavigationParamList['PerpsMarketListView']) => {
+      navigation.navigate(Routes.PERPS.MARKET_LIST, params);
+    },
+    [navigation],
+  );
+
+  const { depositWithOrder } = usePerpsTrading();
+  const { showToast, PerpsToastOptions } = usePerpsToasts();
+  const { track } = usePerpsEventTracking();
+
+  const navigateToOrder = useCallback(
+    (params: PerpsNavigationParamList['PerpsOrder']) => {
+      withPendingTransactionActiveAbTests(
+        params.transactionActiveAbTests,
+        depositWithOrder,
+      )
+        .then(() => {
+          navigation.navigate(
+            Routes.FULL_SCREEN_CONFIRMATIONS.REDESIGNED_CONFIRMATIONS,
+            {
+              ...params,
+              showPerpsHeader:
+                CONFIRMATION_HEADER_CONFIG.ShowPerpsHeaderForDepositAndTrade,
+            },
+          );
+        })
+        .catch((error: unknown) => {
+          const err = ensureError(error, 'usePerpsNavigation.navigateToOrder');
+          Logger.error(err, {
+            tags: { feature: PERPS_CONSTANTS.FeatureName },
+            context: { name: 'usePerpsNavigation.navigateToOrder', data: {} },
+          });
+
+          track(MetaMetricsEvents.PERPS_ERROR, {
+            [PERPS_EVENT_PROPERTY.ERROR_TYPE]:
+              PERPS_EVENT_VALUE.ERROR_TYPE.BACKEND,
+            [PERPS_EVENT_PROPERTY.ERROR_MESSAGE]: err.message,
+            [PERPS_EVENT_PROPERTY.SOURCE]:
+              PERPS_EVENT_VALUE.SOURCE.TRADE_ACTION,
+          });
+
+          showToast(
+            PerpsToastOptions.accountManagement.oneClickTrade.txCreationFailed,
+          );
+        });
+    },
+    [
+      navigation,
+      depositWithOrder,
+      showToast,
+      PerpsToastOptions.accountManagement.oneClickTrade.txCreationFailed,
+      track,
+    ],
+  );
+
+  const navigateToTutorial = useCallback(
+    (params?: PerpsNavigationParamList['PerpsTutorial']) => {
+      navigation.navigate(Routes.PERPS.TUTORIAL, params);
+    },
+    [navigation],
+  );
+
+  const navigateToAdjustMargin = useCallback(
+    (position: Position, mode: 'add' | 'remove') => {
+      navigation.navigate(Routes.PERPS.ADJUST_MARGIN, { position, mode });
+    },
+    [navigation],
+  );
+
+  const navigateToClosePosition = useCallback(
+    (position: Position, source?: string) => {
+      navigation.navigate(Routes.PERPS.CLOSE_POSITION, { position, source });
+    },
+    [navigation],
+  );
+
+  const navigateToOrderDetails = useCallback(
+    (order: Order) => {
+      navigation.navigate(Routes.PERPS.ORDER_DETAILS, { order });
+    },
+    [navigation],
+  );
+
+  // Utility navigation handlers
+  const navigateBack = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  }, [navigation]);
+
+  const canGoBack = navigation.canGoBack();
+
+  return {
+    // Main app navigation
+    navigateToWallet,
+    navigateToBrowser,
+    navigateToActions,
+    navigateToActivity,
+    navigateToRewards,
+
+    // Perps-specific navigation
+    navigateToMarketDetails,
+    navigateToHome,
+    navigateToMarketList,
+    navigateToOrder,
+    navigateToTutorial,
+    navigateToAdjustMargin,
+    navigateToClosePosition,
+    navigateToOrderDetails,
+
+    // Utility navigation
+    navigateBack,
+    canGoBack,
+  };
+};

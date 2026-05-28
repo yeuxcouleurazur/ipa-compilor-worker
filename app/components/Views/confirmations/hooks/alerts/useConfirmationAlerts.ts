@@ -1,0 +1,120 @@
+import { useMemo } from 'react';
+import useBlockaidAlerts from './useBlockaidAlerts';
+import useDomainMismatchAlerts from './useDomainMismatchAlerts';
+import { useGasEstimateFailedAlert } from './useGasEstimateFailedAlert';
+import { useGasSponsorshipWarningAlert } from './useGasSponsorshipWarningAlert';
+import { useInsufficientBalanceAlert } from './useInsufficientBalanceAlert';
+import { useAccountTypeUpgrade } from './useAccountTypeUpgrade';
+import { useSignedOrSubmittedAlert } from './useSignedOrSubmittedAlert';
+import { usePendingTransactionAlert } from './usePendingTransactionAlert';
+import { Alert } from '../../types/alerts';
+import { useBatchedUnusedApprovalsAlert } from './useBatchedUnusedApprovalsAlert';
+import { useInsufficientPayTokenBalanceAlert } from './useInsufficientPayTokenBalanceAlert';
+import { useNoPayTokenQuotesAlert } from './useNoPayTokenQuotesAlert';
+import { useInsufficientPredictBalanceAlert } from './useInsufficientPredictBalanceAlert';
+import { useInsufficientPerpsBalanceAlert } from './useInsufficientPerpsBalanceAlert';
+import { useInsufficientMoneyAccountBalanceAlert } from './useInsufficientMoneyAccountBalanceAlert';
+import { useBurnAddressAlert } from './useBurnAddressAlert';
+import { useTokenTrustSignalAlerts } from './useTokenTrustSignalAlerts';
+import { useAddressTrustSignalAlerts } from './useAddressTrustSignalAlerts';
+import { useOriginTrustSignalAlerts } from './useOriginTrustSignalAlerts';
+import { useHeadlessBuyErrorAlert } from './useHeadlessBuyErrorAlert';
+import { useFirstTimeInteractionAlert } from './useFirstTimeInteractionAlert';
+import { useAddressPoisoningAlert } from './useAddressPoisoningAlert';
+import { useTokenContractAlert } from './useTokenContractAlert';
+
+function useSignatureAlerts(): Alert[] {
+  const domainMismatchAlerts = useDomainMismatchAlerts();
+
+  return useMemo(() => [...domainMismatchAlerts], [domainMismatchAlerts]);
+}
+
+function useTransactionAlerts(): Alert[] {
+  const gasEstimateFailedAlert = useGasEstimateFailedAlert();
+  const gasSponsorshipWarningAlert = useGasSponsorshipWarningAlert();
+  const insufficientBalanceAlert = useInsufficientBalanceAlert();
+  const signedOrSubmittedAlert = useSignedOrSubmittedAlert();
+  const pendingTransactionAlert = usePendingTransactionAlert();
+  const batchedUnusedApprovalsAlert = useBatchedUnusedApprovalsAlert();
+  const insufficientPayTokenBalanceAlert =
+    useInsufficientPayTokenBalanceAlert();
+  const noPayTokenQuotesAlert = useNoPayTokenQuotesAlert();
+  const insufficientPredictBalanceAlert = useInsufficientPredictBalanceAlert();
+  const insufficientPerpsBalanceAlert = useInsufficientPerpsBalanceAlert();
+  const insufficientMoneyAccountBalanceAlert =
+    useInsufficientMoneyAccountBalanceAlert();
+  const burnAddressAlert = useBurnAddressAlert();
+  const headlessBuyErrorAlert = useHeadlessBuyErrorAlert();
+  const tokenTrustSignalAlerts = useTokenTrustSignalAlerts();
+  const firstTimeInteractionAlert = useFirstTimeInteractionAlert();
+  const addressPoisoningAlert = useAddressPoisoningAlert();
+  const tokenContractAlert = useTokenContractAlert();
+
+  return useMemo(
+    () => [
+      ...gasEstimateFailedAlert,
+      ...gasSponsorshipWarningAlert,
+      ...insufficientBalanceAlert,
+      ...batchedUnusedApprovalsAlert,
+      ...pendingTransactionAlert,
+      ...signedOrSubmittedAlert,
+      ...insufficientPayTokenBalanceAlert,
+      ...noPayTokenQuotesAlert,
+      ...insufficientPredictBalanceAlert,
+      ...insufficientPerpsBalanceAlert,
+      ...insufficientMoneyAccountBalanceAlert,
+      ...burnAddressAlert,
+      ...headlessBuyErrorAlert,
+      ...tokenTrustSignalAlerts,
+      ...firstTimeInteractionAlert,
+      ...addressPoisoningAlert,
+      ...tokenContractAlert,
+    ],
+    [
+      gasEstimateFailedAlert,
+      gasSponsorshipWarningAlert,
+      insufficientBalanceAlert,
+      batchedUnusedApprovalsAlert,
+      pendingTransactionAlert,
+      signedOrSubmittedAlert,
+      insufficientPayTokenBalanceAlert,
+      noPayTokenQuotesAlert,
+      insufficientPredictBalanceAlert,
+      insufficientPerpsBalanceAlert,
+      insufficientMoneyAccountBalanceAlert,
+      burnAddressAlert,
+      headlessBuyErrorAlert,
+      tokenTrustSignalAlerts,
+      firstTimeInteractionAlert,
+      addressPoisoningAlert,
+      tokenContractAlert,
+    ],
+  );
+}
+export default function useConfirmationAlerts(): Alert[] {
+  const blockaidAlerts = useBlockaidAlerts();
+  const signatureAlerts = useSignatureAlerts();
+  const transactionAlerts = useTransactionAlerts();
+  const accountTypeUpgrade = useAccountTypeUpgrade();
+  const urlTrustSignalAlerts = useOriginTrustSignalAlerts();
+  const addressTrustSignalAlerts = useAddressTrustSignalAlerts();
+
+  return useMemo(
+    () => [
+      ...blockaidAlerts,
+      ...signatureAlerts,
+      ...transactionAlerts,
+      ...accountTypeUpgrade,
+      ...urlTrustSignalAlerts,
+      ...addressTrustSignalAlerts,
+    ],
+    [
+      blockaidAlerts,
+      signatureAlerts,
+      transactionAlerts,
+      accountTypeUpgrade,
+      urlTrustSignalAlerts,
+      addressTrustSignalAlerts,
+    ],
+  );
+}

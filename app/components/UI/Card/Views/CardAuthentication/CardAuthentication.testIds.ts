@@ -1,0 +1,16 @@
+export const CardAuthenticationSelectors = {
+  VERIFY_ACCOUNT_BUTTON: 'verify-account-button',
+  SIGNUP_BUTTON: 'signup-button',
+  EMAIL_FIELD: 'email-field',
+  PASSWORD_FIELD: 'password-field',
+  PASSWORD_VISIBILITY_TOGGLE: 'password-visibility-toggle',
+  LOGIN_ERROR_TEXT: 'login-error-text',
+  US_LOCATION_BOX: 'us-location-box',
+  INTERNATIONAL_LOCATION_BOX: 'international-location-box',
+  OTP_CODE_FIELD: 'otp-code-field',
+  OTP_CODE_FIELD_ERROR: 'otp-code-field-error',
+  OTP_CONFIRM_BUTTON: 'otp-confirm-button',
+  OTP_BACK_TO_LOGIN_BUTTON: 'otp-back-to-login-button',
+  OTP_RESEND_VERIFICATION: 'otp-resend-verification',
+  OTP_ERROR_TEXT: 'otp-error-text',
+};

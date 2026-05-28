@@ -1,0 +1,91 @@
+import { useSelector } from 'react-redux';
+import {
+  selectBridgeControllerState,
+  selectBridgeQuotes,
+  selectSourceToken,
+} from '../../../../../core/redux/slices/bridge';
+import { useEffect, useMemo } from 'react';
+import Engine from '../../../../../core/Engine';
+import {
+  getQuotesReceivedProperties,
+  QuoteWarning,
+  UnifiedSwapBridgeEventName,
+} from '@metamask/bridge-controller';
+import { useTokenBalanceInUsd } from '../useTokenBalanceInUsd';
+
+/**
+ * Hook for publishing the QuotesReceived event.
+ * Location is automatically injected by the bridge controller via setLocation().
+ */
+export const useBridgeQuoteEvents = ({
+  hasInsufficientBalance,
+  hasInsufficientNativeReserveError,
+  hasNoQuotesAvailable,
+  hasInsufficientGas,
+  isNetworkFeeUnavailable,
+  hasTxAlert,
+  isSubmitDisabled,
+  isPriceImpactWarningVisible,
+}: {
+  hasInsufficientBalance: boolean;
+  hasInsufficientNativeReserveError: boolean;
+  hasNoQuotesAvailable: boolean;
+  hasInsufficientGas: boolean;
+  isNetworkFeeUnavailable: boolean;
+  hasTxAlert: boolean;
+  isSubmitDisabled: boolean;
+  isPriceImpactWarningVisible: boolean;
+}) => {
+  const { quoteFetchError, quotesRefreshCount } = useSelector(
+    selectBridgeControllerState,
+  );
+  const { activeQuote, recommendedQuote, isLoading } =
+    useSelector(selectBridgeQuotes);
+
+  const sourceToken = useSelector(selectSourceToken);
+  const fromTokenBalanceInUsd = useTokenBalanceInUsd(sourceToken ?? undefined);
+
+  const warnings = useMemo(() => {
+    const latestWarnings: QuoteWarning[] = [];
+
+    hasNoQuotesAvailable && latestWarnings.push('no_quotes');
+    if (isNetworkFeeUnavailable) {
+      latestWarnings.push('network_fee_unavailable' as QuoteWarning);
+    } else if (hasInsufficientGas) {
+      latestWarnings.push('insufficient_gas_for_selected_quote');
+    }
+    hasInsufficientBalance && latestWarnings.push('insufficient_balance');
+    hasInsufficientNativeReserveError &&
+      // @ts-expect-error - 'insufficient_native_reserve' is a valid QuoteWarning
+      latestWarnings.push('insufficient_native_reserve');
+    hasTxAlert && latestWarnings.push('tx_alert');
+    isPriceImpactWarningVisible && latestWarnings.push('price_impact');
+
+    return latestWarnings;
+  }, [
+    hasNoQuotesAvailable,
+    hasInsufficientGas,
+    isNetworkFeeUnavailable,
+    hasInsufficientBalance,
+    hasInsufficientNativeReserveError,
+    hasTxAlert,
+    isPriceImpactWarningVisible,
+  ]);
+
+  // Emit QuotesReceived event each time quotes are fetched successfully
+  useEffect(() => {
+    if (!isLoading && quotesRefreshCount > 0 && !quoteFetchError) {
+      Engine.context.BridgeController.trackUnifiedSwapBridgeEvent(
+        UnifiedSwapBridgeEventName.QuotesReceived,
+        getQuotesReceivedProperties(
+          activeQuote,
+          warnings,
+          !isSubmitDisabled,
+          recommendedQuote,
+          fromTokenBalanceInUsd,
+        ),
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quotesRefreshCount]);
+};

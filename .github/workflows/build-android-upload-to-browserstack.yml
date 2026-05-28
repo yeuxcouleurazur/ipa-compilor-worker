@@ -1,0 +1,233 @@
+# This workflow creates two Android Builds and uploads to BrowserStack using GitHub Actions.
+# Build 1: With ADDITIONAL_SRP_1 and PREDEFINED_PASSWORD (pre-imported wallet) — e2e-bs-with-srp
+# Build 2: With E2E_MOCK_OAUTH (seedless onboarding) — e2e-bs-without-srp
+
+name: Build Android Dual Versions and Upload to BrowserStack
+
+on:
+  workflow_call:
+    inputs:
+      browserstack_app_url_android_onboarding:
+        required: false
+        type: string
+        description: 'BrowserStack Android Onboarding App URL (bs://...)'
+      browserstack_app_url_android_imported_wallet:
+        required: false
+        type: string
+        description: 'BrowserStack Android Imported Wallet App URL (bs://...)'
+      branch_name:
+        required: false
+        type: string
+        description: 'Branch name to use for builds (defaults to github.ref_name)'
+      build_variant:
+        required: false
+        type: string
+        description: 'Build variant (e2e = e2e environment, exp = experimental)'
+        default: 'exp'
+    outputs:
+      with-srp-browserstack-url:
+        description: 'BrowserStack URL for with-SRP version'
+        value: ${{ jobs.upload-to-browserstack.outputs.with-srp-browserstack-url }}
+      without-srp-browserstack-url:
+        description: 'BrowserStack URL for without-SRP version'
+        value: ${{ jobs.upload-to-browserstack.outputs.without-srp-browserstack-url }}
+      with-srp-app-id:
+        description: 'BrowserStack App ID for with-SRP version'
+        value: ${{ jobs.upload-to-browserstack.outputs.with-srp-app-id }}
+      without-srp-app-id:
+        description: 'BrowserStack App ID for without-SRP version'
+        value: ${{ jobs.upload-to-browserstack.outputs.without-srp-app-id }}
+      with-srp-version:
+        description: 'App version for with-SRP build'
+        value: ${{ jobs.upload-to-browserstack.outputs.with-srp-version }}
+      without-srp-version:
+        description: 'App version for without-SRP build'
+        value: ${{ jobs.upload-to-browserstack.outputs.without-srp-version }}
+  workflow_dispatch:
+    inputs:
+      description:
+        description: 'Optional description for this build run'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  check-builds-needed:
+    name: Check if Android builds are needed
+    runs-on: ubuntu-latest
+    outputs:
+      builds-needed: ${{ steps.check-builds.outputs.builds-needed }}
+
+    steps:
+      - name: Check if builds are needed
+        id: check-builds
+        run: |
+          if [ -n "${{ inputs.browserstack_app_url_android_onboarding }}" ] || [ -n "${{ inputs.browserstack_app_url_android_imported_wallet }}" ]; then
+            echo "builds-needed=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping Android builds - BS URLs provided via workflow inputs"
+          else
+            echo "builds-needed=true" >> "$GITHUB_OUTPUT"
+            echo "Android builds needed - no BS URLs provided"
+          fi
+
+  build-with-srp:
+    name: Build Android with-SRP
+    needs: [check-builds-needed]
+    if: needs.check-builds-needed.outputs.builds-needed == 'true'
+    uses: ./.github/workflows/build.yml
+    with:
+      build_name: ${{ inputs.build_variant == 'exp' && 'main-exp-with-srp' || inputs.build_variant == 'rc' && 'main-rc-with-srp' || 'main-e2e-bs-with-srp' }}
+      platform: android
+      source_branch: ${{ inputs.branch_name || github.ref_name }}
+    secrets: inherit
+
+  build-without-srp:
+    name: Build Android without-SRP
+    needs: [check-builds-needed]
+    if: needs.check-builds-needed.outputs.builds-needed == 'true'
+    uses: ./.github/workflows/build.yml
+    with:
+      build_name: ${{ inputs.build_variant == 'exp' && 'main-exp-without-srp' || inputs.build_variant == 'rc' && 'main-rc-without-srp' || 'main-e2e-bs-without-srp' }}
+      platform: android
+      source_branch: ${{ inputs.branch_name || github.ref_name }}
+    secrets: inherit
+
+  upload-to-browserstack:
+    name: Upload APKs to BrowserStack
+    runs-on: ubuntu-latest
+    needs: [check-builds-needed, build-with-srp, build-without-srp]
+    if: needs.check-builds-needed.outputs.builds-needed == 'true' && needs.build-with-srp.result == 'success' && needs.build-without-srp.result == 'success'
+    outputs:
+      with-srp-browserstack-url: ${{ steps.browserstack-upload.outputs.with-srp-browserstack-url }}
+      without-srp-browserstack-url: ${{ steps.browserstack-upload.outputs.without-srp-browserstack-url }}
+      with-srp-app-id: ${{ steps.browserstack-upload.outputs.with-srp-app-id }}
+      without-srp-app-id: ${{ steps.browserstack-upload.outputs.without-srp-app-id }}
+      with-srp-version: ${{ steps.browserstack-upload.outputs.with-srp-version }}
+      without-srp-version: ${{ steps.browserstack-upload.outputs.without-srp-version }}
+
+    steps:
+      - name: Download with-SRP APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk-${{ inputs.build_variant == 'exp' && 'main-exp-with-srp' || inputs.build_variant == 'rc' && 'main-rc-with-srp' || 'main-e2e-bs-with-srp' }}
+          path: artifacts/with-srp
+
+      - name: Download without-SRP APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk-${{ inputs.build_variant == 'exp' && 'main-exp-without-srp' || inputs.build_variant == 'rc' && 'main-rc-without-srp' || 'main-e2e-bs-without-srp' }}
+          path: artifacts/without-srp
+
+      - name: Upload APKs to BrowserStack
+        id: browserstack-upload
+        env:
+          BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+        run: |
+          set +e  # Don't exit on error — attempt both uploads independently
+          echo "Uploading APKs to BrowserStack..."
+
+          # Initialize outputs
+          {
+            echo "with-srp-apk-uploaded=false"
+            echo "without-srp-apk-uploaded=false"
+          } >> "$GITHUB_OUTPUT"
+
+          WITH_SRP_APP_URL=""
+          WITHOUT_SRP_APP_URL=""
+          WITH_SRP_ERROR=""
+          WITHOUT_SRP_ERROR=""
+
+          # Find the APK files
+          WITH_SRP_APK=$(find artifacts/with-srp -name "*.apk" | head -1)
+          WITHOUT_SRP_APK=$(find artifacts/without-srp -name "*.apk" | head -1)
+
+          # Upload with-SRP APK
+          if [ -n "$WITH_SRP_APK" ]; then
+            echo "Uploading with-SRP APK: $WITH_SRP_APK"
+            echo "File size: $(du -h "$WITH_SRP_APK" | cut -f1)"
+
+            WITH_SRP_RESPONSE=$(curl -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
+              -X POST "https://api-cloud.browserstack.com/app-automate/upload" \
+              -F "file=@$WITH_SRP_APK" \
+              -F "custom_id=MetaMask-Android-With-SRP-${{ github.run_id }}")
+
+            WITH_SRP_APP_URL=$(echo "$WITH_SRP_RESPONSE" | jq -r '.app_url // empty')
+            WITH_SRP_APP_ID=$(echo "$WITH_SRP_RESPONSE" | jq -r '.app_id // empty')
+
+            if [ -n "$WITH_SRP_APP_URL" ]; then
+              echo "✅ With-SRP APK uploaded"
+              echo "  App URL: $WITH_SRP_APP_URL"
+              echo "  App ID:  $WITH_SRP_APP_ID"
+              {
+                echo "with-srp-browserstack-url=$WITH_SRP_APP_URL"
+                echo "with-srp-app-id=$WITH_SRP_APP_ID"
+                echo "with-srp-version=${{ needs.build-with-srp.outputs.semantic_version }}"
+                echo "with-srp-apk-uploaded=true"
+              } >> "$GITHUB_OUTPUT"
+            else
+              WITH_SRP_ERROR="BrowserStack upload failed"
+              echo "❌ With-SRP: $WITH_SRP_ERROR"
+              echo "Response: $WITH_SRP_RESPONSE"
+            fi
+          else
+            WITH_SRP_ERROR="APK not found in artifacts/with-srp"
+            echo "❌ With-SRP: $WITH_SRP_ERROR"
+          fi
+
+          # Upload without-SRP APK
+          if [ -n "$WITHOUT_SRP_APK" ]; then
+            echo "Uploading without-SRP APK: $WITHOUT_SRP_APK"
+            echo "File size: $(du -h "$WITHOUT_SRP_APK" | cut -f1)"
+
+            WITHOUT_SRP_RESPONSE=$(curl -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
+              -X POST "https://api-cloud.browserstack.com/app-automate/upload" \
+              -F "file=@$WITHOUT_SRP_APK" \
+              -F "custom_id=MetaMask-Android-Without-SRP-${{ github.run_id }}")
+
+            WITHOUT_SRP_APP_URL=$(echo "$WITHOUT_SRP_RESPONSE" | jq -r '.app_url // empty')
+            WITHOUT_SRP_APP_ID=$(echo "$WITHOUT_SRP_RESPONSE" | jq -r '.app_id // empty')
+
+            if [ -n "$WITHOUT_SRP_APP_URL" ]; then
+              echo "✅ Without-SRP APK uploaded"
+              echo "  App URL: $WITHOUT_SRP_APP_URL"
+              echo "  App ID:  $WITHOUT_SRP_APP_ID"
+              {
+                echo "without-srp-browserstack-url=$WITHOUT_SRP_APP_URL"
+                echo "without-srp-app-id=$WITHOUT_SRP_APP_ID"
+                echo "without-srp-version=${{ needs.build-without-srp.outputs.semantic_version }}"
+                echo "without-srp-apk-uploaded=true"
+              } >> "$GITHUB_OUTPUT"
+            else
+              WITHOUT_SRP_ERROR="BrowserStack upload failed"
+              echo "❌ Without-SRP: $WITHOUT_SRP_ERROR"
+              echo "Response: $WITHOUT_SRP_RESPONSE"
+            fi
+          else
+            WITHOUT_SRP_ERROR="APK not found in artifacts/without-srp"
+            echo "❌ Without-SRP: $WITHOUT_SRP_ERROR"
+          fi
+
+          # Summary
+          echo ""
+          echo "=== BrowserStack Upload Summary ==="
+          if [ -n "$WITH_SRP_APP_URL" ]; then
+            echo "✅ With-SRP URL:    $WITH_SRP_APP_URL"
+          else
+            echo "❌ With-SRP: FAILED — ${WITH_SRP_ERROR:-unknown error}"
+          fi
+          if [ -n "$WITHOUT_SRP_APP_URL" ]; then
+            echo "✅ Without-SRP URL: $WITHOUT_SRP_APP_URL"
+          else
+            echo "❌ Without-SRP: FAILED — ${WITHOUT_SRP_ERROR:-unknown error}"
+          fi
+
+          # Fail only if BOTH uploads failed
+          if [ -z "$WITH_SRP_APP_URL" ] && [ -z "$WITHOUT_SRP_APP_URL" ]; then
+            echo ""
+            echo "❌ Both APK uploads failed. Failing step."
+            exit 1
+          fi

@@ -1,0 +1,476 @@
+import React from 'react';
+import { render, fireEvent } from '@testing-library/react-native';
+import { useSelector } from 'react-redux';
+import PerpsCard from './PerpsCard';
+import Routes from '../../../../../constants/navigation/Routes';
+import { usePerpsMarkets } from '../../hooks/usePerpsMarkets';
+import {
+  defaultPerpsPositionMock,
+  defaultPerpsOrderMock,
+} from '../../__mocks__/perpsHooksMocks';
+
+const mockNavigate = jest.fn();
+
+jest.mock('@react-navigation/native', () => {
+  const actualReactNavigation = jest.requireActual('@react-navigation/native');
+  return {
+    ...actualReactNavigation,
+    useNavigation: () => ({
+      navigate: mockNavigate,
+    }),
+  };
+});
+
+jest.mock('react-redux', () => ({
+  ...jest.requireActual('react-redux'),
+  useSelector: jest.fn(() => false), // Default: privacy mode off
+}));
+
+jest.mock('../../hooks/usePerpsEventTracking', () => ({
+  usePerpsEventTracking: jest.fn(() => ({ track: jest.fn() })),
+}));
+
+jest.mock('../../../../../component-library/hooks', () => ({
+  useStyles: () => ({
+    styles: {
+      card: {},
+      cardContent: {},
+      cardLeft: {},
+      assetIcon: {},
+      cardInfo: {},
+      cardRight: {},
+    },
+  }),
+}));
+
+jest.mock('../../../../../../locales/i18n', () => ({
+  strings: (key: string) => key,
+}));
+
+jest.mock('../../hooks/usePerpsMarkets', () => ({
+  usePerpsMarkets: jest.fn(),
+}));
+
+jest.mock('../PerpsTokenLogo', () => 'PerpsTokenLogo');
+
+describe('PerpsCard', () => {
+  const mockPosition = { ...defaultPerpsPositionMock };
+  const mockOrder = { ...defaultPerpsOrderMock };
+  const mockUsePerpsMarkets = jest.mocked(usePerpsMarkets);
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Default: privacy mode off
+    (useSelector as jest.Mock).mockReturnValue(false);
+    // Set up default mock return value
+    mockUsePerpsMarkets.mockReturnValue({
+      markets: [
+        {
+          symbol: 'ETH',
+          name: 'Ethereum',
+          maxLeverage: '50',
+          price: '$3,000.00',
+          change24h: '+$150.00',
+          change24hPercent: '+5.0%',
+          volume: '$1.2B',
+          volumeNumber: 1200000000,
+        },
+      ],
+      isLoading: false,
+      error: null,
+      refresh: jest.fn(),
+      isRefreshing: false,
+    });
+  });
+
+  describe('Navigation', () => {
+    it('navigates to position tab when position card is pressed', () => {
+      // Act
+      const { getByTestId } = render(
+        <PerpsCard position={mockPosition} testID="test-position-card" />,
+      );
+
+      const card = getByTestId('test-position-card');
+      fireEvent.press(card);
+
+      // Assert
+      expect(mockNavigate).toHaveBeenCalledWith(Routes.PERPS.ROOT, {
+        screen: Routes.PERPS.MARKET_DETAILS,
+        params: {
+          market: expect.objectContaining({
+            symbol: 'ETH',
+          }),
+          initialTab: 'position',
+        },
+      });
+    });
+
+    it('navigates to orders tab when order card is pressed', () => {
+      // Act
+      const { getByTestId } = render(
+        <PerpsCard order={mockOrder} testID="test-order-card" />,
+      );
+
+      const card = getByTestId('test-order-card');
+      fireEvent.press(card);
+
+      // Assert
+      expect(mockNavigate).toHaveBeenCalledWith(Routes.PERPS.ROOT, {
+        screen: Routes.PERPS.MARKET_DETAILS,
+        params: {
+          market: expect.objectContaining({
+            symbol: 'ETH',
+          }),
+          initialTab: 'orders',
+        },
+      });
+    });
+
+    it('calls custom onPress when provided', () => {
+      // Arrange
+      const customOnPress = jest.fn();
+
+      // Act
+      const { getByTestId } = render(
+        <PerpsCard
+          position={mockPosition}
+          onPress={customOnPress}
+          testID="test-card"
+        />,
+      );
+
+      const card = getByTestId('test-card');
+      fireEvent.press(card);
+
+      // Assert
+      expect(customOnPress).toHaveBeenCalled();
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('does not navigate when no market data is available', () => {
+      // Arrange
+      mockUsePerpsMarkets.mockReturnValue({
+        markets: [],
+        isLoading: false,
+        error: null,
+        refresh: jest.fn(),
+        isRefreshing: false,
+      });
+
+      // Act
+      const { getByTestId } = render(
+        <PerpsCard position={mockPosition} testID="test-card" />,
+      );
+
+      const card = getByTestId('test-card');
+      fireEvent.press(card);
+
+      // Assert
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('does not navigate when market symbol does not match', () => {
+      // Arrange
+      mockUsePerpsMarkets.mockReturnValue({
+        markets: [
+          {
+            symbol: 'BTC', // Different symbol from position.coin (ETH)
+            name: 'Bitcoin',
+            maxLeverage: '25',
+            price: '$50,000.00',
+            change24h: '+$1,250.00',
+            change24hPercent: '+2.5%',
+            volume: '$2.1B',
+            volumeNumber: 2100000000,
+          },
+        ],
+        isLoading: false,
+        error: null,
+        refresh: jest.fn(),
+        isRefreshing: false,
+      });
+
+      // Act
+      const { getByTestId } = render(
+        <PerpsCard position={mockPosition} testID="test-card" />,
+      );
+
+      const card = getByTestId('test-card');
+      fireEvent.press(card);
+
+      // Assert
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Rendering', () => {
+    it('renders position card with correct content', () => {
+      // Arrange & Act
+      const { getByText } = render(
+        <PerpsCard position={mockPosition} testID="test-position-card" />,
+      );
+
+      // Assert
+      expect(getByText('ETH 3x long')).toBeDefined();
+      expect(getByText('1.5 ETH')).toBeDefined();
+    });
+
+    it('renders order card with correct content', () => {
+      // Arrange & Act
+      const { getByText } = render(
+        <PerpsCard order={mockOrder} testID="test-order-card" />,
+      );
+
+      // Assert
+      expect(getByText('Limit long')).toBeDefined();
+      expect(getByText('1 ETH')).toBeDefined();
+      expect(getByText('$3,000')).toBeDefined();
+      expect(getByText('perps.order.limit_price')).toBeDefined();
+    });
+
+    it('returns null when neither position nor order is provided', () => {
+      // Arrange & Act
+      const { queryByTestId } = render(<PerpsCard testID="test-card" />);
+
+      // Assert
+      expect(queryByTestId('test-card')).toBeNull();
+    });
+  });
+
+  describe('Data Display', () => {
+    it('displays correct PnL color for positive position', () => {
+      // Arrange
+      const positivePosition = {
+        ...mockPosition,
+        unrealizedPnl: '100.50',
+        returnOnEquity: '0.05',
+      };
+
+      // Act
+      const { getByText } = render(
+        <PerpsCard position={positivePosition} testID="test-card" />,
+      );
+
+      // Assert
+      expect(getByText('+$100.50 (+5.0%)')).toBeDefined();
+    });
+
+    it('displays correct PnL color for negative position', () => {
+      // Arrange
+      const negativePosition = {
+        ...mockPosition,
+        unrealizedPnl: '-50.25',
+        returnOnEquity: '-0.025',
+      };
+
+      // Act
+      const { getByText } = render(
+        <PerpsCard position={negativePosition} testID="test-card" />,
+      );
+
+      // Assert
+      expect(getByText('-$50.25 (-2.5%)')).toBeDefined();
+    });
+
+    it('displays short position correctly', () => {
+      // Arrange
+      const shortPosition = {
+        ...mockPosition,
+        size: '-1.5',
+      };
+
+      // Act
+      const { getByText } = render(
+        <PerpsCard position={shortPosition} testID="test-card" />,
+      );
+
+      // Assert
+      expect(getByText('ETH 3x short')).toBeDefined();
+      expect(getByText('1.5 ETH')).toBeDefined();
+    });
+
+    it('displays order side correctly', () => {
+      // Arrange
+      const sellOrder = {
+        ...mockOrder,
+        side: 'sell' as const,
+      };
+
+      // Act
+      const { getByText } = render(
+        <PerpsCard order={sellOrder} testID="test-card" />,
+      );
+
+      // Assert
+      expect(getByText('Limit short')).toBeDefined();
+    });
+
+    it('formats low-price order with adaptive sig-dig instead of threshold', () => {
+      // Arrange
+      const lowPriceOrder = {
+        ...mockOrder,
+        symbol: 'PUMP',
+        price: '0.001',
+      };
+
+      // Act
+      const { getByText, queryByText } = render(
+        <PerpsCard order={lowPriceOrder} testID="test-card" />,
+      );
+
+      // Assert — must show actual price, not <$0.01
+      expect(getByText('$0.001')).toBeOnTheScreen();
+      expect(queryByText('<$0.01')).toBeNull();
+    });
+
+    it('uses trigger price label for trigger orders', () => {
+      const triggerOrder = {
+        ...mockOrder,
+        isTrigger: true,
+        triggerPrice: '3100',
+        detailedOrderType: 'Take Profit Limit',
+      };
+
+      const { getByText } = render(
+        <PerpsCard order={triggerOrder} testID="test-card" />,
+      );
+
+      expect(getByText('$3,100')).toBeDefined();
+      expect(getByText('perps.order.trigger_price')).toBeDefined();
+    });
+
+    it('falls back to market price label when trigger order has no valid trigger price', () => {
+      const triggerMarketOrderWithoutPrice = {
+        ...mockOrder,
+        isTrigger: true,
+        triggerPrice: '0',
+        price: '0',
+        detailedOrderType: 'Stop Market',
+      };
+
+      const { getByText, queryByText } = render(
+        <PerpsCard order={triggerMarketOrderWithoutPrice} testID="test-card" />,
+      );
+
+      expect(getByText('perps.order.market')).toBeDefined();
+      expect(getByText('perps.order.market_price')).toBeDefined();
+      expect(queryByText('perps.order.trigger_price')).toBeNull();
+    });
+
+    it('uses limit price label when trigger-limit order has invalid trigger price', () => {
+      const triggerLimitOrderWithoutValidTriggerPrice = {
+        ...mockOrder,
+        isTrigger: true,
+        orderType: 'limit' as const,
+        detailedOrderType: 'Take Profit Limit',
+        triggerPrice: '0',
+        price: '2800',
+      };
+
+      const { getByText, queryByText } = render(
+        <PerpsCard
+          order={triggerLimitOrderWithoutValidTriggerPrice}
+          testID="test-card"
+        />,
+      );
+
+      expect(getByText('$2,800')).toBeDefined();
+      expect(getByText('perps.order.limit_price')).toBeDefined();
+      expect(queryByText('perps.order.trigger_price')).toBeNull();
+    });
+
+    it('keeps limit price label for non-trigger limit orders when triggerPrice is "0"', () => {
+      const limitOrderWithZeroTriggerPrice = {
+        ...mockOrder,
+        isTrigger: false,
+        orderType: 'limit' as const,
+        detailedOrderType: 'Limit',
+        triggerPrice: '0',
+        price: '2000',
+      };
+
+      const { getByText, queryByText } = render(
+        <PerpsCard order={limitOrderWithZeroTriggerPrice} testID="test-card" />,
+      );
+
+      expect(getByText('$2,000')).toBeDefined();
+      expect(getByText('perps.order.limit_price')).toBeDefined();
+      expect(queryByText('perps.order.market_price')).toBeNull();
+    });
+  });
+
+  describe('Privacy Mode', () => {
+    const DOTS_SHORT = '•'.repeat(6); // SensitiveTextLength.Short
+
+    it('hides position value and PnL label when privacy mode is enabled', () => {
+      // Arrange
+      (useSelector as jest.Mock).mockReturnValue(true);
+      const positivePosition = {
+        ...mockPosition,
+        positionValue: '4350.00',
+        unrealizedPnl: '150.00',
+        returnOnEquity: '10.3',
+      };
+
+      // Act
+      const { queryByText, getAllByText } = render(
+        <PerpsCard position={positivePosition} testID="test-card" />,
+      );
+
+      // Assert - right-side financial values replaced with dots
+      expect(queryByText('$4,350')).toBeNull();
+      expect(queryByText(/\+\$150/)).toBeNull();
+      const hiddenElements = getAllByText(DOTS_SHORT);
+      expect(hiddenElements.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('shows position value and PnL label when privacy mode is disabled', () => {
+      // Arrange
+      (useSelector as jest.Mock).mockReturnValue(false);
+      const positivePosition = {
+        ...mockPosition,
+        unrealizedPnl: '100.50',
+        returnOnEquity: '0.05',
+      };
+
+      // Act
+      const { getByText, queryByText } = render(
+        <PerpsCard position={positivePosition} testID="test-card" />,
+      );
+
+      // Assert - actual values visible, no hiding dots
+      expect(getByText('+$100.50 (+5.0%)')).toBeOnTheScreen();
+      expect(queryByText(DOTS_SHORT)).toBeNull();
+    });
+
+    it('hides order price value but not the order type label when privacy mode is enabled', () => {
+      // Arrange
+      (useSelector as jest.Mock).mockReturnValue(true);
+
+      // Act
+      const { queryByText, getAllByText, getByText } = render(
+        <PerpsCard order={mockOrder} testID="test-card" />,
+      );
+
+      // Assert - price value is hidden, but non-financial order type label is not
+      expect(queryByText('$3,000')).toBeNull();
+      const hiddenElements = getAllByText(DOTS_SHORT);
+      expect(hiddenElements.length).toBeGreaterThanOrEqual(1);
+      expect(getByText('perps.order.limit_price')).toBeOnTheScreen();
+    });
+
+    it('does not hide non-financial labels (symbol, direction) when privacy mode is enabled', () => {
+      // Arrange
+      (useSelector as jest.Mock).mockReturnValue(true);
+
+      // Act
+      const { getByText } = render(
+        <PerpsCard position={mockPosition} testID="test-card" />,
+      );
+
+      // Assert - left-side non-financial content is unaffected
+      expect(getByText('ETH 3x long')).toBeOnTheScreen();
+      expect(getByText('1.5 ETH')).toBeOnTheScreen();
+    });
+  });
+});

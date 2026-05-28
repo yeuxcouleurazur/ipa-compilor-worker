@@ -1,0 +1,904 @@
+{
+  "KeyringController": {
+    "isUnlocked": false,
+    "keyrings": []
+  },
+  "LoggingController": {
+    "logs": {}
+  },
+  "AccountTrackerController": {
+    "accountsByChainId": {}
+  },
+  "AccountsController": {
+    "internalAccounts": {
+      "accounts": {},
+      "selectedAccount": ""
+    },
+    "accountIdByAddress": {}
+  },
+  "AccountTreeController": {
+    "accountTree": {
+      "wallets": {}
+    },
+    "selectedAccountGroup": "",
+    "accountGroupsMetadata": {},
+    "accountWalletsMetadata": {},
+    "hasAccountTreeSyncingSyncedAtLeastOnce": false,
+    "isAccountTreeSyncingInProgress": false
+  },
+  "AddressBookController": {
+    "addressBook": {}
+  },
+  "AnalyticsController": {
+    "analyticsId": "59710bcf-06cc-4247-9386-12425e7fc905",
+    "optedIn": false
+  },
+  "GatorPermissionsController": {
+    "grantedPermissions": [],
+    "isFetchingGatorPermissions": false,
+    "lastSyncedTimestamp": -1,
+    "pendingRevocations": []
+  },
+  "NftController": {
+    "allNftContracts": {},
+    "allNfts": {},
+    "ignoredNfts": []
+  },
+  "TokensController": {
+    "allTokens": {},
+    "allIgnoredTokens": {},
+    "allDetectedTokens": {}
+  },
+  "CurrencyRateController": {
+    "currentCurrency": "usd",
+    "currencyRates": {
+      "ETH": {
+        "conversionDate": 0,
+        "conversionRate": 0,
+        "usdConversionRate": null
+      }
+    }
+  },
+  "DelegationController": {
+    "delegations": {}
+  },
+  "NetworkController": {
+    "selectedNetworkClientId": "mainnet",
+    "networksMetadata": {
+      "mainnet": {
+        "status": "unknown",
+        "EIPS": {}
+      }
+    },
+    "networkConfigurationsByChainId": {
+      "0x1": {
+        "blockExplorerUrls": [],
+        "chainId": "0x1",
+        "defaultRpcEndpointIndex": 0,
+        "name": "Ethereum",
+        "nativeCurrency": "ETH",
+        "rpcEndpoints": [
+          {
+            "networkClientId": "mainnet",
+            "type": "infura",
+            "url": "https://mainnet.infura.io/v3/{infuraProjectId}",
+            "failoverUrls": []
+          }
+        ]
+      },
+      "0x18c7": {
+        "blockExplorerUrls": ["https://megaeth-testnet-v2.blockscout.com"],
+        "chainId": "0x18c7",
+        "defaultRpcEndpointIndex": 0,
+        "defaultBlockExplorerUrlIndex": 0,
+        "name": "MegaETH Testnet",
+        "nativeCurrency": "MegaETH",
+        "rpcEndpoints": [
+          {
+            "networkClientId": "megaeth-testnet-v2",
+            "type": "custom",
+            "url": "https://carrot.megaeth.com/rpc",
+            "failoverUrls": []
+          }
+        ]
+      },
+      "0x279f": {
+        "blockExplorerUrls": ["https://testnet.monadexplorer.com"],
+        "chainId": "0x279f",
+        "defaultBlockExplorerUrlIndex": 0,
+        "defaultRpcEndpointIndex": 0,
+        "name": "Monad Testnet",
+        "nativeCurrency": "MON",
+        "rpcEndpoints": [
+          {
+            "failoverUrls": [],
+            "networkClientId": "monad-testnet",
+            "type": "custom",
+            "url": "https://testnet-rpc.monad.xyz"
+          }
+        ]
+      },
+      "0x38": {
+        "blockExplorerUrls": [],
+        "chainId": "0x38",
+        "defaultRpcEndpointIndex": 0,
+        "name": "BNB Chain",
+        "nativeCurrency": "BNB",
+        "rpcEndpoints": [
+          {
+            "failoverUrls": [],
+            "networkClientId": "bsc-mainnet",
+            "type": "infura",
+            "url": "https://bsc-mainnet.infura.io/v3/{infuraProjectId}"
+          }
+        ]
+      },
+      "0x89": {
+        "blockExplorerUrls": [],
+        "chainId": "0x89",
+        "defaultRpcEndpointIndex": 0,
+        "name": "Polygon",
+        "nativeCurrency": "POL",
+        "rpcEndpoints": [
+          {
+            "failoverUrls": [],
+            "networkClientId": "polygon-mainnet",
+            "type": "infura",
+            "url": "https://polygon-mainnet.infura.io/v3/{infuraProjectId}"
+          }
+        ]
+      },
+      "0xa": {
+        "blockExplorerUrls": [],
+        "chainId": "0xa",
+        "defaultRpcEndpointIndex": 0,
+        "name": "OP",
+        "nativeCurrency": "ETH",
+        "rpcEndpoints": [
+          {
+            "failoverUrls": [],
+            "networkClientId": "optimism-mainnet",
+            "type": "infura",
+            "url": "https://optimism-mainnet.infura.io/v3/{infuraProjectId}"
+          }
+        ]
+      },
+      "0xa4b1": {
+        "blockExplorerUrls": [],
+        "chainId": "0xa4b1",
+        "defaultRpcEndpointIndex": 0,
+        "name": "Arbitrum",
+        "nativeCurrency": "ETH",
+        "rpcEndpoints": [
+          {
+            "failoverUrls": [],
+            "networkClientId": "arbitrum-mainnet",
+            "type": "infura",
+            "url": "https://arbitrum-mainnet.infura.io/v3/{infuraProjectId}"
+          }
+        ]
+      },
+      "0xaa36a7": {
+        "blockExplorerUrls": [],
+        "chainId": "0xaa36a7",
+        "defaultRpcEndpointIndex": 0,
+        "name": "Sepolia",
+        "nativeCurrency": "SepoliaETH",
+        "rpcEndpoints": [
+          {
+            "networkClientId": "sepolia",
+            "type": "infura",
+            "url": "https://sepolia.infura.io/v3/{infuraProjectId}",
+            "failoverUrls": []
+          }
+        ]
+      },
+      "0xe705": {
+        "blockExplorerUrls": [],
+        "chainId": "0xe705",
+        "defaultRpcEndpointIndex": 0,
+        "name": "Linea Sepolia",
+        "nativeCurrency": "LineaETH",
+        "rpcEndpoints": [
+          {
+            "networkClientId": "linea-sepolia",
+            "type": "infura",
+            "url": "https://linea-sepolia.infura.io/v3/{infuraProjectId}",
+            "failoverUrls": []
+          }
+        ]
+      },
+      "0xe708": {
+        "blockExplorerUrls": [],
+        "chainId": "0xe708",
+        "defaultRpcEndpointIndex": 0,
+        "name": "Linea",
+        "nativeCurrency": "ETH",
+        "rpcEndpoints": [
+          {
+            "networkClientId": "linea-mainnet",
+            "type": "infura",
+            "url": "https://linea-mainnet.infura.io/v3/{infuraProjectId}",
+            "failoverUrls": []
+          }
+        ]
+      },
+      "0x2105": {
+        "blockExplorerUrls": [],
+        "chainId": "0x2105",
+        "defaultRpcEndpointIndex": 0,
+        "name": "Base",
+        "nativeCurrency": "ETH",
+        "rpcEndpoints": [
+          {
+            "failoverUrls": [],
+            "networkClientId": "base-mainnet",
+            "type": "infura",
+            "url": "https://base-mainnet.infura.io/v3/{infuraProjectId}"
+          }
+        ]
+      },
+      "0x8f": {
+        "blockExplorerUrls": [],
+        "chainId": "0x8f",
+        "defaultRpcEndpointIndex": 0,
+        "name": "Monad Mainnet",
+        "nativeCurrency": "MON",
+        "rpcEndpoints": [
+          {
+            "failoverUrls": [],
+            "networkClientId": "monad-mainnet",
+            "type": "infura",
+            "url": "https://monad-mainnet.infura.io/v3/{infuraProjectId}"
+          }
+        ]
+      },
+      "0x10e6": {
+        "blockExplorerUrls": [],
+        "chainId": "0x10e6",
+        "defaultRpcEndpointIndex": 0,
+        "name": "MegaETH Mainnet",
+        "nativeCurrency": "ETH",
+        "rpcEndpoints": [
+          {
+            "failoverUrls": [],
+            "networkClientId": "megaeth-mainnet",
+            "type": "infura",
+            "url": "https://megaeth-mainnet.infura.io/v3/{infuraProjectId}"
+          }
+        ]
+      },
+      "0x144": {
+        "blockExplorerUrls": [],
+        "chainId": "0x144",
+        "defaultRpcEndpointIndex": 0,
+        "name": "ZKsync Era",
+        "nativeCurrency": "ETH",
+        "rpcEndpoints": [
+          {
+            "failoverUrls": [],
+            "networkClientId": "zksync-mainnet",
+            "type": "infura",
+            "url": "https://zksync-mainnet.infura.io/v3/{infuraProjectId}"
+          }
+        ]
+      },
+      "0xa86a": {
+        "blockExplorerUrls": [],
+        "chainId": "0xa86a",
+        "defaultRpcEndpointIndex": 0,
+        "name": "Avalanche Mainnet",
+        "nativeCurrency": "AVAX",
+        "rpcEndpoints": [
+          {
+            "failoverUrls": [],
+            "networkClientId": "avalanche-mainnet",
+            "type": "infura",
+            "url": "https://avalanche-mainnet.infura.io/v3/{infuraProjectId}"
+          }
+        ]
+      }
+    }
+  },
+  "NetworkEnablementController": {
+    "enabledNetworkMap": {
+      "bip122": {
+        "bip122:000000000019d6689c085ae165831e93": true,
+        "bip122:000000000933ea01ad0ee984209779ba": false,
+        "bip122:00000008819873e925422c1ff0f99f7c": false
+      },
+      "eip155": {
+        "0x1": true,
+        "0x2105": true,
+        "0x38": true,
+        "0x531": true,
+        "0x89": true,
+        "0x8f": true,
+        "0xa": true,
+        "0xa4b1": true,
+        "0xe708": true
+      },
+      "solana": {
+        "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z": false,
+        "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": true,
+        "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1": false
+      },
+      "tron": {
+        "tron:2494104990": false,
+        "tron:3448148188": false,
+        "tron:728126428": true
+      }
+    },
+    "nativeAssetIdentifiers": {}
+  },
+  "PhishingController": {
+    "addressScanCache": {},
+    "c2DomainBlocklistLastFetched": 0,
+    "phishingLists": [],
+    "whitelist": [],
+    "hotlistLastFetched": 0,
+    "stalelistLastFetched": 0,
+    "tokenScanCache": {},
+    "urlScanCache": {},
+    "whitelistPaths": {}
+  },
+  "PreferencesController": {
+    "featureFlags": {},
+    "ipfsGateway": "https://dweb.link/ipfs/",
+    "useTokenDetection": true,
+    "useNftDetection": true,
+    "useSafeChainsListValidation": true,
+    "displayNftMedia": true,
+    "dismissSmartAccountSuggestionEnabled": false,
+    "securityAlertsEnabled": true,
+    "isMultiAccountBalancesEnabled": true,
+    "showMultiRpcModal": false,
+    "showTestNetworks": false,
+    "smartAccountOptIn": true,
+    "showIncomingTransactions": {
+      "0x1": true,
+      "0x5": true,
+      "0x38": true,
+      "0x61": true,
+      "0xa": true,
+      "0xa869": true,
+      "0xaa37dc": true,
+      "0x89": true,
+      "0x8f": true,
+      "0x13881": true,
+      "0xa86a": true,
+      "0xfa": true,
+      "0xfa2": true,
+      "0xaa36a7": true,
+      "0xe704": true,
+      "0xe705": true,
+      "0xe708": true,
+      "0x504": true,
+      "0x507": true,
+      "0x505": true,
+      "0x64": true,
+      "0x531": true,
+      "0x3e7": true
+    },
+    "isIpfsGatewayEnabled": true,
+    "smartTransactionsOptInStatus": true,
+    "useTransactionSimulations": true,
+    "tokenSortConfig": {
+      "key": "tokenFiatAmount",
+      "order": "dsc",
+      "sortCallback": "stringNumeric"
+    },
+    "tokenNetworkFilter": {},
+    "privacyMode": false
+  },
+  "TokenBalancesController": {
+    "tokenBalances": {}
+  },
+  "TokenRatesController": {
+    "marketData": {}
+  },
+  "TokenSearchDiscoveryDataController": {
+    "tokenDisplayData": []
+  },
+  "TransactionController": {
+    "lastFetchedBlockNumbers": {},
+    "methodData": {},
+    "submitHistory": [],
+    "transactions": [],
+    "transactionBatches": []
+  },
+  "SmartTransactionsController": {
+    "smartTransactionsState": {
+      "smartTransactions": {
+        "0x1": []
+      },
+      "userOptIn": null,
+      "userOptInV2": null,
+      "fees": {
+        "approvalTxFees": null,
+        "tradeTxFees": null
+      },
+      "liveness": true,
+      "livenessByChainId": {
+        "0x1": true,
+        "0xaa36a7": true
+      },
+      "feesByChainId": {
+        "0x1": {
+          "approvalTxFees": null,
+          "tradeTxFees": null
+        },
+        "0xaa36a7": {
+          "approvalTxFees": null,
+          "tradeTxFees": null
+        }
+      }
+    }
+  },
+  "SnapController": {
+    "isReady": false,
+    "snapStates": {},
+    "snaps": {},
+    "unencryptedSnapStates": {}
+  },
+  "SnapInterfaceController": {
+    "interfaces": {}
+  },
+  "SnapRegistryController": {
+    "database": null,
+    "databaseUnavailable": false,
+    "lastUpdated": null,
+    "signature": null
+  },
+  "SocialController": {
+    "followingAddresses": [],
+    "followingProfileIds": [],
+    "leaderboardEntries": []
+  },
+  "SubjectMetadataController": {
+    "subjectMetadata": {}
+  },
+  "GeolocationController": {
+    "location": "UNKNOWN",
+    "status": "loading",
+    "lastFetchedAt": null,
+    "error": null
+  },
+  "GasFeeController": {
+    "gasFeeEstimates": {},
+    "estimatedGasFeeTimeBounds": {},
+    "gasEstimateType": "none",
+    "gasFeeEstimatesByChainId": {},
+    "nonRPCGasFeeApisDisabled": false
+  },
+  "ApprovalController": {
+    "pendingApprovals": {},
+    "pendingApprovalCount": 0,
+    "approvalFlows": []
+  },
+  "AssetsController": {
+    "assetPreferences": {},
+    "assetsBalance": {},
+    "assetsInfo": {
+      "eip155:1/erc20:0xacA92E438df0B2401fF60dA7E4337B687a2435DA": {
+        "decimals": 6,
+        "name": "MetaMask USD",
+        "symbol": "mUSD",
+        "type": "erc20"
+      },
+      "eip155:143/erc20:0xacA92E438df0B2401fF60dA7E4337B687a2435DA": {
+        "decimals": 6,
+        "name": "MetaMask USD",
+        "symbol": "mUSD",
+        "type": "erc20"
+      },
+      "eip155:59144/erc20:0xacA92E438df0B2401fF60dA7E4337B687a2435DA": {
+        "decimals": 6,
+        "name": "MetaMask USD",
+        "symbol": "mUSD",
+        "type": "erc20"
+      }
+    },
+    "assetsPrice": {},
+    "customAssets": {},
+    "selectedCurrency": "usd"
+  },
+  "PermissionController": {
+    "subjects": {}
+  },
+  "PerpsController": {
+    "activeProvider": "hyperliquid",
+    "isTestnet": false,
+    "initializationState": "uninitialized",
+    "initializationError": null,
+    "initializationAttempts": 0,
+    "accountState": null,
+    "depositInProgress": false,
+    "depositRequests": [],
+    "lastDepositTransactionId": null,
+    "lastDepositResult": null,
+    "withdrawInProgress": false,
+    "withdrawalRequests": [],
+    "withdrawalProgress": {
+      "progress": 0,
+      "lastUpdated": 0,
+      "activeWithdrawalId": null
+    },
+    "lastWithdrawResult": null,
+    "lastCompletedWithdrawalTimestamp": null,
+    "lastCompletedWithdrawalTxHashes": [],
+    "lastError": null,
+    "lastUpdateTimestamp": 0,
+    "isEligible": false,
+    "isFirstTimeUser": {
+      "testnet": true,
+      "mainnet": true
+    },
+    "hasPlacedFirstOrder": {
+      "testnet": false,
+      "mainnet": false
+    },
+    "watchlistMarkets": {
+      "mainnet": [],
+      "testnet": []
+    },
+    "tradeConfigurations": {
+      "mainnet": {},
+      "testnet": {}
+    },
+    "marketFilterPreferences": {
+      "optionId": "volume",
+      "direction": "desc"
+    },
+    "hip3ConfigVersion": 0,
+    "perpsBalances": {},
+    "selectedPaymentToken": null,
+    "cachedMarketDataByProvider": {},
+    "cachedUserDataByProvider": {}
+  },
+  "RemoteFeatureFlagController": {
+    "cacheTimestamp": 0,
+    "localOverrides": {},
+    "rawRemoteFeatureFlags": {},
+    "remoteFeatureFlags": {}
+  },
+  "SeedlessOnboardingController": {
+    "isSeedlessOnboardingUserAuthenticated": false,
+    "socialBackupsMetadata": []
+  },
+  "SelectedNetworkController": {
+    "domains": {},
+    "activeDappNetwork": null
+  },
+  "SignatureController": {
+    "signatureRequests": {},
+    "unapprovedPersonalMsgs": {},
+    "unapprovedTypedMessages": {},
+    "unapprovedPersonalMsgCount": 0,
+    "unapprovedTypedMessagesCount": 0
+  },
+  "AuthenticationController": {
+    "isSignedIn": false,
+    "needsProfilePairing": true
+  },
+  "NotificationServicesController": {
+    "isCheckingAccountsPresence": false,
+    "isFeatureAnnouncementsEnabled": false,
+    "isFetchingMetamaskNotifications": false,
+    "isMetamaskNotificationsFeatureSeen": false,
+    "isNotificationServicesEnabled": false,
+    "isUpdatingMetamaskNotifications": false,
+    "isUpdatingMetamaskNotificationsAccount": [],
+    "metamaskNotificationsList": [],
+    "metamaskNotificationsReadList": [],
+    "subscriptionAccountsSeen": []
+  },
+  "NotificationServicesPushController": {
+    "fcmToken": "",
+    "isPushEnabled": true,
+    "isUpdatingFCMToken": false
+  },
+  "TransactionPayController": {
+    "transactionData": {}
+  },
+  "ProfileMetricsController": {
+    "initialEnqueueCompleted": false,
+    "syncQueue": {}
+  },
+  "UserStorageController": {
+    "isBackupAndSyncEnabled": true,
+    "isBackupAndSyncUpdateLoading": false,
+    "isAccountSyncingEnabled": true,
+    "isContactSyncingEnabled": true,
+    "isContactSyncingInProgress": false
+  },
+  "MultichainBalancesController": {
+    "balances": {}
+  },
+  "MultichainNetworkController": {
+    "isEvmSelected": true,
+    "networksWithTransactionActivity": {},
+    "selectedMultichainNetworkChainId": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+    "multichainNetworkConfigurationsByChainId": {
+      "bip122:000000000019d6689c085ae165831e93": {
+        "chainId": "bip122:000000000019d6689c085ae165831e93",
+        "name": "Bitcoin",
+        "nativeCurrency": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+        "isEvm": false
+      },
+      "bip122:000000000933ea01ad0ee984209779ba": {
+        "chainId": "bip122:000000000933ea01ad0ee984209779ba",
+        "isEvm": false,
+        "name": "Bitcoin Testnet",
+        "nativeCurrency": "bip122:000000000933ea01ad0ee984209779ba/slip44:0"
+      },
+      "bip122:00000000da84f2bafbbc53dee25a72ae": {
+        "chainId": "bip122:00000000da84f2bafbbc53dee25a72ae",
+        "isEvm": false,
+        "name": "Bitcoin Testnet4",
+        "nativeCurrency": "bip122:00000000da84f2bafbbc53dee25a72ae/slip44:0"
+      },
+      "bip122:00000008819873e925422c1ff0f99f7c": {
+        "chainId": "bip122:00000008819873e925422c1ff0f99f7c",
+        "isEvm": false,
+        "name": "Bitcoin Mutinynet",
+        "nativeCurrency": "bip122:00000008819873e925422c1ff0f99f7c/slip44:0"
+      },
+      "bip122:regtest": {
+        "chainId": "bip122:regtest",
+        "isEvm": false,
+        "name": "Bitcoin Regtest",
+        "nativeCurrency": "bip122:regtest/slip44:0"
+      },
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": {
+        "chainId": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "name": "Solana",
+        "nativeCurrency": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501",
+        "isEvm": false
+      },
+      "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z": {
+        "chainId": "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z",
+        "isEvm": false,
+        "name": "Solana Testnet",
+        "nativeCurrency": "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z/slip44:501"
+      },
+      "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1": {
+        "chainId": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+        "isEvm": false,
+        "name": "Solana Devnet",
+        "nativeCurrency": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/slip44:501"
+      },
+      "tron:2494104990": {
+        "chainId": "tron:2494104990",
+        "isEvm": false,
+        "name": "Tron Shasta",
+        "nativeCurrency": "tron:2494104990/slip44:195"
+      },
+      "tron:3448148188": {
+        "chainId": "tron:3448148188",
+        "isEvm": false,
+        "name": "Tron Nile",
+        "nativeCurrency": "tron:3448148188/slip44:195"
+      },
+      "tron:728126428": {
+        "chainId": "tron:728126428",
+        "isEvm": false,
+        "name": "Tron",
+        "nativeCurrency": "tron:728126428/slip44:195"
+      }
+    }
+  },
+  "MultichainTransactionsController": {
+    "nonEvmTransactions": {}
+  },
+  "MultichainAssetsController": {
+    "accountsAssets": {},
+    "assetsMetadata": {},
+    "allIgnoredAssets": {}
+  },
+  "BridgeController": {
+    "assetExchangeRates": {},
+    "minimumBalanceForRentExemptionInLamports": "0",
+    "quoteFetchError": null,
+    "quoteRequest": [
+      {
+        "srcTokenAddress": "0x0000000000000000000000000000000000000000"
+      }
+    ],
+    "quotes": [],
+    "quotesInitialLoadTime": null,
+    "quotesLastFetched": null,
+    "quotesLoadingStatus": null,
+    "quotesRefreshCount": 0,
+    "quoteStreamComplete": null,
+    "tokenSecurityTypeDestination": null,
+    "tokenWarnings": []
+  },
+  "BridgeStatusController": {
+    "txHistory": {}
+  },
+  "CardController": {
+    "selectedCountry": null,
+    "activeProviderId": "baanx",
+    "cardHomeData": null,
+    "cardHomeDataStatus": "idle",
+    "isAuthenticated": false,
+    "cardholderAccounts": [],
+    "providerData": {}
+  },
+  "ClientController": {
+    "isUiOpen": false
+  },
+  "ComplianceController": {},
+  "ConnectivityController": {
+    "connectivityStatus": "online"
+  },
+  "MultichainAssetsRatesController": {
+    "conversionRates": {},
+    "historicalPrices": {}
+  },
+  "CronjobController": {
+    "events": {}
+  },
+  "EarnController": {
+    "lastUpdated": 0,
+    "pooled_staking": {
+      "isEligible": false
+    },
+    "lending": {
+      "markets": [
+        {
+          "id": "",
+          "chainId": 0,
+          "protocol": "",
+          "name": "",
+          "address": "",
+          "tvlUnderlying": "0",
+          "netSupplyRate": 0,
+          "totalSupplyRate": 0,
+          "underlying": {
+            "address": "",
+            "chainId": 0
+          },
+          "outputToken": {
+            "address": "",
+            "chainId": 0
+          },
+          "rewards": [
+            {
+              "token": {
+                "address": "",
+                "chainId": 0
+              },
+              "rate": 0
+            }
+          ]
+        }
+      ],
+      "positions": [
+        {
+          "id": "",
+          "chainId": 0,
+          "assets": "0",
+          "marketId": "",
+          "marketAddress": "",
+          "protocol": ""
+        }
+      ],
+      "isEligible": false
+    },
+    "tron_staking": null
+  },
+  "DeFiPositionsController": {
+    "allDeFiPositions": {},
+    "allDeFiPositionsCount": {}
+  },
+  "SamplePetnamesController": {
+    "namesByChainIdAndAddress": {}
+  },
+  "RewardsController": {
+    "accounts": {},
+    "activeAccount": null,
+    "activeBoosts": {},
+    "offDeviceSubscriptionAccounts": {},
+    "pointsEstimateHistory": [],
+    "pointsEvents": {},
+    "campaigns": {},
+    "ondoCampaignLeaderboardPositions": {},
+    "ondoCampaignPortfolio": {},
+    "ondoCampaignActivity": {},
+    "ondoCampaignDeposits": {},
+    "ondoCampaignLeaderboard": {},
+    "perpsTradingCampaignLeaderboard": {},
+    "perpsTradingCampaignLeaderboardPositions": {},
+    "perpsTradingCampaignVolume": {},
+    "clientVersionRequirements": null,
+    "campaignParticipantStatus": {},
+    "unlockedRewards": {},
+    "seasonStatuses": {},
+    "seasons": {},
+    "subscriptionBenefits": {},
+    "vipDashboard": {},
+    "vipPerpsFees": {},
+    "subscriptionReferralDetails": {},
+    "subscriptions": {},
+    "rewardsEnvUrl": null
+  },
+  "PredictController": {
+    "eligibility": {
+      "eligible": false
+    },
+    "lastError": null,
+    "lastUpdateTimestamp": 0,
+    "balances": {},
+    "claimablePositions": {},
+    "pendingDeposits": {},
+    "pendingClaims": {},
+    "withdrawTransaction": null,
+    "activeBuyOrders": {},
+    "selectedPaymentToken": null,
+    "accountMeta": {}
+  },
+  "AiDigestController": {
+    "marketInsights": {},
+    "marketOverview": null
+  },
+  "RampsController": {
+    "userRegion": null,
+    "countries": {
+      "data": [],
+      "selected": null,
+      "isLoading": false,
+      "error": null
+    },
+    "providerAutoSelected": false,
+    "providers": {
+      "data": [],
+      "selected": null,
+      "isLoading": false,
+      "error": null
+    },
+    "tokens": {
+      "data": null,
+      "selected": null,
+      "isLoading": false,
+      "error": null
+    },
+    "paymentMethods": {
+      "data": [],
+      "selected": null,
+      "isLoading": false,
+      "error": null
+    },
+    "nativeProviders": {
+      "transak": {
+        "buyQuote": {
+          "data": null,
+          "selected": null,
+          "isLoading": false,
+          "error": null
+        },
+        "isAuthenticated": false,
+        "kycRequirement": {
+          "data": null,
+          "selected": null,
+          "isLoading": false,
+          "error": null
+        },
+        "userDetails": {
+          "data": null,
+          "selected": null,
+          "isLoading": false,
+          "error": null
+        }
+      }
+    },
+    "requests": {},
+    "orders": [],
+    "providerAutoSelected": false
+  },
+  "MoneyAccountController": {
+    "moneyAccounts": {}
+  },
+  "MoneyAccountUpgradeController": {}
+}

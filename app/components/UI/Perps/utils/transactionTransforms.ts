@@ -1,0 +1,858 @@
+import { BigNumber } from 'bignumber.js';
+import {
+  TransactionMeta,
+  TransactionType,
+} from '@metamask/transaction-controller';
+import { strings } from '../../../../../locales/i18n';
+import {
+  Funding,
+  Order,
+  OrderFill,
+  UserHistoryItem,
+  getPerpsDisplaySymbol,
+} from '@metamask/perps-controller';
+import {
+  FillType,
+  PerpsOrderTransactionStatus,
+  PerpsOrderTransactionStatusType,
+  PerpsTransaction,
+} from '../types/transactionHistory';
+import { formatOrderLabel } from './orderUtils';
+import { getTokenTransferData } from '../../../Views/confirmations/utils/transaction-pay';
+import { parseStandardTokenTransactionData } from '../../../Views/confirmations/utils/transaction';
+import { calcTokenAmount } from '../../../../util/transactions';
+import { ARBITRUM_USDC } from '../../../Views/confirmations/constants/perps';
+
+/**
+ * Determines the close direction category for aggregation purposes.
+ * Returns a normalized direction string for grouping fills that should be aggregated together.
+ *
+ * @param direction - The fill direction string (e.g., "Close Long", "Close Short", "Sell")
+ * @returns A normalized close direction for grouping, or null if not a close fill
+ */
+function getCloseDirectionForAggregation(
+  direction: string | undefined,
+): string | null {
+  if (!direction) return null;
+
+  const [part1, part2] = direction.split(' ');
+
+  // Handle standard close directions
+  if (part1 === 'Close') {
+    return `Close ${part2}`; // "Close Long" or "Close Short"
+  }
+
+  // Handle spot-perps and prelaunch markets that use "Sell" for closing
+  if (direction === 'Sell') {
+    return 'Sell';
+  }
+
+  // Handle auto-deleveraging as a closeable position
+  if (direction === 'Auto-Deleveraging') {
+    return 'Auto-Deleveraging';
+  }
+
+  // Not a close fill - don't aggregate
+  return null;
+}
+
+/**
+ * Aggregates fills that occur at the same timestamp for the same asset when closing positions.
+ * This handles cases where a stop loss or take profit order is split into multiple fills
+ * by HyperLiquid, ensuring users see the aggregate PnL instead of partial amounts.
+ *
+ * Aggregation criteria:
+ * - Same asset symbol
+ * - Same timestamp (truncated to the same second)
+ * - Same close direction (Close Long, Close Short, Sell, or Auto-Deleveraging)
+ *
+ * For aggregated fills:
+ * - Sizes are summed
+ * - PnLs are summed
+ * - Fees are summed
+ * - Price is calculated as VWAP (Volume Weighted Average Price)
+ * - First fill's orderId and metadata are preserved
+ * - detailedOrderType (Stop Loss, Take Profit) is preserved from any grouped fill
+ * - liquidation info is preserved from any grouped fill
+ *
+ * @param fills - Array of OrderFill objects to aggregate
+ * @returns Array of OrderFill objects with close fills aggregated by timestamp
+ */
+export function aggregateFillsByTimestamp(fills: OrderFill[]): OrderFill[] {
+  // Map to group fills by aggregation key
+  const aggregationMap = new Map<string, OrderFill[]>();
+  // Array to preserve non-aggregatable fills in order
+  const nonAggregatableFills: OrderFill[] = [];
+
+  // Group fills by asset + timestamp (truncated to second) + close direction
+  for (const fill of fills) {
+    const closeDirection = getCloseDirectionForAggregation(fill.direction);
+
+    if (closeDirection === null) {
+      // Not a close fill - don't aggregate, preserve as-is
+      nonAggregatableFills.push(fill);
+      continue;
+    }
+
+    // Create aggregation key: asset + timestamp (truncated to second) + close direction
+    const timestampSecond = Math.floor(fill.timestamp / 1000);
+    const aggregationKey = `${fill.symbol}-${timestampSecond}-${closeDirection}`;
+
+    const existingGroup = aggregationMap.get(aggregationKey);
+    if (existingGroup) {
+      existingGroup.push(fill);
+    } else {
+      aggregationMap.set(aggregationKey, [fill]);
+    }
+  }
+
+  // Build aggregated fills
+  const aggregatedFills: OrderFill[] = [];
+
+  for (const groupedFills of aggregationMap.values()) {
+    if (groupedFills.length === 1) {
+      // Only one fill in the group - no aggregation needed
+      aggregatedFills.push(groupedFills[0]);
+      continue;
+    }
+
+    // Aggregate multiple fills
+    const firstFill = groupedFills[0];
+
+    // Sum sizes, PnLs, and fees
+    let totalSize = BigNumber(0);
+    let totalPnl = BigNumber(0);
+    let totalFee = BigNumber(0);
+    let totalNotional = BigNumber(0); // For VWAP calculation: sum of (size * price)
+
+    // Preserve detailedOrderType and liquidation from any fill in the group
+    let aggregatedDetailedOrderType: string | undefined;
+    let aggregatedLiquidation: OrderFill['liquidation'];
+    let aggregatedStartPosition: string | undefined;
+
+    for (const fill of groupedFills) {
+      const size = BigNumber(fill.size);
+      const price = BigNumber(fill.price);
+      const pnl = BigNumber(fill.pnl || '0');
+      const fee = BigNumber(fill.fee || '0');
+
+      totalSize = totalSize.plus(size);
+      totalPnl = totalPnl.plus(pnl);
+      totalFee = totalFee.plus(fee);
+      totalNotional = totalNotional.plus(size.times(price));
+
+      // Preserve detailedOrderType from any fill that has it
+      if (fill.detailedOrderType && !aggregatedDetailedOrderType) {
+        aggregatedDetailedOrderType = fill.detailedOrderType;
+      }
+
+      // Preserve liquidation info from any fill that has it
+      if (fill.liquidation && !aggregatedLiquidation) {
+        aggregatedLiquidation = fill.liquidation;
+      }
+
+      // Use the startPosition from the first fill (represents position before any fills)
+      if (fill.startPosition && !aggregatedStartPosition) {
+        aggregatedStartPosition = fill.startPosition;
+      }
+    }
+
+    // Calculate VWAP: totalNotional / totalSize
+    const vwapPrice = totalSize.isZero()
+      ? BigNumber(firstFill.price)
+      : totalNotional.dividedBy(totalSize);
+
+    // Create aggregated fill
+    const aggregatedFill: OrderFill = {
+      orderId: firstFill.orderId, // Use first fill's orderId
+      symbol: firstFill.symbol,
+      side: firstFill.side,
+      size: totalSize.toString(),
+      price: vwapPrice.toString(),
+      pnl: totalPnl.toString(),
+      direction: firstFill.direction,
+      fee: totalFee.toString(),
+      feeToken: firstFill.feeToken,
+      timestamp: firstFill.timestamp, // Use first fill's timestamp
+      startPosition: aggregatedStartPosition,
+      success: firstFill.success,
+      liquidation: aggregatedLiquidation,
+      orderType: firstFill.orderType,
+      detailedOrderType: aggregatedDetailedOrderType,
+    };
+
+    aggregatedFills.push(aggregatedFill);
+  }
+
+  // Combine aggregated and non-aggregatable fills, then sort by timestamp descending
+  const allFills = [...aggregatedFills, ...nonAggregatableFills];
+  allFills.sort((a, b) => b.timestamp - a.timestamp);
+
+  return allFills;
+}
+
+/**
+ * Merges REST and WebSocket fill arrays into a single deduplicated, sorted array.
+ *
+ * REST fills are added first; WS fills overwrite duplicates (fresher data).
+ * When a WS fill lacks `detailedOrderType` or `liquidation` that the REST fill has,
+ * the REST metadata is preserved so TP/SL pills remain visible on all screens.
+ *
+ * Dedup key: `orderId-timestamp-size-price`
+ *
+ * @param restFills - Historical fills from the REST API
+ * @param liveFills - Real-time fills from the WebSocket
+ * @returns Merged, deduplicated fills sorted by timestamp descending
+ */
+export function mergeOrderFills(
+  restFills: OrderFill[],
+  liveFills: OrderFill[],
+): OrderFill[] {
+  const fillsMap = new Map<string, OrderFill>();
+
+  for (const fill of restFills) {
+    const key = `${fill.orderId}-${fill.timestamp}-${fill.size}-${fill.price}`;
+    fillsMap.set(key, fill);
+  }
+
+  for (const fill of liveFills) {
+    const key = `${fill.orderId}-${fill.timestamp}-${fill.size}-${fill.price}`;
+    const existing = fillsMap.get(key);
+    if (existing?.detailedOrderType && !fill.detailedOrderType) {
+      fillsMap.set(key, {
+        ...fill,
+        detailedOrderType: existing.detailedOrderType,
+        ...(existing.liquidation &&
+          !fill.liquidation && { liquidation: existing.liquidation }),
+      });
+    } else {
+      fillsMap.set(key, fill);
+    }
+  }
+
+  return Array.from(fillsMap.values()).sort(
+    (a, b) => b.timestamp - a.timestamp,
+  );
+}
+
+export interface WithdrawalRequest {
+  id: string;
+  timestamp: number;
+  amount: string;
+  asset: string;
+  txHash?: string;
+  status: 'pending' | 'bridging' | 'completed' | 'failed';
+  destination?: string;
+  withdrawalId?: string;
+}
+
+export interface DepositRequest {
+  id: string;
+  timestamp: number;
+  amount: string;
+  asset: string;
+  txHash?: string;
+  status: 'pending' | 'bridging' | 'completed' | 'failed';
+  source?: string;
+  depositId?: string;
+}
+
+/**
+ * Transform abstract OrderFill objects to PerpsTransaction format.
+ * Close fills that occur at the same timestamp for the same asset are automatically
+ * aggregated to show combined PnL (handles split stop loss/take profit orders).
+ *
+ * @param fills - Array of abstract OrderFill objects
+ * @returns Array of PerpsTransaction objects
+ */
+export function transformFillsToTransactions(
+  fills: OrderFill[],
+): PerpsTransaction[] {
+  // Aggregate close fills that occur at the same timestamp for the same asset
+  // This handles split stop loss/take profit orders that execute as multiple fills
+  const aggregatedFills = aggregateFillsByTimestamp(fills);
+
+  return aggregatedFills.reduce((acc: PerpsTransaction[], fill) => {
+    const {
+      direction,
+      orderId,
+      symbol,
+      size,
+      price,
+      fee,
+      timestamp,
+      feeToken,
+      pnl,
+      liquidation,
+      detailedOrderType,
+    } = fill;
+    const [part1, part2] = direction ? direction.split(' ') : [];
+    const isOpened = part1 === 'Open';
+    const isClosed = part1 === 'Close';
+    const isFlipped = part2 === '>';
+
+    const isAutoDeleveraging = direction === 'Auto-Deleveraging';
+    // Handle spot-perps and prelaunch markets that use "Buy"/"Sell" instead of "Open Long"/"Close Short"
+    const isBuy = direction === 'Buy';
+    const isSell = direction === 'Sell';
+
+    let action = '';
+    let isPositive = false;
+    if (isOpened || isBuy) {
+      action = isBuy ? 'Bought' : 'Opened';
+      // Will be set based on fee calculation below
+    } else if (isClosed || isSell || isAutoDeleveraging) {
+      action = isSell ? 'Sold' : 'Closed';
+      // Will be set based on PnL calculation below
+    } else if (isFlipped) {
+      action = 'Flipped';
+      // Will be set based on calculation below
+    } else if (!direction) {
+      console.warn('Unknown fill direction', fill);
+      return acc;
+    } else if (direction === 'Spot Dust Conversion') {
+      // HL housekeeping — auto-conversion of spot dust to USDC, not a perps trade
+      return acc;
+    } else {
+      console.warn('Unhandled fill direction', direction);
+      return acc;
+    }
+
+    let amountBN = BigNumber(0);
+    let displayAmount = '';
+    let fillSize = size;
+    if (isFlipped) {
+      fillSize = BigNumber(fill.startPosition || '0')
+        .minus(fill.size)
+        .absoluteValue()
+        .toString();
+    }
+    // Calculate display amount based on action type
+    if (isOpened || isBuy) {
+      // For opening positions or buying: show fee paid (negative)
+      amountBN = BigNumber(fill.fee || 0);
+      displayAmount = `-$${Math.abs(amountBN.toNumber()).toFixed(2)}`;
+      isPositive = false; // Fee is always a cost
+    } else if (isClosed || isSell || isFlipped || isAutoDeleveraging) {
+      // For closing positions: show PnL minus fee
+      const pnlValue = BigNumber(fill.pnl || 0);
+      const feeValue = BigNumber(fill.fee || 0);
+      amountBN = pnlValue.minus(feeValue);
+      const netPnL = amountBN.toNumber();
+      // For display, show + for positive, - for negative, nothing for 0
+      if (netPnL > 0) {
+        displayAmount = `+$${Math.abs(netPnL).toFixed(2)}`;
+        isPositive = true;
+      } else if (netPnL < 0) {
+        displayAmount = `-$${Math.abs(netPnL).toFixed(2)}`;
+        isPositive = false;
+      } else {
+        displayAmount = `$${Math.abs(netPnL).toFixed(2)}`;
+        isPositive = true; // Treat break-even as positive (green)
+      }
+    } else {
+      // Fallback: show order size value
+      amountBN = BigNumber(fill.size).times(fill.price);
+      displayAmount = `$${Math.abs(amountBN.toNumber()).toFixed(2)}`;
+      isPositive = false; // Default to false for unknown cases
+    }
+
+    const isLiquidation = Boolean(liquidation);
+    const isTakeProfit = Boolean(detailedOrderType?.includes('Take Profit'));
+    const isStopLoss = Boolean(detailedOrderType?.includes('Stop'));
+
+    let title = '';
+
+    if (isBuy || isSell) {
+      // For Buy/Sell directions, just use the action ("Bought" or "Sold")
+      title = action;
+    } else if (isFlipped) {
+      title = `${action} ${direction?.toLowerCase() || ''}`;
+    } else if (isAutoDeleveraging) {
+      const startPositionNum = Number(fill.startPosition);
+      if (Number.isNaN(startPositionNum)) return acc;
+      const directionLabel =
+        Number(fill.startPosition) > 0
+          ? strings('perps.market.long')
+          : strings('perps.market.short');
+      title = `${action} ${directionLabel?.toLowerCase() || ''}`;
+    } else {
+      title = `${action} ${part2?.toLowerCase() || ''}`;
+    }
+
+    let fillType = FillType.Standard;
+    if (isAutoDeleveraging) {
+      fillType = FillType.AutoDeleveraging;
+    } else if (isLiquidation) {
+      fillType = FillType.Liquidation;
+    } else if (isTakeProfit) {
+      fillType = FillType.TakeProfit;
+    } else if (isStopLoss) {
+      fillType = FillType.StopLoss;
+    }
+
+    acc.push({
+      id: `${orderId || 'fill'}-${timestamp}-${acc.length}`,
+      type: 'trade',
+      category: isOpened || isBuy ? 'position_open' : 'position_close',
+      title,
+      subtitle: `${size} ${getPerpsDisplaySymbol(symbol)}`,
+      timestamp,
+      asset: symbol,
+      fill: {
+        shortTitle:
+          isBuy || isSell
+            ? action
+            : `${action} ${
+                isFlipped
+                  ? direction?.toLowerCase() || ''
+                  : part2?.toLowerCase() || ''
+              }`,
+        // this is the amount that is displayed in the transaction view for what has been spent/gained
+        // it may be the fee spent or the pnl depending on the case
+        amount: displayAmount,
+        amountNumber: parseFloat(amountBN.toFixed(2)),
+        isPositive,
+        size: fillSize,
+        entryPrice: price,
+        pnl,
+        fee,
+        points: '0', // Points feature not activated yet
+        feeToken,
+        action,
+        liquidation,
+        fillType,
+      },
+    });
+    return acc;
+  }, []);
+}
+
+/**
+ * Transform abstract Order objects to PerpsTransaction format
+ * @param orders - Array of abstract Order objects
+ * @param fillSizeByOrderId - Optional map of orderId to total filled size (from actual fills).
+ * When provided, uses actual fill data to calculate accurate filled percentages.
+ * This is important because HyperLiquid's historical orders API returns sz=0 for all
+ * completed orders, making it impossible to calculate partial fill percentages without fill data.
+ * @returns Array of PerpsTransaction objects
+ */
+export function transformOrdersToTransactions(
+  orders: Order[],
+  fillSizeByOrderId?: Map<string, BigNumber>,
+): PerpsTransaction[] {
+  return orders.map((order) => {
+    const {
+      orderId,
+      symbol,
+      orderType,
+      size,
+      originalSize,
+      price,
+      status,
+      timestamp,
+    } = order;
+
+    const isCancelled = status === 'canceled';
+    const isCompleted = status === 'filled';
+    const isOpened = status === 'open';
+    const isRejected = status === 'rejected';
+    const isTriggered = status === 'triggered';
+
+    // Use centralized order label formatting
+    const title = formatOrderLabel(order);
+    const subtitle = `${originalSize || '0'} ${getPerpsDisplaySymbol(symbol)}`;
+
+    const orderTypeSlug = orderType.toLowerCase().split(' ').join('_');
+
+    let orderStatusType: PerpsOrderTransactionStatusType =
+      PerpsOrderTransactionStatusType.Pending;
+    let statusText = PerpsOrderTransactionStatus.Queued;
+
+    if (isCompleted) {
+      orderStatusType = PerpsOrderTransactionStatusType.Filled;
+      statusText = PerpsOrderTransactionStatus.Filled;
+    } else if (isCancelled) {
+      orderStatusType = PerpsOrderTransactionStatusType.Canceled;
+      statusText = PerpsOrderTransactionStatus.Canceled;
+    } else if (isRejected) {
+      orderStatusType = PerpsOrderTransactionStatusType.Canceled; // Map rejected to canceled
+      statusText = PerpsOrderTransactionStatus.Rejected;
+    } else if (isTriggered) {
+      orderStatusType = PerpsOrderTransactionStatusType.Filled; // Map triggered to filled
+      statusText = PerpsOrderTransactionStatus.Triggered;
+    } else {
+      orderStatusType = PerpsOrderTransactionStatusType.Pending;
+      statusText = isOpened
+        ? PerpsOrderTransactionStatus.Open
+        : PerpsOrderTransactionStatus.Queued;
+    }
+
+    // Calculate filled percentage - prefer actual fill data when available
+    let filledPercent: string;
+    const actualFilledSize = fillSizeByOrderId?.get(orderId);
+
+    if (actualFilledSize !== undefined) {
+      // Use actual fill data for accurate percentage
+      const origSize = BigNumber(originalSize);
+
+      if (origSize.isZero()) {
+        filledPercent = '0';
+      } else {
+        filledPercent = actualFilledSize
+          .dividedBy(origSize)
+          .multipliedBy(100)
+          .toFixed(0); // Round to whole number
+      }
+    } else if (isCompleted || isTriggered) {
+      // Filled/triggered orders are 100% filled
+      filledPercent = '100';
+    } else if (isCancelled || isRejected) {
+      // Canceled/rejected orders without fills = 0% filled
+      filledPercent = '0';
+    } else {
+      // Open/pending orders - use the order's size fields
+      const sizeIsZero = BigNumber(size).isEqualTo(0);
+      const originalSizeIsZero = BigNumber(originalSize).isZero();
+
+      if (sizeIsZero && originalSizeIsZero) {
+        // Position-bound TP/SL orders have no fixed size (both are 0)
+        // They're not filled yet - they're just tied to the position size
+        filledPercent = '0';
+      } else if (sizeIsZero) {
+        // Regular order with 0 remaining size = fully filled
+        filledPercent = '100';
+      } else {
+        // Partially filled order
+        filledPercent = BigNumber(originalSize)
+          .minus(size)
+          .dividedBy(originalSize)
+          .absoluteValue()
+          .multipliedBy(100)
+          .toString();
+      }
+    }
+
+    return {
+      id: `${orderId}-${timestamp}`,
+      type: 'order',
+      category: 'limit_order',
+      title,
+      subtitle,
+      timestamp,
+      asset: symbol,
+      order: {
+        text: statusText,
+        statusType: orderStatusType,
+        type: orderTypeSlug.includes('limit') ? 'limit' : 'market',
+        size: BigNumber(originalSize).multipliedBy(price).toString(),
+        limitPrice: price,
+        filled: `${filledPercent}%`,
+      },
+    };
+  });
+}
+
+/**
+ * Transform abstract Funding objects to PerpsTransaction format
+ * @param funding - Array of abstract Funding objects
+ * @returns Array of PerpsTransaction objects sorted by timestamp (newest first)
+ */
+export function transformFundingToTransactions(
+  funding: Funding[],
+): PerpsTransaction[] {
+  return funding.map((fundingItem) => {
+    const { symbol, amountUsd, rate, timestamp } = fundingItem;
+
+    // Create safe amount strings
+    const isPositive = BigNumber(amountUsd).isGreaterThan(0);
+    const amountUSDC = `${isPositive ? '+' : '-'}$${BigNumber(amountUsd)
+      .absoluteValue()
+      .toString()}`;
+
+    return {
+      id: `funding-${timestamp}-${symbol}`,
+      type: 'funding',
+      category: 'funding_fee',
+      title: `${isPositive ? 'Received' : 'Paid'} funding fee`,
+      subtitle: getPerpsDisplaySymbol(symbol),
+      timestamp,
+      asset: symbol,
+      fundingAmount: {
+        isPositive,
+        fee: amountUSDC,
+        feeNumber: parseFloat(amountUsd),
+        rate: `${BigNumber(rate ?? '0')
+          .multipliedBy(100)
+          .toString()}%`,
+      },
+    };
+  });
+}
+
+/**
+ * Transform UserHistoryItem objects to PerpsTransaction format
+ * Only shows completed deposits/withdrawals (txHash not displayed in UI)
+ * @param userHistory - Array of UserHistoryItem objects (deposits/withdrawals)
+ * @returns Array of PerpsTransaction objects
+ */
+export function transformUserHistoryToTransactions(
+  userHistory: UserHistoryItem[],
+): PerpsTransaction[] {
+  return userHistory
+    .filter((item) => item.status === 'completed')
+    .map((item) => {
+      const { id, timestamp, type, amount, asset, txHash, status } = item;
+
+      const isDeposit = type === 'deposit';
+
+      // Format amount with appropriate sign
+      const amountBN = BigNumber(amount);
+      const displayAmount = `${isDeposit ? '+' : '-'}$${amountBN.toFixed(2)}`;
+
+      // For completed transactions, status is always positive (green)
+      const statusText = strings(
+        'perps.transactions.activity.status_completed',
+      );
+      const title = isDeposit
+        ? strings('perps.transactions.activity.deposited_amount', {
+            amount,
+            symbol: asset,
+          })
+        : strings('perps.transactions.activity.withdrew_amount', {
+            amount,
+            symbol: asset,
+          });
+
+      return {
+        id: `${type}-${id}`,
+        type: isDeposit ? 'deposit' : 'withdrawal',
+        category: isDeposit ? 'deposit' : 'withdrawal',
+        title,
+        subtitle: statusText,
+        timestamp,
+        asset,
+        depositWithdrawal: {
+          amount: displayAmount,
+          amountNumber: amountBN.toNumber(),
+          isPositive: isDeposit,
+          asset,
+          txHash: txHash || '',
+          status,
+          type: isDeposit ? 'deposit' : 'withdrawal',
+        },
+      };
+    });
+}
+
+/** Wallet transaction status to perps deposit/withdrawal status */
+const WALLET_STATUS_TO_DEPOSIT_STATUS: Record<
+  string,
+  'completed' | 'failed' | 'pending' | 'bridging'
+> = {
+  confirmed: 'completed',
+  failed: 'failed',
+  rejected: 'failed',
+  dropped: 'failed',
+  signed: 'pending',
+  submitted: 'pending',
+  approved: 'pending',
+  unapproved: 'pending',
+  pending: 'pending',
+};
+
+/**
+ * Transform wallet TransactionMeta (perpsDeposit / perpsDepositAndOrder) to PerpsTransaction format.
+ * Ensures wallet-originated perps deposits appear in the Perps activity Deposits tab.
+ * @param transactions - Array of TransactionMeta with type perpsDeposit or perpsDepositAndOrder
+ * @returns Array of PerpsTransaction objects with type 'deposit'
+ */
+export function transformWalletPerpsDepositsToTransactions(
+  transactions: TransactionMeta[],
+): PerpsTransaction[] {
+  return transactions.map((tx) => {
+    const tokenData = getTokenTransferData(tx);
+    const decoded = tokenData?.data
+      ? parseStandardTokenTransactionData(tokenData.data)
+      : undefined;
+    const amountWei = decoded?.args?._value?.toString?.();
+    const amountBN =
+      amountWei !== undefined
+        ? new BigNumber(
+            calcTokenAmount(amountWei, ARBITRUM_USDC.decimals).toString(),
+          )
+        : new BigNumber(0);
+
+    const displayAmount = `+$${amountBN.toFixed(2)}`;
+    const status = WALLET_STATUS_TO_DEPOSIT_STATUS[tx.status] ?? 'pending';
+    const statusText =
+      status === 'completed'
+        ? strings('perps.transactions.activity.status_completed')
+        : status === 'failed'
+          ? strings('perps.transactions.activity.status_failed')
+          : strings('perps.transactions.activity.status_pending');
+
+    const title =
+      amountBN.isZero() || !amountWei
+        ? strings('perps.transactions.activity.deposit_title')
+        : strings('perps.transactions.activity.deposited_amount', {
+            amount: amountBN.toFixed(2),
+            symbol: ARBITRUM_USDC.symbol,
+          });
+
+    return {
+      id: `wallet-deposit-${tx.id}`,
+      type: 'deposit' as const,
+      category: 'deposit' as const,
+      title,
+      subtitle: statusText,
+      timestamp: tx.time ?? 0,
+      asset: ARBITRUM_USDC.symbol,
+      depositWithdrawal: {
+        amount: displayAmount,
+        amountNumber: amountBN.toNumber(),
+        isPositive: true,
+        asset: ARBITRUM_USDC.symbol,
+        txHash: tx.hash ?? '',
+        status,
+        type: 'deposit' as const,
+      },
+    };
+  });
+}
+
+/**
+ * Transform WithdrawalRequest objects to PerpsTransaction format
+ * @param withdrawalRequests - Array of WithdrawalRequest objects
+ * @returns Array of PerpsTransaction objects
+ */
+export function transformWithdrawalRequestsToTransactions(
+  withdrawalRequests: WithdrawalRequest[],
+): PerpsTransaction[] {
+  return withdrawalRequests.map((request) => {
+    const { id, timestamp, amount, asset, txHash, status } = request;
+
+    const amountBN = BigNumber(amount);
+    const displayAmount = `-$${amountBN.toFixed(2)}`;
+
+    const statusText =
+      status === 'completed'
+        ? strings('perps.transactions.activity.status_completed')
+        : status === 'failed'
+          ? strings('perps.transactions.activity.status_failed')
+          : strings('perps.transactions.activity.status_pending');
+
+    const title = amountBN.isZero()
+      ? strings('perps.transactions.activity.withdrawal_title')
+      : strings('perps.transactions.activity.withdrew_amount', {
+          amount,
+          symbol: asset,
+        });
+
+    return {
+      id,
+      type: 'withdrawal' as const,
+      category: 'withdrawal' as const,
+      title,
+      subtitle: statusText,
+      timestamp,
+      asset,
+      depositWithdrawal: {
+        amount: displayAmount,
+        amountNumber: -amountBN.toNumber(),
+        isPositive: false,
+        asset,
+        txHash: txHash || '',
+        status,
+        type: 'withdrawal' as const,
+      },
+    };
+  });
+}
+
+/**
+ * Convert wallet TransactionMeta (perpsWithdraw) to WithdrawalRequest format
+ * so it can be passed to transformWithdrawalRequestsToTransactions.
+ * @param transactions - Array of TransactionMeta with type perpsWithdraw
+ * @returns Array of WithdrawalRequest objects
+ */
+export function walletPerpsWithdrawalsToRequests(
+  transactions: TransactionMeta[],
+): WithdrawalRequest[] {
+  return transactions.map((tx) => {
+    const tokenData = getTokenTransferData(tx);
+    const decoded = tokenData?.data
+      ? parseStandardTokenTransactionData(tokenData.data)
+      : undefined;
+    const amountWei = decoded?.args?._value?.toString?.();
+    const amountBN =
+      amountWei !== undefined
+        ? new BigNumber(
+            calcTokenAmount(amountWei, ARBITRUM_USDC.decimals).toString(),
+          )
+        : new BigNumber(0);
+
+    return {
+      id: `wallet-withdrawal-${tx.id}`,
+      timestamp: tx.time ?? 0,
+      amount: amountBN.toFixed(2),
+      asset: ARBITRUM_USDC.symbol,
+      txHash: tx.hash,
+      status: WALLET_STATUS_TO_DEPOSIT_STATUS[tx.status] ?? 'pending',
+    };
+  });
+}
+
+/**
+ * Transform DepositRequest objects to PerpsTransaction format
+ * Only shows completed deposits (txHash not displayed in UI)
+ * @param depositRequests - Array of DepositRequest objects
+ * @returns Array of PerpsTransaction objects
+ */
+export function transformDepositRequestsToTransactions(
+  depositRequests: DepositRequest[],
+): PerpsTransaction[] {
+  return depositRequests
+    .filter((request) => request.status === 'completed')
+    .map((request) => {
+      const { id, timestamp, amount, asset, txHash, status } = request;
+
+      // Format amount with positive sign for deposits
+      const amountBN = BigNumber(amount);
+      const displayAmount = `+$${amountBN.toFixed(2)}`;
+
+      // For completed deposits, status is always positive (green)
+      const statusText = strings(
+        'perps.transactions.activity.status_completed',
+      );
+      const isPositive = true;
+
+      // Create title based on whether we have the actual amount
+      const title =
+        amount === '0' || amount === '0.00'
+          ? strings('perps.transactions.activity.deposit_title')
+          : strings('perps.transactions.activity.deposited_amount', {
+              amount,
+              symbol: asset,
+            });
+
+      return {
+        id: `deposit-${id}`,
+        type: 'deposit' as const,
+        category: 'deposit' as const,
+        title,
+        subtitle: statusText,
+        timestamp,
+        asset,
+        depositWithdrawal: {
+          amount: displayAmount,
+          amountNumber: amountBN.toNumber(),
+          isPositive,
+          asset,
+          txHash: txHash || '',
+          status,
+          type: 'deposit' as const,
+        },
+      };
+    });
+}

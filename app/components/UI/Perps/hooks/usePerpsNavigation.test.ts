@@ -1,0 +1,416 @@
+import { renderHook } from '@testing-library/react-hooks';
+import { waitFor } from '@testing-library/react-native';
+import { useNavigation } from '@react-navigation/native';
+import { usePerpsNavigation } from './usePerpsNavigation';
+import { usePerpsTrading } from './usePerpsTrading';
+import usePerpsToasts from './usePerpsToasts';
+import { usePerpsEventTracking } from './usePerpsEventTracking';
+import Routes from '../../../../constants/navigation/Routes';
+import { CONFIRMATION_HEADER_CONFIG } from '../constants/perpsConfig';
+
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: jest.fn(),
+}));
+
+const mockDepositWithOrder = jest.fn();
+const mockShowToast = jest.fn();
+const mockTrack = jest.fn();
+const mockWithPendingTransactionActiveAbTests = jest.fn(
+  (_tests: unknown, fn: () => Promise<unknown>) => fn(),
+);
+
+jest.mock('./usePerpsTrading', () => ({
+  usePerpsTrading: jest.fn(),
+}));
+
+jest.mock('./usePerpsToasts', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
+
+jest.mock('./usePerpsEventTracking', () => ({
+  usePerpsEventTracking: jest.fn(),
+}));
+
+jest.mock(
+  '../../../../util/transactions/transaction-active-ab-test-attribution-registry',
+  () => ({
+    withPendingTransactionActiveAbTests: (
+      tests: unknown,
+      fn: () => Promise<unknown>,
+    ) => mockWithPendingTransactionActiveAbTests(tests, fn),
+  }),
+);
+
+describe('usePerpsNavigation', () => {
+  const mockNavigate = jest.fn();
+  const mockCanGoBack = jest.fn();
+  const mockGoBack = jest.fn();
+  const mockUseNavigation = useNavigation as jest.MockedFunction<
+    typeof useNavigation
+  >;
+  const mockUsePerpsTrading = usePerpsTrading as jest.MockedFunction<
+    typeof usePerpsTrading
+  >;
+  const mockUsePerpsToasts = usePerpsToasts as jest.MockedFunction<
+    typeof usePerpsToasts
+  >;
+  const mockUsePerpsEventTracking =
+    usePerpsEventTracking as jest.MockedFunction<typeof usePerpsEventTracking>;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockCanGoBack.mockReturnValue(true);
+    mockDepositWithOrder.mockResolvedValue({ result: Promise.resolve('') });
+    mockUsePerpsTrading.mockReturnValue({
+      depositWithOrder: mockDepositWithOrder,
+    } as Partial<ReturnType<typeof usePerpsTrading>> as ReturnType<
+      typeof usePerpsTrading
+    >);
+    mockUsePerpsToasts.mockReturnValue({
+      showToast: mockShowToast,
+      PerpsToastOptions: {
+        accountManagement: {
+          deposit: { error: {} },
+          oneClickTrade: { txCreationFailed: {} },
+        },
+      },
+    } as unknown as ReturnType<typeof usePerpsToasts>);
+    mockUsePerpsEventTracking.mockReturnValue({
+      track: mockTrack,
+    });
+    mockUseNavigation.mockReturnValue({
+      navigate: mockNavigate,
+      canGoBack: mockCanGoBack,
+      goBack: mockGoBack,
+    } as Partial<ReturnType<typeof useNavigation>> as ReturnType<
+      typeof useNavigation
+    >);
+  });
+
+  describe('Main App Navigation', () => {
+    it('navigates to wallet view', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+
+      result.current.navigateToWallet();
+
+      expect(mockNavigate).toHaveBeenCalledWith(Routes.WALLET.HOME, {
+        screen: Routes.WALLET.TAB_STACK_FLOW,
+        params: {
+          screen: Routes.WALLET_VIEW,
+        },
+      });
+    });
+
+    it('navigates to browser view', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+
+      result.current.navigateToBrowser();
+
+      expect(mockNavigate).toHaveBeenCalledWith(Routes.BROWSER.HOME, {
+        screen: Routes.BROWSER.VIEW,
+      });
+    });
+
+    it('navigates to actions modal', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+
+      result.current.navigateToActions();
+
+      expect(mockNavigate).toHaveBeenCalledWith(Routes.MODAL.ROOT_MODAL_FLOW, {
+        screen: Routes.MODAL.WALLET_ACTIONS,
+      });
+    });
+
+    it('navigates to activity view', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+
+      result.current.navigateToActivity();
+
+      expect(mockNavigate).toHaveBeenCalledWith(Routes.PERPS.ACTIVITY, {
+        redirectToPerpsTransactions: true,
+        showBackButton: true,
+      });
+    });
+
+    it('navigates to rewards', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+
+      result.current.navigateToRewards();
+
+      expect(mockNavigate).toHaveBeenCalledWith(Routes.REWARDS_VIEW);
+    });
+  });
+
+  describe('Perps-Specific Navigation', () => {
+    it('navigates to market details without source', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+      const mockMarket = { symbol: 'BTC' } as Partial<
+        Parameters<typeof result.current.navigateToMarketDetails>[0]
+      >;
+
+      result.current.navigateToMarketDetails(
+        mockMarket as Parameters<
+          typeof result.current.navigateToMarketDetails
+        >[0],
+      );
+
+      expect(mockNavigate).toHaveBeenCalledWith(Routes.PERPS.MARKET_DETAILS, {
+        market: mockMarket,
+        source: undefined,
+      });
+    });
+
+    it('navigates to market details with source', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+      const mockMarket = { symbol: 'ETH' } as Partial<
+        Parameters<typeof result.current.navigateToMarketDetails>[0]
+      >;
+
+      result.current.navigateToMarketDetails(
+        mockMarket as Parameters<
+          typeof result.current.navigateToMarketDetails
+        >[0],
+        'home_screen',
+      );
+
+      expect(mockNavigate).toHaveBeenCalledWith(Routes.PERPS.MARKET_DETAILS, {
+        market: mockMarket,
+        source: 'home_screen',
+      });
+    });
+
+    it('navigates to market details with transaction active A/B tests', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+      const mockMarket = { symbol: 'SOL' } as Partial<
+        Parameters<typeof result.current.navigateToMarketDetails>[0]
+      >;
+      const transactionActiveAbTests = [
+        {
+          key: 'homeTMCU725AbtestHomepagePerpsPillsEmptyState',
+          value: 'treatment',
+          key_value_pair:
+            'homeTMCU725AbtestHomepagePerpsPillsEmptyState=treatment',
+        },
+      ];
+
+      result.current.navigateToMarketDetails(
+        mockMarket as Parameters<
+          typeof result.current.navigateToMarketDetails
+        >[0],
+        'perp_markets',
+        transactionActiveAbTests,
+      );
+
+      expect(mockNavigate).toHaveBeenCalledWith(Routes.PERPS.MARKET_DETAILS, {
+        market: mockMarket,
+        source: 'perp_markets',
+        transactionActiveAbTests,
+      });
+    });
+
+    it('navigates to perps home without source', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+
+      result.current.navigateToHome();
+
+      expect(mockNavigate).toHaveBeenCalledWith(Routes.PERPS.PERPS_HOME, {
+        source: undefined,
+      });
+    });
+
+    it('navigates to perps home with source', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+
+      result.current.navigateToHome('market_list');
+
+      expect(mockNavigate).toHaveBeenCalledWith(Routes.PERPS.PERPS_HOME, {
+        source: 'market_list',
+      });
+    });
+
+    it('navigates to market list without params', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+
+      result.current.navigateToMarketList();
+
+      expect(mockNavigate).toHaveBeenCalledWith(
+        Routes.PERPS.MARKET_LIST,
+        undefined,
+      );
+    });
+
+    it('navigates to market list with params', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+      const params = { source: 'test', variant: 'full' as const };
+
+      result.current.navigateToMarketList(params);
+
+      expect(mockNavigate).toHaveBeenCalledWith(
+        Routes.PERPS.MARKET_LIST,
+        params,
+      );
+    });
+
+    it('navigates to order screen with direction and asset', async () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+      const params = { direction: 'long' as const, asset: 'BTC' };
+
+      result.current.navigateToOrder(params);
+
+      await waitFor(() => {
+        expect(mockDepositWithOrder).toHaveBeenCalled();
+        expect(mockNavigate).toHaveBeenCalledWith(
+          Routes.FULL_SCREEN_CONFIRMATIONS.REDESIGNED_CONFIRMATIONS,
+          {
+            ...params,
+            showPerpsHeader:
+              CONFIRMATION_HEADER_CONFIG.ShowPerpsHeaderForDepositAndTrade,
+          },
+        );
+      });
+    });
+
+    it('wraps order creation with transaction active A/B tests when provided', async () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+      const transactionActiveAbTests = [
+        {
+          key: 'homeTMCU725AbtestHomepagePerpsPillsEmptyState',
+          value: 'control',
+          key_value_pair:
+            'homeTMCU725AbtestHomepagePerpsPillsEmptyState=control',
+        },
+      ];
+      const params = {
+        direction: 'long' as const,
+        asset: 'BTC',
+        transactionActiveAbTests,
+      };
+
+      result.current.navigateToOrder(params);
+
+      await waitFor(() => {
+        expect(mockWithPendingTransactionActiveAbTests).toHaveBeenCalledWith(
+          transactionActiveAbTests,
+          mockDepositWithOrder,
+        );
+        expect(mockNavigate).toHaveBeenCalledWith(
+          Routes.FULL_SCREEN_CONFIRMATIONS.REDESIGNED_CONFIRMATIONS,
+          expect.objectContaining({
+            transactionActiveAbTests,
+          }),
+        );
+      });
+    });
+
+    it('does not navigate when depositWithOrder rejects (e.g. user cancellation)', async () => {
+      const rejectionError = new Error('User denied');
+      mockDepositWithOrder.mockRejectedValue(rejectionError);
+
+      const { result } = renderHook(() => usePerpsNavigation());
+      const params = { direction: 'short' as const, asset: 'ETH' };
+
+      result.current.navigateToOrder(params);
+
+      await waitFor(() => {
+        expect(mockDepositWithOrder).toHaveBeenCalled();
+      });
+
+      expect(mockNavigate).not.toHaveBeenCalled();
+      expect(mockShowToast).toHaveBeenCalledWith({});
+      expect(mockTrack).toHaveBeenCalled();
+    });
+
+    it('does not navigate when depositWithOrder rejects', async () => {
+      const depositError = new Error('Deposit failed');
+      mockDepositWithOrder.mockRejectedValue(depositError);
+
+      const { result } = renderHook(() => usePerpsNavigation());
+      const params = { direction: 'long' as const, asset: 'BTC' };
+
+      result.current.navigateToOrder(params);
+
+      await waitFor(() => {
+        expect(mockDepositWithOrder).toHaveBeenCalledTimes(1);
+        expect(mockShowToast).toHaveBeenCalledWith({});
+      });
+
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('navigates to tutorial without params', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+
+      result.current.navigateToTutorial();
+
+      expect(mockNavigate).toHaveBeenCalledWith(
+        Routes.PERPS.TUTORIAL,
+        undefined,
+      );
+    });
+
+    it('navigates to tutorial with params', () => {
+      const { result } = renderHook(() => usePerpsNavigation());
+      const params = { isFromDeeplink: true };
+
+      result.current.navigateToTutorial(params);
+
+      expect(mockNavigate).toHaveBeenCalledWith(Routes.PERPS.TUTORIAL, params);
+    });
+  });
+
+  describe('Utility Navigation', () => {
+    it('navigates back when can go back', () => {
+      mockCanGoBack.mockReturnValue(true);
+      const { result } = renderHook(() => usePerpsNavigation());
+
+      result.current.navigateBack();
+
+      expect(mockGoBack).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not navigate back when cannot go back', () => {
+      mockCanGoBack.mockReturnValue(false);
+      const { result } = renderHook(() => usePerpsNavigation());
+
+      result.current.navigateBack();
+
+      expect(mockGoBack).not.toHaveBeenCalled();
+    });
+
+    it('returns canGoBack state', () => {
+      mockCanGoBack.mockReturnValue(true);
+      const { result } = renderHook(() => usePerpsNavigation());
+
+      expect(result.current.canGoBack).toBe(true);
+    });
+
+    it('returns false when cannot go back', () => {
+      mockCanGoBack.mockReturnValue(false);
+      const { result } = renderHook(() => usePerpsNavigation());
+
+      expect(result.current.canGoBack).toBe(false);
+    });
+  });
+
+  describe('Handler Stability', () => {
+    it('maintains stable function references', () => {
+      const { result, rerender } = renderHook(() => usePerpsNavigation());
+
+      const firstRenderHandlers = { ...result.current };
+      rerender();
+      const secondRenderHandlers = { ...result.current };
+
+      // All handlers should be stable (same reference)
+      expect(firstRenderHandlers.navigateToWallet).toBe(
+        secondRenderHandlers.navigateToWallet,
+      );
+      expect(firstRenderHandlers.navigateToMarketDetails).toBe(
+        secondRenderHandlers.navigateToMarketDetails,
+      );
+      expect(firstRenderHandlers.navigateBack).toBe(
+        secondRenderHandlers.navigateBack,
+      );
+    });
+  });
+});

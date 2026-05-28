@@ -1,0 +1,134 @@
+import { createSelector } from 'reselect';
+import { RootState } from '../../../../../reducers';
+import { PredictPositionStatus } from '../../types';
+import { selectSelectedInternalAccountAddress } from '../../../../../selectors/accountsController';
+
+const selectPredictControllerState = (state: RootState) =>
+  state.engine.backgroundState.PredictController;
+
+const selectPredictPendingDeposits = createSelector(
+  selectPredictControllerState,
+  (predictControllerState) => predictControllerState?.pendingDeposits || {},
+);
+
+const selectPredictPendingClaims = createSelector(
+  selectPredictControllerState,
+  (predictControllerState) => predictControllerState?.pendingClaims || {},
+);
+
+const selectPredictWithdrawTransaction = createSelector(
+  selectPredictControllerState,
+  (predictControllerState) => predictControllerState?.withdrawTransaction,
+);
+
+const selectPredictActiveBuyOrder = createSelector(
+  selectPredictControllerState,
+  selectSelectedInternalAccountAddress,
+  (predictState, address) => {
+    if (!predictState || !address) return null;
+    return predictState.activeBuyOrders[address] ?? null;
+  },
+);
+
+const selectPredictClaimablePositions = createSelector(
+  selectPredictControllerState,
+  (predictControllerState) => predictControllerState?.claimablePositions || {},
+);
+
+const selectPredictClaimablePositionsByAddress = ({
+  address,
+}: {
+  address: string;
+}) =>
+  createSelector(
+    selectPredictClaimablePositions,
+    (claimablePositions) => claimablePositions[address] || [],
+  );
+
+const selectPredictWonPositions = ({ address }: { address: string }) =>
+  createSelector(
+    selectPredictClaimablePositionsByAddress({ address }),
+    (claimablePositions) =>
+      claimablePositions.filter(
+        (position) => position.status === PredictPositionStatus.WON,
+      ),
+  );
+
+const selectPredictWinFiat = ({ address }: { address: string }) =>
+  createSelector(selectPredictWonPositions({ address }), (winningPositions) =>
+    winningPositions.reduce((acc, position) => acc + position.currentValue, 0),
+  );
+
+const selectPredictWinPnl = ({ address }: { address: string }) =>
+  createSelector(selectPredictWonPositions({ address }), (winningPositions) =>
+    winningPositions.reduce((acc, position) => acc + position.cashPnl, 0),
+  );
+
+const selectPredictBalances = createSelector(
+  selectPredictControllerState,
+  (predictControllerState) => predictControllerState?.balances || {},
+);
+
+const selectPredictBalanceByAddress = ({ address }: { address: string }) =>
+  createSelector(
+    selectPredictBalances,
+    (balances) => balances[address]?.balance || 0,
+  );
+
+const selectPredictPendingDepositByAddress = ({
+  address,
+}: {
+  address: string;
+}) =>
+  createSelector(
+    selectPredictPendingDeposits,
+    (pendingDeposits) => pendingDeposits[address] || undefined,
+  );
+
+const selectPredictPendingClaimByAddress = ({ address }: { address: string }) =>
+  createSelector(
+    selectPredictPendingClaims,
+    (pendingClaims) => pendingClaims[address] || undefined,
+  );
+
+const selectPredictSelectedPaymentToken = createSelector(
+  selectPredictControllerState,
+  (predictState) => predictState?.selectedPaymentToken ?? null,
+);
+
+const selectPredictAccountMeta = createSelector(
+  selectPredictControllerState,
+  (predictControllerState) => predictControllerState?.accountMeta || {},
+);
+
+const selectPredictAccountMetaByAddress = ({
+  providerId,
+  address,
+}: {
+  providerId: string;
+  address: string;
+}) =>
+  createSelector(
+    selectPredictAccountMeta,
+    (accountMeta) => accountMeta[providerId]?.[address] || {},
+  );
+
+export {
+  selectPredictControllerState,
+  selectPredictPendingDeposits,
+  selectPredictPendingClaims,
+  selectPredictWithdrawTransaction,
+  selectPredictActiveBuyOrder,
+  selectPredictClaimablePositions,
+  selectPredictClaimablePositionsByAddress,
+  selectPredictWonPositions,
+  selectPredictWinFiat,
+  selectPredictWinPnl,
+  selectPredictBalances,
+  selectPredictBalanceByAddress,
+  selectPredictPendingDepositByAddress,
+  selectPredictPendingClaimByAddress,
+  selectPredictAccountMeta,
+  selectPredictAccountMetaByAddress,
+  selectPredictSelectedPaymentToken,
+};

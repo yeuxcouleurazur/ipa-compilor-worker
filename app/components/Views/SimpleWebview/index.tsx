@@ -1,0 +1,53 @@
+/* eslint-disable @typescript-eslint/consistent-type-definitions */
+import React, { useCallback } from 'react';
+import { View } from 'react-native';
+import { WebView } from '@metamask/react-native-webview';
+import HeaderCompactStandard from '../../../component-library/components-temp/HeaderCompactStandard';
+import { IconName } from '@metamask/design-system-react-native';
+import { useTailwind } from '@metamask/design-system-twrnc-preset';
+import Share from 'react-native-share'; // eslint-disable-line  import-x/default
+import Logger from '../../../util/Logger';
+import { baseStyles } from '../../../styles/common';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+
+// TODO: This will be replaced with the actual route params type once navigation is refactored
+type RouteParams = {
+  SimpleWebView: {
+    url: string;
+    title?: string;
+  };
+};
+
+const SimpleWebView = () => {
+  const tw = useTailwind();
+  const navigation = useNavigation();
+  const route = useRoute<RouteProp<RouteParams, 'SimpleWebView'>>();
+  const url = route.params.url;
+  const title = (route.params as { title?: string })?.title ?? '';
+
+  const share = useCallback(() => {
+    if (url) {
+      Share.open({
+        url,
+      }).catch((err) => {
+        Logger.log('Error while trying to share simple web view', err);
+      });
+    }
+  }, [url]);
+
+  return (
+    <View style={tw.style('flex-1 bg-default')}>
+      <HeaderCompactStandard
+        title={title}
+        onBack={() => navigation.goBack()}
+        includesTopInset
+        endButtonIconProps={[{ iconName: IconName.Share, onPress: share }]}
+      />
+      <WebView containerStyle={baseStyles.flexGrow} source={{ uri: url }} />
+    </View>
+  );
+};
+
+export default SimpleWebView;
+
+export { default as createWebviewNavDetails } from './SimpleWebview.types';

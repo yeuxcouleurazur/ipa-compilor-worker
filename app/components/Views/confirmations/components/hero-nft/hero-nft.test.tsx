@@ -1,0 +1,176 @@
+import React from 'react';
+import { merge } from 'lodash';
+import { fireEvent } from '@testing-library/react-native';
+import { MOCK_ADDRESS_1 } from '../../../../../util/test/accountsControllerTestUtils';
+import { MOCK_STATE_NFT } from '../../../../../util/test/mock-data/root-state/nft';
+import renderWithProvider from '../../../../../util/test/renderWithProvider';
+import { useTransactionMetadataRequest } from '../../hooks/transactions/useTransactionMetadataRequest';
+import { HeroNft } from './hero-nft';
+
+const mockNft = MOCK_STATE_NFT.engine.backgroundState.NftController.allNfts[
+  MOCK_ADDRESS_1.toLowerCase()
+]['0x1'].find((nft) => nft.tokenId === '12345');
+
+const mockNavigate = jest.fn();
+
+jest.mock('@react-navigation/native', () => {
+  const actualNav = jest.requireActual('@react-navigation/native');
+  return {
+    ...actualNav,
+    useNavigation: () => ({
+      navigate: mockNavigate,
+    }),
+  };
+});
+
+jest.mock('../../hooks/transactions/useTransactionMetadataRequest', () => ({
+  useTransactionMetadataRequest: jest.fn(),
+}));
+
+jest.mock('../../hooks/ui/useFullScreenConfirmation', () => ({
+  useFullScreenConfirmation: () => ({ isFullScreenConfirmation: false }),
+}));
+
+describe('HeroNft', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    const mockTransaction =
+      MOCK_STATE_NFT.engine.backgroundState.TransactionController
+        .transactions[0];
+    (useTransactionMetadataRequest as jest.Mock).mockReturnValue({
+      txParams: mockTransaction.txParams,
+      chainId: mockTransaction.chainId,
+    });
+  });
+
+  it('renders placeholder when image is not provided', () => {
+    const { getByTestId, queryAllByText } = renderWithProvider(<HeroNft />, {
+      state: merge({}, MOCK_STATE_NFT, {
+        engine: {
+          backgroundState: {
+            NftController: {
+              allNfts: {
+                [MOCK_ADDRESS_1.toLowerCase()]: {
+                  '0x1': [
+                    {
+                      ...mockNft,
+                      image: undefined,
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      }),
+    });
+
+    // eslint-disable-next-line @metamask/design-tokens/color-no-hex
+    expect(queryAllByText('#12345')).toHaveLength(2);
+    expect(getByTestId('hero-nft-placeholder')).toBeOnTheScreen();
+
+    fireEvent.press(getByTestId('hero-nft-placeholder'));
+    expect(mockNavigate).toHaveBeenCalledWith('NftDetailsFullImage', {
+      collectible: {
+        ...mockNft,
+        image: undefined,
+      },
+    });
+  });
+
+  it('placeholder is not interactable when no nft found', () => {
+    const state = merge({}, MOCK_STATE_NFT, {
+      engine: {
+        backgroundState: {
+          NftController: {},
+        },
+      },
+    });
+    state.engine.backgroundState.NftController.allNfts[
+      MOCK_ADDRESS_1.toLowerCase()
+    ]['0x1'] = [];
+    const { getByTestId } = renderWithProvider(<HeroNft />, {
+      state,
+    });
+
+    expect(getByTestId('hero-nft-placeholder')).toBeOnTheScreen();
+
+    fireEvent.press(getByTestId('hero-nft-placeholder'));
+
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('renders NFT with network badge', () => {
+    const { getByTestId, getByText } = renderWithProvider(<HeroNft />, {
+      state: MOCK_STATE_NFT,
+    });
+
+    expect(getByTestId('nft-image')).toBeDefined();
+    expect(getByTestId('network-avatar-image')).toBeDefined();
+    expect(getByText('Test Dapp NFTs')).toBeDefined();
+    // eslint-disable-next-line @metamask/design-tokens/color-no-hex
+    expect(getByText('#12345')).toBeDefined();
+
+    fireEvent.press(getByTestId('nft-image'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('NftDetailsFullImage', {
+      collectible: mockNft,
+    });
+  });
+
+  it('renders horizontal layout with Sending label, name and tokenId', () => {
+    const { getByText, getByTestId } = renderWithProvider(
+      <HeroNft layout="horizontal" />,
+      {
+        state: MOCK_STATE_NFT,
+      },
+    );
+
+    expect(getByText('Sending')).toBeOnTheScreen();
+    expect(getByText('Test Dapp NFTs')).toBeOnTheScreen();
+    // eslint-disable-next-line @metamask/design-tokens/color-no-hex -- false positive: '#12345' is a token-id display prefix, not a color literal
+    expect(getByText('#12345')).toBeOnTheScreen();
+    expect(getByTestId('nft-image')).toBeOnTheScreen();
+  });
+
+  it('renders NFT image correctly when image is defined in collection.imageUrl', () => {
+    const { getByText, getByTestId } = renderWithProvider(<HeroNft />, {
+      state: merge({}, MOCK_STATE_NFT, {
+        engine: {
+          backgroundState: {
+            NftController: {
+              allNfts: {
+                [MOCK_ADDRESS_1.toLowerCase()]: {
+                  '0x1': [
+                    {
+                      ...mockNft,
+                      image: undefined,
+                      collection: { imageUrl: 'testURI//:333' },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      }),
+    });
+
+    expect(getByTestId('nft-image')).toBeDefined();
+    expect(getByTestId('network-avatar-image')).toBeDefined();
+    expect(getByText('Test Dapp NFTs')).toBeDefined();
+    // eslint-disable-next-line @metamask/design-tokens/color-no-hex
+    expect(getByText('#12345')).toBeDefined();
+
+    fireEvent.press(getByTestId('nft-image'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('NftDetailsFullImage', {
+      collectible: {
+        ...mockNft,
+        image: undefined,
+        collection: { imageUrl: 'testURI//:333' },
+      },
+    });
+  });
+});

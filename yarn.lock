@@ -19338,10 +19338,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/luxon@npm:^3.4.2":
-  version: 3.4.2
-  resolution: "@types/luxon@npm:3.4.2"
-  checksum: 10/fd89566e3026559f2bc4ddcc1e70a2c16161905ed50be9473ec0cfbbbe919165041408c4f6e06c4bcf095445535052e2c099087c76b1b38e368127e618fc968d
+"@types/luxon@npm:^3.7.1":
+  version: 3.7.1
+  resolution: "@types/luxon@npm:3.7.1"
+  checksum: 10/c7bc164c278393ea0be938f986c74b4cddfab9013b1aff4495b016f771ded1d5b7b7b4825b2c7f0b8799edce19c5f531c28ff434ab3dedf994ac2d99a20fd4c4
   languageName: node
   linkType: hard
 
@@ -35227,6 +35227,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"luxon@npm:^3.7.2":
+  version: 3.7.2
+  resolution: "luxon@npm:3.7.2"
+  checksum: 10/b24cd205ed306ce7415991687897dcc4027921ae413c9116590bc33a95f93b86ce52cf74ba72b4f5c5ab1c10090517f54ac8edfb127c049e0bf55b90dc2260be
+  languageName: node
+  linkType: hard
+
 "lz-string@npm:^1.5.0":
   version: 1.5.0
   resolution: "lz-string@npm:1.5.0"
@@ -35716,7 +35723,7 @@ __metadata:
     "@types/jest": "npm:^29.5.12"
     "@types/koa": "npm:^2.15.0"
     "@types/lodash": "npm:^4.14.184"
-    "@types/luxon": "npm:^3.4.2"
+    "@types/luxon": "npm:^3.7.1"
     "@types/node": "npm:^20.12.8"
     "@types/pako": "npm:^2.0.4"
     "@types/prompts": "npm:^2.4.9"
@@ -35845,7 +35852,7 @@ __metadata:
     liveline: "npm:0.0.7"
     lodash: "npm:4.18.1"
     lottie-react-native: "npm:~7.3.1"
-    luxon: "npm:^3.5.0"
+    luxon: "npm:^3.7.2"
     metro-react-native-babel-preset: "npm:~0.76.9"
     metro-react-native-babel-transformer: "npm:~0.76.9"
     mockttp: "npm:^3.15.2"

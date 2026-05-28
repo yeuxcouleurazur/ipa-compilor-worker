@@ -672,7 +672,7 @@
     "jetifier": "2.0.0",
     "js-yaml": "^4.1.0",
     "koa": "^2.14.2",
-    "lint-staged": "10.5.4",
+    "lint-staged": "17.0.5",
     "listr2": "^8.0.2",
     "liveline": "0.0.7",
     "metro-react-native-babel-preset": "~0.76.9",

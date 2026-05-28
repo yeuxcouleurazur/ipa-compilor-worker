@@ -8394,6 +8394,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@metamask/core-backend@npm:^6.3.1":
+  version: 6.3.1
+  resolution: "@metamask/core-backend@npm:6.3.1"
+  dependencies:
+    "@metamask/accounts-controller": "npm:^38.1.2"
+    "@metamask/controller-utils": "npm:^12.1.0"
+    "@metamask/keyring-controller": "npm:^26.0.0"
+    "@metamask/messenger": "npm:^1.2.0"
+    "@metamask/profile-sync-controller": "npm:^28.1.1"
+    "@metamask/utils": "npm:^11.9.0"
+    "@tanstack/query-core": "npm:^5.62.16"
+    async-mutex: "npm:^0.5.0"
+    uuid: "npm:^8.3.2"
+  checksum: 10/f267e17202738f6190da8edc7eeeb49941b76ba893d33c8e07fb2010bf0f9c44f360556199b2e5bc08db4e66296efec377b8d06cb7fabba2be99bf7c2a6d21c9
+  languageName: node
+  linkType: hard
+
 "@metamask/delegation-controller@npm:^2.0.2":
   version: 2.0.2
   resolution: "@metamask/delegation-controller@npm:2.0.2"
@@ -9077,6 +9094,29 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@metamask/keyring-controller@npm:^26.0.0":
+  version: 26.0.0
+  resolution: "@metamask/keyring-controller@npm:26.0.0"
+  dependencies:
+    "@ethereumjs/util": "npm:^9.1.0"
+    "@metamask/base-controller": "npm:^9.1.0"
+    "@metamask/browser-passworder": "npm:^6.0.0"
+    "@metamask/eth-hd-keyring": "npm:^14.1.1"
+    "@metamask/eth-sig-util": "npm:^8.2.0"
+    "@metamask/eth-simple-keyring": "npm:^12.0.2"
+    "@metamask/keyring-api": "npm:^23.1.0"
+    "@metamask/keyring-internal-api": "npm:^11.0.1"
+    "@metamask/messenger": "npm:^1.2.0"
+    "@metamask/utils": "npm:^11.9.0"
+    async-mutex: "npm:^0.5.0"
+    ethereumjs-wallet: "npm:^1.0.1"
+    immer: "npm:^9.0.6"
+    lodash: "npm:^4.17.21"
+    ulid: "npm:^2.3.0"
+  checksum: 10/3ca8a86b97fb9568debdc7b574d42cf98a6c3ff76695e72679980169738ff9e4b9626c9ee59a91f3aa57e3e89003ecccfd5f2e9fa7c2775ff1b545e12a47933f
+  languageName: node
+  linkType: hard
+
 "@metamask/keyring-internal-api@npm:^11.0.1":
   version: 11.0.1
   resolution: "@metamask/keyring-internal-api@npm:11.0.1"
@@ -9738,6 +9778,30 @@ __metadata:
     "@metamask/providers": ^22.0.0
     webextension-polyfill: ^0.10.0 || ^0.11.0 || ^0.12.0
   checksum: 10/33c318fe005e55b38b4d0d603806c9303b8deaddf8f98fc04f89ecb49cf26da2189ceea20ac6a4b1be5da49060a928d6788cb465b4451aa199c8e51172366213
+  languageName: node
+  linkType: hard
+
+"@metamask/profile-sync-controller@npm:^28.1.1":
+  version: 28.1.1
+  resolution: "@metamask/profile-sync-controller@npm:28.1.1"
+  dependencies:
+    "@metamask/address-book-controller": "npm:^7.1.2"
+    "@metamask/base-controller": "npm:^9.1.0"
+    "@metamask/keyring-controller": "npm:^26.0.0"
+    "@metamask/messenger": "npm:^1.2.0"
+    "@metamask/snaps-controllers": "npm:^19.0.0"
+    "@metamask/snaps-sdk": "npm:^11.0.0"
+    "@metamask/snaps-utils": "npm:^12.1.2"
+    "@metamask/utils": "npm:^11.9.0"
+    "@noble/ciphers": "npm:^1.3.0"
+    "@noble/hashes": "npm:^1.8.0"
+    immer: "npm:^9.0.6"
+    loglevel: "npm:^1.8.1"
+    siwe: "npm:^2.3.2"
+  peerDependencies:
+    "@metamask/providers": ^22.0.0
+    webextension-polyfill: ^0.10.0 || ^0.11.0 || ^0.12.0
+  checksum: 10/0fd175ee7f3327eaaf9d019ca1044aa10d98df1025c8f2d1fbd9c24f8ee0d5183a695aed32a9a6ff18fe94247edd18967ad7d9c2872bc9999d70c39a5794b523
   languageName: node
   linkType: hard
 
@@ -35548,7 +35612,7 @@ __metadata:
     "@metamask/compliance-controller": "npm:2.0.0"
     "@metamask/connectivity-controller": "npm:^0.1.0"
     "@metamask/controller-utils": "npm:^12.0.0"
-    "@metamask/core-backend": "npm:^6.3.0"
+    "@metamask/core-backend": "npm:^6.3.1"
     "@metamask/delegation-controller": "npm:^2.0.2"
     "@metamask/delegation-deployments": "npm:^1.0.0"
     "@metamask/design-system-react-native": "npm:^0.26.0"

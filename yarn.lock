@@ -29359,15 +29359,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-sensors@npm:~15.0.8":
-  version: 15.0.8
-  resolution: "expo-sensors@npm:15.0.8"
+"expo-sensors@npm:~56.0.5":
+  version: 56.0.5
+  resolution: "expo-sensors@npm:56.0.5"
   dependencies:
     invariant: "npm:^2.2.4"
   peerDependencies:
     expo: "*"
     react-native: "*"
-  checksum: 10/59af0d30695f207cbaf06dacd5e2c2b860ba4f0cc563659fdd3fe86af58a05b62790f57b485d6cc6cb231518344da8cdc53b8997175b196a7becb262effee4a2
+  checksum: 10/4ed6129b03ccb053e48d21bfa8b9df34524660eef9f84aa9ebaa7a92419267663d7e6bc324e3ddf05ca984dcfc94dee511130661fe665e56902bac66962b0ed5
   languageName: node
   linkType: hard
 
@@ -35822,7 +35822,7 @@ __metadata:
     expo-image: "npm:~3.0.11"
     expo-local-authentication: "npm:~17.0.8"
     expo-screen-orientation: "npm:~9.0.8"
-    expo-sensors: "npm:~15.0.8"
+    expo-sensors: "npm:~56.0.5"
     expo-splash-screen: "npm:~31.0.13"
     expo-updates: "npm:~29.0.16"
     expo-web-browser: "npm:~15.0.10"

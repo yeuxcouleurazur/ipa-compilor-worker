@@ -1,0 +1,158 @@
+# List things here that *are - 'used, that depcheck is wrong about'
+
+ignores:
+  - '@metamask/browser-playground'
+  - '@metamask/oss-attribution-generator'
+  - '@metamask/test-dapp-multichain'
+  - 'webpack-cli'
+  - '@react-native-community/datetimepicker'
+  - '@react-native-community/slider'
+  - 'patch-package'
+  - '@lavamoat/allow-scripts'
+  - '@lavamoat/git-safe-dependencies'
+  - 'babel-plugin-inline-import'
+  # This is used in index.d.ts
+  - '@sentry/react'
+  # These dependencies are needed for react-compiler - https://react.dev/learn/react-compiler#using-react-compiler-with-react-17-or-18
+  - 'react-compiler-runtime'
+  # This is used on the patch for TokenRatesController of Assets controllers, for we to be able to use the last version of it
+  - cockatiel
+  # This is used for the buffer polyfills
+  - '@craftzdog/react-native-buffer'
+  # These are used in metro.config.js to setup Hardened JavaScript via @lavamoat/react-native-lockdown
+  - '@react-native/js-polyfills'
+  - 'reflect-metadata'
+  # Husky is used for pre-commit hooks
+  - 'husky'
+  # Auto changelog tooling used in release scripts
+  - '@metamask/auto-changelog'
+  # Remove this once it's used in the project
+  - 'rive-react-native'
+  # Appwright will be used in a follow up PR. We will remove once PR is ready
+  - 'appwright'
+  # Appium drivers are used by Appwright for mobile automation
+  - 'appium-adb'
+  - 'appium-chromium-driver'
+  - 'appium-uiautomator2-driver'
+  - 'appium-xcuitest-driver'
+  # ESBuild is used for AI E2E script compilation
+  - 'esbuild'
+  - 'esbuild-register'
+  # tsx runs all scripts/tooling/*.ts files directly (CLI wrapper, MCP server, yarn pre/post hooks, report CLI)
+  - 'tsx'
+  # agent-device is used as a CLI (`yarn agent-device`), not imported
+  - 'agent-device'
+  # xml2js is used in .github/scripts/ for E2E test report processing
+  - 'xml2js'
+  # jest-junit is used as a Jest reporter in tests/jest.e2e.detox.config.js
+  - 'jest-junit'
+
+  # tsconfig path alias pointing to app/controllers/perps (not an npm package)
+  - '@metamask/perps-controller'
+  # Used in scripts/repack for CI optimization
+  - '@expo/repack-app'
+
+  # ESLint plugins, resolvers, parsers, configuration, etc.
+  - 'eslint-config-prettier'
+  - 'eslint-import-resolver-typescript'
+  - 'eslint-plugin-prettier'
+  - 'eslint-plugin-react-native'
+
+  # Note: Everything below this line should be removed after investigation
+  # TODO: Investigate each dependency to see whether it's used
+
+  ## Unused dependencies to investigate
+  - '@babel/preset-env'
+  - '@babel/runtime'
+  - '@metamask/mobile-provider'
+  - '@testing-library/react'
+  - '@testing-library/react-hooks'
+  - '@types/jest'
+  - '@types/react-native-video'
+  - 'appium'
+  - 'assert'
+  - 'babel-core'
+  - 'babel-loader'
+  - 'chromedriver'
+  - 'execa'
+  - 'jetifier'
+  - 'metro-react-native-babel-preset'
+  - 'react-native-svg-asset-plugin'
+  - 'regenerator-runtime'
+  - 'prettier-2'
+
+  ## Unused devDependencies to investigate
+  - '@metamask/swappable-obj-proxy'
+  - '@segment/sovran-react-native'
+  - '@tradle/react-native-http'
+  - 'asyncstorage-down'
+  - 'buffer'
+  - 'd3-shape'
+  - 'eciesjs'
+  - 'eth-block-tracker'
+  - 'eth-json-rpc-infura'
+  - 'events'
+  - 'https-browserify'
+  - 'path'
+  - 'pbkdf2'
+  - 'pify'
+  - 'punycode'
+  - 'randomfill'
+  - 'react-native-aes-crypto'
+  - 'react-native-aes-crypto-forked'
+  - 'react-native-crypto'
+  - 'react-native-level-fs'
+  - 'react-native-os'
+  - 'react-native-randombytes'
+  - 'react-native-swipe-gestures'
+  - 'socket.io-client'
+  - 'stream-browserify'
+  - 'url'
+  - 'vm-browserify'
+  - 'react-native-cli'
+  - 'babel-plugin-module-resolver'
+
+  ## Missing dependencies to investigate
+  - '@react-navigation/core'
+  - 'app'
+  - 'i18n-js'
+  - 'images'
+
+  ## Expo
+  - '@config-plugins/detox'
+  - 'cross-spawn'
+  - 'expo-build-properties'
+  - 'expo-dev-client'
+  - 'expo-font'
+
+  ## react native
+  - '@react-native-community/cli'
+  - '@react-native-community/cli-platform-android'
+  - '@react-native-community/cli-platform-ios'
+  - '@react-native-community/cli-server-api'
+  - '@react-native/typescript-config'
+  - 'react-native-pager-view'
+  # this dependency can probably be removed, needs investigation
+  - '@types/react-test-renderer'
+  # runtime for dependecies using Nitro Modules (@metamask/native-utils)
+  - 'react-native-nitro-modules'
+  # Jest `jest.mock('react-native-worklets', …, { virtual: true })` in testSetup only; not a root dependency
+  - 'react-native-worklets'
+
+  # Used in Yarn plugin for preview builds
+  - '@yarnpkg/core'
+
+  # Babel plugins referenced in babel.config.js by their short name (without
+  # the `babel-plugin-` prefix). Babel resolves them correctly at build time
+  # but depcheck doesn't recognize the indirect reference. See babel.config.js
+  # line 65 comment for details.
+  - 'babel-plugin-react-compiler' # used as 'react-compiler' (line 68)
+  - 'babel-plugin-transform-inline-environment-variables' # used as 'transform-inline-environment-variables' (line 81)
+  - 'babel-plugin-transform-remove-console' # used as 'transform-remove-console' (line 166, production env)
+
+  # Listed as a direct dep in package.json but no longer referenced in
+  # babel.config.js (we use babel-preset-expo) or anywhere in our source.
+  # It's still available transitively via babel-preset-expo + Metro, so
+  # removing the direct declaration should be a no-op — left for a follow-up
+  # cleanup once the RN 0.81 upgrade has settled to avoid surprises.
+  - '@react-native/babel-preset'

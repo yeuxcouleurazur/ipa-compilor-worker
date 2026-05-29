@@ -1,0 +1,428 @@
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useStyles } from '../../../../../component-library/hooks';
+import Text, {
+  TextVariant,
+  TextColor,
+} from '../../../../../component-library/components/Texts/Text';
+import {
+  Button,
+  ButtonVariant,
+  ButtonSize,
+} from '@metamask/design-system-react-native';
+import ButtonIcon, {
+  ButtonIconSizes,
+} from '../../../../../component-library/components/Buttons/ButtonIcon';
+import {
+  IconColor,
+  IconName,
+} from '../../../../../component-library/components/Icons/Icon';
+import { strings } from '../../../../../../locales/i18n';
+import { usePerpsTrading } from '../../hooks/usePerpsTrading';
+import { usePerpsMeasurement } from '../../hooks/usePerpsMeasurement';
+import { usePerpsOrderFees } from '../../hooks/usePerpsOrderFees';
+import usePerpsToasts from '../../hooks/usePerpsToasts';
+import { TraceName } from '../../../../../util/trace';
+import { PERPS_CONSTANTS, type Order } from '@metamask/perps-controller';
+import styleSheet from './PerpsOrderDetailsView.styles';
+import { PerpsOrderDetailsViewSelectorsIDs } from '../../Perps.testIds';
+import PerpsTokenLogo from '../../components/PerpsTokenLogo';
+import {
+  formatPerpsFiat,
+  formatPositionSize,
+  formatOrderCardDate,
+  PRICE_RANGES_UNIVERSAL,
+} from '../../utils/formatUtils';
+import {
+  formatOrderLabel,
+  getValidOrderPrice,
+  getValidTriggerPrice,
+  inferTriggerConditionKey,
+  isSyntheticOrderCancelable,
+} from '../../utils/orderUtils';
+
+interface OrderDetailsRouteParams {
+  order: Order;
+}
+
+interface DetailRow {
+  key: string;
+  label: string;
+  value: string;
+}
+
+const PerpsOrderDetailsView: React.FC = () => {
+  const navigation = useNavigation();
+  const route =
+    useRoute<RouteProp<{ params: OrderDetailsRouteParams }, 'params'>>();
+  const { order } = route.params ?? {};
+  const { styles } = useStyles(styleSheet, {});
+  const { cancelOrder } = usePerpsTrading();
+  const { showToast, PerpsToastOptions } = usePerpsToasts();
+
+  const [isCanceling, setIsCanceling] = useState(false);
+  const canCancel = order ? isSyntheticOrderCancelable(order) : false;
+
+  const priceMetrics = useMemo(() => {
+    if (!order) {
+      return {
+        validOrderPrice: null as number | null,
+        validTriggerPrice: null as number | null,
+        effectivePrice: null as number | null,
+      };
+    }
+
+    const validOrderPrice = getValidOrderPrice(order);
+    const validTriggerPrice = getValidTriggerPrice(order);
+    // Used as the best-available estimate for order value/fee rows.
+    // For market-style trigger orders, adapter data may set `order.price` from triggerPx
+    // when no limitPx exists; keep trigger fallback to preserve estimate behavior.
+    const effectivePrice = validOrderPrice ?? validTriggerPrice;
+
+    return { validOrderPrice, validTriggerPrice, effectivePrice };
+  }, [order]);
+
+  // Calculate size in USD for fee calculation
+  const sizeInUSD = useMemo(() => {
+    if (!order || priceMetrics.effectivePrice === null) return '0';
+    return (parseFloat(order.size) * priceMetrics.effectivePrice).toString();
+  }, [order, priceMetrics.effectivePrice]);
+
+  // Get order fees
+  const { totalFee } = usePerpsOrderFees({
+    orderType: order?.orderType ?? 'market',
+    amount: sizeInUSD,
+  });
+
+  // Add performance measurement
+  usePerpsMeasurement({
+    traceName: TraceName.PerpsOrderDetailsView,
+    conditions: [!!order],
+  });
+
+  // Handle back button press
+  const handleBack = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
+
+  // Calculate order details
+  const orderDetails = useMemo(() => {
+    if (!order) return null;
+
+    const orderTypeLabel = formatOrderLabel(order);
+
+    // Calculate fill percentage
+    const fillPercentage =
+      parseFloat(order.originalSize) > 0
+        ? (parseFloat(order.filledSize) / parseFloat(order.originalSize)) * 100
+        : 0;
+
+    const { validOrderPrice, validTriggerPrice, effectivePrice } = priceMetrics;
+    const originalSizeUSD =
+      effectivePrice !== null
+        ? parseFloat(order.originalSize) * effectivePrice
+        : null;
+
+    const isMarketExecution =
+      order.orderType === 'market' ||
+      (order.detailedOrderType ?? '').toLowerCase().includes('market');
+
+    const priceText =
+      isMarketExecution || validOrderPrice === null
+        ? strings('perps.order_details.market')
+        : formatPerpsFiat(validOrderPrice, {
+            ranges: PRICE_RANGES_UNIVERSAL,
+          });
+
+    let triggerCondition: string | undefined;
+    if (order.isTrigger && validTriggerPrice !== null) {
+      const formattedTriggerPrice = formatPerpsFiat(validTriggerPrice, {
+        ranges: PRICE_RANGES_UNIVERSAL,
+      });
+      const conditionKey = inferTriggerConditionKey({
+        detailedOrderType: order.detailedOrderType,
+        side: order.side,
+        triggerPrice: order.triggerPrice,
+        price: order.price,
+      });
+      if (conditionKey) {
+        triggerCondition = strings(conditionKey, {
+          price: formattedTriggerPrice,
+        });
+      }
+    }
+
+    const parsedTakeProfitPrice = Number.parseFloat(
+      order.takeProfitPrice ?? '',
+    );
+    const hasTakeProfitPrice =
+      Number.isFinite(parsedTakeProfitPrice) && parsedTakeProfitPrice > 0;
+    const parsedStopLossPrice = Number.parseFloat(order.stopLossPrice ?? '');
+    const hasStopLossPrice =
+      Number.isFinite(parsedStopLossPrice) && parsedStopLossPrice > 0;
+
+    // Format date using formatOrderCardDate
+    const dateString = formatOrderCardDate(order.timestamp);
+
+    return {
+      orderTypeLabel,
+      fillPercentage,
+      originalSizeInUSDText:
+        originalSizeUSD !== null
+          ? formatPerpsFiat(originalSizeUSD)
+          : PERPS_CONSTANTS.FallbackPriceDisplay,
+      dateString,
+      triggerCondition,
+      priceText,
+      reduceOnlyText: order.reduceOnly
+        ? strings('perps.order_details.yes')
+        : strings('perps.order_details.no'),
+      takeProfitPriceText: hasTakeProfitPrice
+        ? formatPerpsFiat(parsedTakeProfitPrice, {
+            ranges: PRICE_RANGES_UNIVERSAL,
+          })
+        : undefined,
+      stopLossPriceText: hasStopLossPrice
+        ? formatPerpsFiat(parsedStopLossPrice, {
+            ranges: PRICE_RANGES_UNIVERSAL,
+          })
+        : undefined,
+    };
+  }, [order, priceMetrics]);
+
+  const handleCancelOrder = useCallback(async () => {
+    if (!order || !canCancel) return;
+
+    setIsCanceling(true);
+
+    // Show in-progress toast
+    showToast(
+      PerpsToastOptions.orderManagement.shared.cancellationInProgress(
+        order.side === 'buy' ? 'long' : 'short',
+        order.size,
+        order.symbol,
+        order.orderType,
+      ),
+    );
+
+    try {
+      const result = await cancelOrder({
+        orderId: order.orderId,
+        symbol: order.symbol,
+      });
+
+      // Show success/failure toast
+      if (result.success) {
+        showToast(
+          PerpsToastOptions.orderManagement.shared.cancellationSuccess(
+            order.reduceOnly,
+            order.orderType,
+            order.side === 'buy' ? 'long' : 'short',
+            order.size,
+            order.symbol,
+          ),
+        );
+        navigation.goBack();
+      } else {
+        showToast(PerpsToastOptions.orderManagement.shared.cancellationFailed);
+      }
+    } catch (error) {
+      showToast(PerpsToastOptions.orderManagement.shared.cancellationFailed);
+    } finally {
+      setIsCanceling(false);
+    }
+  }, [order, canCancel, cancelOrder, navigation, showToast, PerpsToastOptions]);
+
+  if (!order) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text variant={TextVariant.BodyMD} color={TextColor.Error}>
+            {strings('perps.errors.order_not_found')}
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!orderDetails) {
+    return null;
+  }
+
+  const detailRows: DetailRow[] = [
+    {
+      key: 'date',
+      label: strings('perps.order_details.date'),
+      value: orderDetails.dateString,
+    },
+    ...(orderDetails.triggerCondition
+      ? [
+          {
+            key: 'trigger-condition',
+            label: strings('perps.order_details.trigger_condition'),
+            value: orderDetails.triggerCondition,
+          },
+        ]
+      : []),
+    {
+      key: 'price',
+      label: strings('perps.order_details.price'),
+      value: orderDetails.priceText,
+    },
+    ...(orderDetails.takeProfitPriceText
+      ? [
+          {
+            key: 'take-profit',
+            label: strings('perps.order_details.take_profit'),
+            value: orderDetails.takeProfitPriceText,
+          },
+        ]
+      : []),
+    ...(orderDetails.stopLossPriceText
+      ? [
+          {
+            key: 'stop-loss',
+            label: strings('perps.order_details.stop_loss'),
+            value: orderDetails.stopLossPriceText,
+          },
+        ]
+      : []),
+    {
+      key: 'size',
+      label: strings('perps.order_details.size'),
+      value: `${formatPositionSize(parseFloat(order.size))} ${order.symbol}`,
+    },
+    {
+      key: 'original-size',
+      label: strings('perps.order_details.original_size'),
+      value: `${formatPositionSize(parseFloat(order.originalSize))} ${
+        order.symbol
+      }`,
+    },
+    {
+      key: 'order-value',
+      label: strings('perps.order_details.order_value'),
+      value: orderDetails.originalSizeInUSDText,
+    },
+    {
+      key: 'reduce-only',
+      label: strings('perps.order_details.reduce_only'),
+      value: orderDetails.reduceOnlyText,
+    },
+    {
+      key: 'fee',
+      label: strings('perps.order_details.fee'),
+      value:
+        priceMetrics.effectivePrice !== null
+          ? formatPerpsFiat(totalFee)
+          : PERPS_CONSTANTS.FallbackPriceDisplay,
+    },
+  ];
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Header with back button */}
+      <View style={styles.header}>
+        <View style={styles.headerBackButton}>
+          <ButtonIcon
+            iconName={IconName.ArrowLeft}
+            iconColor={IconColor.Default}
+            size={ButtonIconSizes.Md}
+            onPress={handleBack}
+          />
+        </View>
+        <View style={styles.headerTitleContainer}>
+          <Text variant={TextVariant.HeadingSM} color={TextColor.Default}>
+            {orderDetails.orderTypeLabel}
+          </Text>
+        </View>
+      </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Section */}
+        <View style={styles.headerSection}>
+          <View style={styles.assetLogoContainer}>
+            <PerpsTokenLogo symbol={order.symbol} size={48} />
+          </View>
+          <Text variant={TextVariant.HeadingLG} style={styles.assetName}>
+            {order.symbol}
+          </Text>
+        </View>
+
+        {/* Order Details Card */}
+        <View style={styles.section}>
+          <View style={styles.detailsCard}>
+            {detailRows.map((detailRow) => (
+              <View key={detailRow.key} style={styles.detailRow}>
+                <Text
+                  variant={TextVariant.BodyMD}
+                  color={TextColor.Alternative}
+                  style={styles.detailLabel}
+                >
+                  {detailRow.label}
+                </Text>
+                <View style={styles.detailValue}>
+                  <Text variant={TextVariant.BodyMD}>{detailRow.value}</Text>
+                </View>
+              </View>
+            ))}
+
+            {/* Status */}
+            <View style={styles.detailRow}>
+              <Text
+                variant={TextVariant.BodyMD}
+                color={TextColor.Alternative}
+                style={styles.detailLabel}
+              >
+                {strings('perps.order_details.status')}
+              </Text>
+              <View style={styles.detailValue}>
+                <View style={styles.statusContainer}>
+                  {orderDetails.fillPercentage > 0 && (
+                    <View style={styles.statusFilled}>
+                      <Text
+                        variant={TextVariant.BodySM}
+                        color={TextColor.Success}
+                      >
+                        {Math.round(orderDetails.fillPercentage)}% filled
+                      </Text>
+                    </View>
+                  )}
+                  {orderDetails.fillPercentage === 0 && (
+                    <Text variant={TextVariant.BodyMD}>
+                      {strings('perps.order_details.open')}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Footer Actions */}
+      {canCancel ? (
+        <View style={styles.footer}>
+          <Button
+            variant={ButtonVariant.Secondary}
+            size={ButtonSize.Lg}
+            isFullWidth
+            isDanger
+            onPress={handleCancelOrder}
+            isLoading={isCanceling}
+            testID={PerpsOrderDetailsViewSelectorsIDs.CANCEL_BUTTON}
+          >
+            {strings('perps.order_details.cancel_order')}
+          </Button>
+        </View>
+      ) : null}
+    </SafeAreaView>
+  );
+};
+
+export default PerpsOrderDetailsView;

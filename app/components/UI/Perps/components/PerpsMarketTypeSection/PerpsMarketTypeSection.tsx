@@ -1,0 +1,153 @@
+import React, { useCallback } from 'react';
+import { View, StyleProp, ViewStyle } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import Routes from '../../../../../constants/navigation/Routes';
+import {
+  type PerpsMarketData,
+  type MarketTypeFilter,
+  type SortField,
+} from '@metamask/perps-controller';
+import { useStyles } from '../../../../../component-library/hooks';
+import PerpsMarketList from '../PerpsMarketList';
+import styleSheet from './PerpsMarketTypeSection.styles';
+import PerpsRowSkeleton from '../PerpsRowSkeleton';
+import SectionHeader from '../../../../../component-library/components-temp/SectionHeader';
+import type { TransactionActiveAbTestEntry } from '../../../../../util/transactions/transaction-active-ab-test-attribution-registry';
+
+export interface PerpsMarketTypeSectionProps {
+  /** Section title (e.g., "Perps", "Stocks", "Commodities") */
+  title: string;
+  /** Markets to display */
+  markets: PerpsMarketData[];
+  /** Market type for filtering when "See All" is pressed */
+  marketType: MarketTypeFilter;
+  /** Sort field for market list */
+  sortBy?: SortField;
+  /** Whether markets are loading */
+  isLoading?: boolean;
+  /** Analytics source identifying the parent screen (e.g., 'perps_home') */
+  source?: string;
+  /** Bound onto market-list/details routes for downstream transaction attribution. */
+  transactionActiveAbTests?: TransactionActiveAbTestEntry[];
+  /** Test ID for component */
+  testID?: string;
+  /** Optional style override for the section container */
+  style?: StyleProp<ViewStyle>;
+  /** Optional style override for the header */
+  headerStyle?: StyleProp<ViewStyle>;
+  /** Optional style override for the content container */
+  contentContainerStyle?: StyleProp<ViewStyle>;
+}
+
+/**
+ * PerpsMarketTypeSection Component
+ *
+ * Generic reusable section for displaying markets grouped by type.
+ * Used for Perps (crypto), Stocks, Commodities, Forex sections on home screen.
+ *
+ * Features:
+ * - Shows section header with title and "See All" link
+ * - Displays market list with sorting
+ * - Skeleton loading state
+ * - Hides section entirely when no markets available
+ * - Navigates to full market list view on "See All"
+ *
+ * @example
+ * ```tsx
+ * <PerpsMarketTypeSection
+ *   title={strings('perps.home.stocks')}
+ *   markets={stocksMarkets}
+ *   isLoading={isLoading.markets}
+ *   sortBy="volume"
+ * />
+ * ```
+ */
+const PerpsMarketTypeSection: React.FC<PerpsMarketTypeSectionProps> = ({
+  title,
+  markets,
+  marketType,
+  sortBy = 'volume',
+  isLoading,
+  source,
+  transactionActiveAbTests,
+  testID,
+  style,
+  headerStyle,
+  contentContainerStyle,
+}) => {
+  const { styles } = useStyles(styleSheet, {});
+  const navigation = useNavigation();
+
+  const handleViewAll = useCallback(() => {
+    navigation.navigate(Routes.PERPS.ROOT, {
+      screen: Routes.PERPS.MARKET_LIST,
+      params: {
+        defaultMarketTypeFilter: marketType,
+        source,
+        ...(transactionActiveAbTests?.length
+          ? { transactionActiveAbTests }
+          : {}),
+      },
+    });
+  }, [navigation, marketType, source, transactionActiveAbTests]);
+
+  const handleMarketPress = useCallback(
+    (market: PerpsMarketData) => {
+      navigation.navigate(Routes.PERPS.ROOT, {
+        screen: Routes.PERPS.MARKET_DETAILS,
+        params: {
+          market,
+          source,
+          ...(transactionActiveAbTests?.length
+            ? { transactionActiveAbTests }
+            : {}),
+        },
+      });
+    },
+    [navigation, source, transactionActiveAbTests],
+  );
+
+  // Show skeleton during initial load
+  if (isLoading) {
+    return (
+      <View style={[styles.section, style]} testID={testID}>
+        <SectionHeader
+          title={title}
+          onPress={handleViewAll}
+          twClassName="mb-3"
+          style={headerStyle}
+        />
+        <View style={contentContainerStyle}>
+          <PerpsRowSkeleton count={5} />
+        </View>
+      </View>
+    );
+  }
+
+  // Hide section entirely when no markets (feature flag controlled)
+  if (markets.length === 0) {
+    return null;
+  }
+
+  // Render market list
+  return (
+    <View style={[styles.section, style]} testID={testID}>
+      <SectionHeader
+        title={title}
+        onPress={handleViewAll}
+        twClassName="mb-3"
+        style={headerStyle}
+      />
+      <View style={contentContainerStyle}>
+        <PerpsMarketList
+          markets={markets}
+          sortBy={sortBy}
+          onMarketPress={handleMarketPress}
+          showBadge={false}
+        />
+      </View>
+    </View>
+  );
+};
+
+export default PerpsMarketTypeSection;

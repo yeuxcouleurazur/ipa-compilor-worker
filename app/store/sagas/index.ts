@@ -1,0 +1,505 @@
+import {
+  fork,
+  take,
+  cancel,
+  put,
+  call,
+  all,
+  select,
+  race,
+  delay,
+  join,
+} from 'redux-saga/effects';
+import NavigationService from '../../core/NavigationService';
+import Routes from '../../constants/navigation/Routes';
+import {
+  setAppServicesReady,
+  UserActionType,
+  LoginAction,
+  CheckForDeeplinkAction,
+} from '../../actions/user';
+import { NavigationActionType } from '../../actions/navigation';
+import { EventChannel, Task, eventChannel } from 'redux-saga';
+import Engine from '../../core/Engine';
+import Logger from '../../util/Logger';
+import LockManagerService from '../../core/LockManagerService';
+import {
+  overrideXMLHttpRequest,
+  restoreXMLHttpRequest,
+} from './xmlHttpRequestOverride';
+import EngineService from '../../core/EngineService';
+import { AppStateEventProcessor } from '../../core/AppStateEventListener';
+import SharedDeeplinkManager from '../../core/DeeplinkManager/DeeplinkManager';
+import AppConstants from '../../core/AppConstants';
+import {
+  SET_COMPLETED_ONBOARDING,
+  SetCompletedOnboardingAction,
+} from '../../actions/onboarding';
+import { selectCompletedOnboarding } from '../../selectors/onboarding';
+import { applyVaultInitialization } from '../../util/generateSkipOnboardingState';
+import { applyDemoModeInitialization } from '../../util/demoMode/initialization';
+import { isDemoModeEnabled } from '../../util/demoMode/isDemoModeEnabled';
+import { DEMO_WALLET_PASSWORD } from '../../constants/demoMode';
+import SDKConnect from '../../core/SDKConnect/SDKConnect';
+import WC2Manager from '../../core/WalletConnect/WalletConnectV2';
+import { selectExistingUser, selectUserLoggedIn } from '../../reducers/user';
+import UrlParser from 'url-parse';
+import { isSDKServiceDeeplink } from '../../core/DeeplinkManager/util/deeplinks';
+import { rewardsBulkLinkSaga } from './rewardsBulkLinkAccountGroups';
+import Authentication from '../../core/Authentication';
+import { AppState, AppStateStatus } from 'react-native';
+import trackErrorAsAnalytics from '../../util/metrics/TrackError/trackErrorAsAnalytics';
+import { providerErrors } from '@metamask/rpc-errors';
+import { backfillSocialLoginMarketingConsentSaga } from './backfillSocialLoginMarketingConsent';
+import { promptIosGoogleWarningSheetSaga } from './onboarding/legacyIosGoogleReminder';
+import {
+  watchMarketingAttributionOnClearOnboarding,
+  watchMarketingAttributionOnConsentChange,
+} from './marketingAttribution';
+import { getDevAutoUnlockPassword } from '../../util/environment';
+
+/**
+ * Safety ceiling: if `MainNavigator` never mounts (e.g. the user stays on
+ * the onboarding stack), parse the deeplink anyway. A late deeplink is
+ * better than a silently dropped one.
+ */
+const MAIN_NAVIGATOR_READY_TIMEOUT_MS = 3000;
+
+let hasMainNavigatorMounted = false;
+let sdkServicesInitializationTask: Task<void> | undefined;
+
+export const __setMainNavigatorReadyForTesting = (isReady: boolean) => {
+  hasMainNavigatorMounted = isReady;
+};
+
+export const __resetSDKServicesInitializationForTesting = () => {
+  sdkServicesInitializationTask = undefined;
+};
+
+export function* startSDKServicesInitialization() {
+  // Keep a single task so normal deeplinks can warm services in the background
+  // and SDK/WC deeplinks can join that same work when they require it.
+  if (!sdkServicesInitializationTask) {
+    sdkServicesInitializationTask = yield fork(initializeSDKServices);
+  }
+
+  return sdkServicesInitializationTask;
+}
+
+export function* waitForSDKServicesInitialization() {
+  const task: Task<void> = yield call(startSDKServicesInitialization);
+  yield join(task);
+}
+
+/**
+ * Runtime-only latch for MainNavigator readiness.
+ *
+ * This deliberately lives in the saga module instead of Redux: the signal is
+ * only valid for the current JS session and should never be persisted or
+ * rehydrated. `parseDeeplinkAfterNavReady` still waits on the action itself,
+ * while this latch preserves the fast path for hot-start deeplinks after
+ * MainNavigator has already mounted once.
+ */
+export function* mainNavigatorReadyStateMachine() {
+  while (true) {
+    const action: {
+      type: NavigationActionType.MAIN_NAVIGATOR_READY | UserActionType.LOGOUT;
+    } = yield take([
+      NavigationActionType.MAIN_NAVIGATOR_READY,
+      UserActionType.LOGOUT,
+    ]);
+
+    hasMainNavigatorMounted =
+      action.type === NavigationActionType.MAIN_NAVIGATOR_READY;
+  }
+}
+
+/**
+ * Waits until `MainNavigator` has mounted, i.e. post-login screens like
+ * Wallet, RampTokenSelection, Swap, etc. are registered with React
+ * Navigation, then parses the deeplink. Prevents cold-start deeplinks
+ * from being silently dropped with "NAVIGATE was not handled by any
+ * navigator" when `handleDeeplinkSaga` runs before the main screen stack
+ * has rendered.
+ */
+export function* parseDeeplinkAfterNavReady(deeplink: string, origin: string) {
+  if (!hasMainNavigatorMounted) {
+    const { timedOut } = yield race({
+      ready: take(NavigationActionType.MAIN_NAVIGATOR_READY),
+      timedOut: delay(MAIN_NAVIGATOR_READY_TIMEOUT_MS),
+    });
+
+    if (timedOut) {
+      Logger.log(
+        'parseDeeplinkAfterNavReady: MainNavigator did not mount within timeout, parsing anyway',
+      );
+    } else {
+      hasMainNavigatorMounted = true;
+    }
+  }
+
+  try {
+    yield call([SharedDeeplinkManager, SharedDeeplinkManager.parse], deeplink, {
+      origin,
+    });
+  } catch (error) {
+    Logger.error(
+      error as Error,
+      'parseDeeplinkAfterNavReady: failed to parse deeplink',
+    );
+  }
+}
+
+/**
+ * Creates a channel to listen to app state changes.
+ */
+function appStateListenerChannel() {
+  return eventChannel<AppStateStatus>((emitter) => {
+    const appStateListener = AppState.addEventListener('change', emitter);
+    return () => {
+      appStateListener.remove();
+    };
+  });
+}
+
+/**
+ * Checks seedless password status and performs the correct auth flow.
+ */
+async function tryBiometricUnlock(): Promise<void> {
+  if (
+    await Authentication.checkIsSeedlessPasswordOutdated({
+      skipCache: true,
+      captureSentryError: false,
+    })
+  ) {
+    NavigationService.navigation?.reset({
+      routes: [
+        {
+          name: Routes.ONBOARDING.REHYDRATE,
+          params: { isSeedlessPasswordOutdated: true },
+        },
+      ],
+    });
+    return;
+  }
+
+  // Prompt authentication.
+  await Authentication.unlockWallet();
+}
+
+/**
+ * Listens to app state changes and prompts authentication when the app is foregrounded.
+ */
+export function* appStateListenerTask() {
+  // Create channel to listen to app state changes.
+  const channel: EventChannel<AppStateStatus> = yield call(
+    appStateListenerChannel,
+  );
+
+  try {
+    while (true) {
+      const appState: AppStateStatus = yield take(channel);
+      if (appState === 'active') {
+        yield call(async () => {
+          // This is in a try catch since errors are not propogated in event channels.
+          try {
+            await tryBiometricUnlock();
+          } catch (error) {
+            // Navigate to login.
+            NavigationService.navigation?.reset({
+              routes: [{ name: Routes.ONBOARDING.LOGIN }],
+            });
+            trackErrorAsAnalytics(
+              'Lockscreen: Authentication failed',
+              (error as Error)?.message,
+            );
+          }
+        });
+        // Close channel once authentication is prompted.
+        channel.close();
+      }
+    }
+  } finally {
+    // Unconditionally close channel to prevent memory leaks.
+    channel.close();
+  }
+}
+
+export function* appLockStateMachine() {
+  while (true) {
+    yield take(UserActionType.LOCKED_APP);
+
+    // Reject any pending confirmations so the user doesn't see a stale confirmation after unlock.
+    try {
+      const { ApprovalController } = Engine.context;
+      if (ApprovalController) {
+        ApprovalController.clearRequests(providerErrors.userRejectedRequest());
+      }
+    } catch (error) {
+      Logger.error(
+        error as Error,
+        'Failed to reject pending approvals on app lock',
+      );
+    }
+
+    // Navigate to lock screen.
+    NavigationService.navigation?.navigate(Routes.LOCK_SCREEN);
+
+    // App state listener for prompting authentication when the app is foregrounded.
+    yield call(appStateListenerTask);
+  }
+}
+
+/**
+ * Automatically requests authentication on app start.
+ */
+export function* requestAuthOnAppStart() {
+  try {
+    if (isDemoModeEnabled()) {
+      const userLoggedIn: boolean = yield select(selectUserLoggedIn);
+      const existingUser: boolean = yield select(selectExistingUser);
+      const { KeyringController } = Engine.context;
+
+      if (!userLoggedIn && existingUser && KeyringController.state?.vault) {
+        yield call(Authentication.unlockWallet, {
+          password: DEMO_WALLET_PASSWORD,
+        });
+      }
+      return;
+    }
+
+    const devAutoUnlockPassword = getDevAutoUnlockPassword();
+    if (devAutoUnlockPassword) {
+      const { KeyringController } = Engine.context;
+      if (!KeyringController.isUnlocked() && KeyringController.state?.vault) {
+        yield call(Authentication.unlockWallet, {
+          password: devAutoUnlockPassword,
+        });
+        return;
+      }
+    }
+
+    yield call(tryBiometricUnlock);
+  } catch (_) {
+    // If authentication fails, navigate to login screen
+    // TODO: Consolidate error handling in future PRs. For now, we'll rely on the Login screen to handle triaging specific errors.
+    NavigationService.navigation?.reset({
+      routes: [{ name: Routes.ONBOARDING.LOGIN }],
+    });
+  }
+}
+
+/**
+ * The state machine for detecting when the app is logged vs logged out.
+ * While on the Wallet screen, this state machine
+ * will "listen" to the app lock state machine.
+ */
+export function* authStateMachine() {
+  // Start when the user is logged in.
+  while (true) {
+    yield take(UserActionType.LOGIN);
+    // Listen to the app once it enters the locked state.
+    const appLockStateMachineTask: Task<void> = yield fork(appLockStateMachine);
+    // Handles locking the app when the app is backgrounded.
+    LockManagerService.startListening();
+    // Listen to app lock behavior.
+    yield take(UserActionType.LOGOUT);
+    LockManagerService.stopListening();
+    // Cancels appLockStateMachineTask, which also cancels nested sagas once logged out.
+    yield cancel(appLockStateMachineTask);
+  }
+}
+
+export function* basicFunctionalityToggle() {
+  while (true) {
+    const { basicFunctionalityEnabled } = yield take(
+      'TOGGLE_BASIC_FUNCTIONALITY',
+    );
+
+    if (basicFunctionalityEnabled) {
+      restoreXMLHttpRequest();
+    } else {
+      // apply global blocklist
+      overrideXMLHttpRequest();
+    }
+  }
+}
+
+function* initializeWalletConnectService() {
+  try {
+    yield call(() => WC2Manager.init({}));
+  } catch (e) {
+    Logger.log('Failed to initialize WalletConnect V2', e);
+  }
+}
+
+function* initializeSDKConnectService() {
+  try {
+    yield call(() => SDKConnect.init({ context: 'Nav/App' }));
+  } catch (e) {
+    Logger.log('Failed to initialize SDKConnect', e);
+  }
+}
+
+export function* initializeSDKServices() {
+  // Init WC2 and SDKConnect in parallel; they are independent and each takes ~1-3 s on cold start.
+  yield all([
+    call(initializeWalletConnectService),
+    call(initializeSDKConnectService),
+  ]);
+}
+
+export function* handleDeeplinkSaga() {
+  while (true) {
+    // Handle parsing deeplinks after login or when the lock manager is resolved
+    const value = (yield take([
+      UserActionType.LOGIN,
+      UserActionType.CHECK_FOR_DEEPLINK,
+      SET_COMPLETED_ONBOARDING,
+    ])) as LoginAction | CheckForDeeplinkAction | SetCompletedOnboardingAction;
+
+    let completedOnboarding = false;
+
+    // Check if triggering action is SET_COMPLETED_ONBOARDING
+    if (value.type === SET_COMPLETED_ONBOARDING) {
+      completedOnboarding = value.completedOnboarding;
+    } else {
+      completedOnboarding = yield select(selectCompletedOnboarding);
+    }
+
+    const existingUser: boolean = yield select(selectExistingUser);
+
+    if (AppStateEventProcessor.pendingDeeplink) {
+      const url = new UrlParser(AppStateEventProcessor.pendingDeeplink);
+      const storedSource =
+        AppStateEventProcessor.pendingDeeplinkSource ??
+        AppConstants.DEEPLINKS.ORIGIN_DEEPLINK;
+      // try handle fast onboarding if mobile existingUser flag is false and 'onboarding' present in deeplink
+      if (!existingUser && url.pathname === '/onboarding') {
+        // New-user onboarding lives outside MainNavigator, so do not wait for MAIN_NAVIGATOR_READY
+        setTimeout(() => {
+          SharedDeeplinkManager.parse(url.href, {
+            origin: storedSource,
+          });
+        }, 200);
+        AppStateEventProcessor.clearPendingDeeplink();
+        continue;
+      }
+    }
+
+    const { KeyringController } = Engine.context;
+    const isUnlocked = KeyringController.isUnlocked();
+
+    // App is locked or onboarding is not yet complete
+    if (!isUnlocked || !completedOnboarding) {
+      continue;
+    }
+
+    // Start SDK services in the background
+    yield call(startSDKServicesInitialization);
+
+    const deeplink = AppStateEventProcessor.pendingDeeplink;
+    const deeplinkSource =
+      AppStateEventProcessor.pendingDeeplinkSource ??
+      AppConstants.DEEPLINKS.ORIGIN_DEEPLINK;
+
+    if (deeplink) {
+      if (isSDKServiceDeeplink(deeplink)) {
+        yield call(waitForSDKServicesInitialization);
+      }
+
+      // Fork so the saga loop keeps listening for new deeplink events
+      // while parseDeeplinkAfterNavReady waits for navigation to settle.
+      yield fork(parseDeeplinkAfterNavReady, deeplink, deeplinkSource);
+      AppStateEventProcessor.clearPendingDeeplink();
+    }
+  }
+}
+
+///: BEGIN:ONLY_INCLUDE_IF(snaps)
+/**
+ * Handles updating the Snaps registry when the user has booted the app and is onboarded
+ */
+export function* handleSnapsRegistry() {
+  while (true) {
+    const result = (yield take([
+      UserActionType.LOGIN,
+      SET_COMPLETED_ONBOARDING,
+    ])) as LoginAction | SetCompletedOnboardingAction;
+
+    const state: boolean = yield select(selectCompletedOnboarding);
+    const completedOnboarding =
+      result.type === 'SET_COMPLETED_ONBOARDING'
+        ? result.completedOnboarding
+        : state;
+
+    if (!completedOnboarding) {
+      continue;
+    }
+
+    try {
+      const { SnapController } = Engine.context;
+      yield call([SnapController, SnapController.updateRegistry]);
+    } catch {
+      // Ignore
+    }
+  }
+}
+///: END:ONLY_INCLUDE_IF
+
+/**
+ * Handles initializing app services on start up
+ */
+export function* startAppServices() {
+  // Wait for persisted data to be loaded and navigation to be ready
+  yield all([
+    take(UserActionType.ON_PERSISTED_DATA_LOADED),
+    take(NavigationActionType.ON_NAVIGATION_READY),
+  ]);
+
+  // Start Engine service
+  yield call(EngineService.start);
+
+  // Start DeeplinkManager and process branch deeplinks
+  SharedDeeplinkManager.start();
+
+  // Start AppStateEventProcessor
+  AppStateEventProcessor.start();
+
+  // Apply vault initialization
+  yield call(applyVaultInitialization);
+  yield call(applyDemoModeInitialization);
+
+  // Unblock the ControllersGate
+  yield put(setAppServicesReady());
+
+  // Wait for the next frame to ensure that navigation stack is rendered.
+  // This is needed to prevent a race condition where the navigation container is ready BUT the navigation stacks are not yet rendered.
+  // TODO: Follow up on pre-rendering the navigation stacks.
+  yield call(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+
+  // Request authentication on app start after the auth state machine is started
+  yield call(requestAuthOnAppStart);
+}
+
+// Main generator function that initializes other sagas in parallel.
+export function* rootSaga() {
+  yield fork(startAppServices);
+  yield fork(authStateMachine);
+  yield fork(basicFunctionalityToggle);
+  yield fork(mainNavigatorReadyStateMachine);
+  yield fork(handleDeeplinkSaga);
+  yield fork(rewardsBulkLinkSaga);
+
+  // Send one-time analytics backfill for migrated social login users after
+  // persisted state has been rehydrated and app services are available.
+  yield fork(backfillSocialLoginMarketingConsentSaga);
+
+  yield fork(watchMarketingAttributionOnConsentChange);
+  yield fork(watchMarketingAttributionOnClearOnboarding);
+
+  yield fork(promptIosGoogleWarningSheetSaga);
+  ///: BEGIN:ONLY_INCLUDE_IF(snaps)
+  yield fork(handleSnapsRegistry);
+  ///: END:ONLY_INCLUDE_IF
+}

@@ -1,0 +1,660 @@
+import React from 'react';
+import { renderHook } from '@testing-library/react-hooks';
+import { Provider } from 'react-redux';
+import configureMockStore from 'redux-mock-store';
+import useSubmitBridgeTx from './useSubmitBridgeTx';
+import {
+  DummyQuoteMetadata,
+  DummyQuotesNoApproval,
+  DummyQuotesWithApproval,
+} from '../../../../tests/api-mocking/mock-responses/bridge-api-quotes';
+import { QuoteMetadata, QuoteResponse } from '@metamask/bridge-controller';
+import { backgroundState } from '../../test/initial-root-state';
+import { TransactionMeta } from '@metamask/transaction-controller';
+import { selectSourceWalletAddress } from '../../../selectors/bridge';
+import { useABTest } from '../../../hooks';
+
+type BridgeQuoteResponse = QuoteResponse & QuoteMetadata;
+interface MockABTestResult {
+  variant: unknown;
+  variantName: string;
+  isActive: boolean;
+}
+
+let mockSubmitTx: jest.Mock<
+  Promise<TransactionMeta>,
+  [string, BridgeQuoteResponse, boolean]
+>;
+let mockSubmitIntent: jest.Mock<
+  Promise<TransactionMeta>,
+  [{ quoteResponse: BridgeQuoteResponse; accountAddress: string }]
+>;
+
+jest.mock('../../../core/Engine', () => {
+  mockSubmitTx = jest.fn<
+    Promise<TransactionMeta>,
+    [string, QuoteResponse & QuoteMetadata, boolean]
+  >();
+  mockSubmitIntent = jest.fn<
+    Promise<TransactionMeta>,
+    [{ quoteResponse: BridgeQuoteResponse; accountAddress: string }]
+  >();
+  return {
+    controllerMessenger: {},
+    context: {
+      BridgeStatusController: {
+        startPollingForBridgeTxStatus: jest.fn(),
+        submitTx: mockSubmitTx,
+        submitIntent: mockSubmitIntent,
+      },
+    },
+  };
+});
+
+jest.mock('../../../selectors/networkController', () => {
+  const original = jest.requireActual('../../../selectors/networkController');
+  return {
+    ...original,
+    selectSelectedNetworkClientId: () => 'mainnet',
+    selectEvmNetworkConfigurationsByChainId: jest.fn(() => ({
+      '0x1': {
+        blockExplorerUrls: ['https://etherscan.io'],
+        chainId: '0x1',
+        defaultBlockExplorerUrlIndex: 0,
+        defaultRpcEndpointIndex: 0,
+        name: 'Ethereum Mainnet',
+        nativeCurrency: 'ETH',
+        rpcEndpoints: [
+          {
+            networkClientId: 'mainnet',
+            type: 'infura',
+            url: 'https://mainnet.infura.io/v3/infuraProjectId',
+          },
+        ],
+      },
+      '0xa4b1': {
+        blockExplorerUrls: ['https://explorer.arbitrum.io'],
+        chainId: '0xa4b1',
+        defaultBlockExplorerUrlIndex: 0,
+        defaultRpcEndpointIndex: 0,
+        name: 'Arbitrum One',
+        nativeCurrency: 'ETH',
+        rpcEndpoints: [
+          {
+            networkClientId: '3725601d-f497-43aa-9afa-97c26e9033a3',
+            type: 'custom',
+            url: 'https://arbitrum-mainnet.infura.io/v3/infuraProjectId',
+          },
+        ],
+      },
+    })),
+  };
+});
+
+jest.mock('../../../selectors/smartTransactionsController', () => ({
+  ...jest.requireActual('../../../selectors/smartTransactionsController'),
+  selectShouldUseSmartTransaction: jest.fn(() => true),
+}));
+
+jest.mock('../../../selectors/bridge', () => ({
+  ...jest.requireActual('../../../selectors/bridge'),
+  selectSourceWalletAddress: jest.fn(
+    () => '0x1234567890123456789012345678901234567890',
+  ),
+}));
+
+jest.mock('../../../hooks', () => ({
+  useABTest: jest.fn(),
+}));
+
+const mockStore = configureMockStore();
+const inactiveABTestResult: MockABTestResult = {
+  variant: undefined,
+  variantName: 'control',
+  isActive: false,
+};
+
+describe('useSubmitBridgeTx', () => {
+  const mockABTests = ({
+    numpad = inactiveABTestResult,
+    tokenSelector = inactiveABTestResult,
+    stickyFooter = inactiveABTestResult,
+    ambientColor = inactiveABTestResult,
+  }: {
+    numpad?: MockABTestResult;
+    tokenSelector?: MockABTestResult;
+    stickyFooter?: MockABTestResult;
+    ambientColor?: MockABTestResult;
+  } = {}) => {
+    jest
+      .mocked(useABTest)
+      .mockReset()
+      .mockReturnValue(inactiveABTestResult)
+      .mockReturnValueOnce(numpad)
+      .mockReturnValueOnce(tokenSelector)
+      .mockReturnValueOnce(stickyFooter)
+      .mockReturnValueOnce(ambientColor);
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Default every test to the non-experiment path unless it opts in.
+    mockABTests();
+  });
+
+  const createWrapper = (mockState = {}) => {
+    const store = mockStore({
+      engine: {
+        backgroundState: {
+          ...backgroundState,
+          BridgeController: {
+            quoteRequest: [
+              {
+                slippage: 0.5,
+              },
+            ],
+          },
+          BridgeStatusController: {
+            startPollingForBridgeTxStatus: jest.fn(),
+          },
+          SmartTransactionsController: {
+            smartTransactionsState: {
+              liveness: true,
+            },
+          },
+        },
+      },
+      bridge: {
+        abTestContext: undefined,
+      },
+      swaps: {
+        featureFlags: {
+          smart_transactions: {
+            mobile_active: true,
+          },
+          smartTransactions: {
+            mobileActive: true,
+          },
+        },
+      },
+      ...mockState,
+    });
+    return ({ children }: { children: React.ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+  };
+
+  it('should handle bridge transaction without approval', async () => {
+    const { result } = renderHook(() => useSubmitBridgeTx(), {
+      wrapper: createWrapper(),
+    });
+
+    const mockQuoteResponse = {
+      ...DummyQuotesNoApproval.OP_0_005_ETH_TO_ARB[0],
+      ...DummyQuoteMetadata,
+    };
+
+    mockSubmitTx.mockResolvedValueOnce({
+      chainId: '0x1',
+      id: '1',
+      networkClientId: '1',
+      status: 'submitted',
+      time: Date.now(),
+      txParams: {
+        from: '0x1234567890123456789012345678901234567890',
+      },
+    } as TransactionMeta);
+
+    const txResult = await result.current.submitBridgeTx({
+      quoteResponse: mockQuoteResponse as BridgeQuoteResponse,
+    });
+
+    expect(mockSubmitTx).toHaveBeenCalledWith(
+      '0x1234567890123456789012345678901234567890',
+      {
+        ...mockQuoteResponse,
+        approval: undefined,
+      },
+      true,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      null,
+    );
+    expect(txResult).toEqual({
+      chainId: '0x1',
+      id: '1',
+      networkClientId: '1',
+      status: 'submitted',
+      time: expect.any(Number),
+      txParams: {
+        from: '0x1234567890123456789012345678901234567890',
+      },
+    });
+
+    // Re-render with an active assignment to verify submitTx forwards activeAbTests.
+    mockABTests({
+      tokenSelector: {
+        variant: {},
+        variantName: 'treatment',
+        isActive: true,
+      },
+    });
+    mockSubmitTx.mockResolvedValueOnce({
+      chainId: '0x1',
+      id: '2',
+      networkClientId: '1',
+      status: 'submitted',
+      time: Date.now(),
+      txParams: {
+        from: '0x1234567890123456789012345678901234567890',
+      },
+    } as TransactionMeta);
+
+    const { result: activeResult } = renderHook(() => useSubmitBridgeTx(), {
+      wrapper: createWrapper(),
+    });
+
+    await activeResult.current.submitBridgeTx({
+      quoteResponse: mockQuoteResponse as BridgeQuoteResponse,
+    });
+
+    expect(mockSubmitTx).toHaveBeenLastCalledWith(
+      '0x1234567890123456789012345678901234567890',
+      {
+        ...mockQuoteResponse,
+        approval: undefined,
+      },
+      true,
+      undefined,
+      undefined,
+      undefined,
+      [
+        expect.objectContaining({
+          key: expect.any(String),
+          value: 'treatment',
+          key_value_pair: expect.stringMatching(/[=]treatment$/u),
+        }),
+      ],
+      null,
+    );
+  });
+
+  it('should handle bridge transaction with approval', async () => {
+    const { result } = renderHook(() => useSubmitBridgeTx(), {
+      wrapper: createWrapper(),
+    });
+
+    const mockQuoteResponse = {
+      ...DummyQuotesWithApproval.ETH_11_USDC_TO_ARB[0],
+      ...DummyQuoteMetadata,
+    };
+
+    mockSubmitTx.mockResolvedValueOnce({
+      chainId: '0x1',
+      id: '1',
+      networkClientId: '1',
+      status: 'submitted',
+      time: Date.now(),
+      txParams: {
+        from: '0x1234567890123456789012345678901234567890',
+      },
+    } as TransactionMeta);
+
+    const txResult = await result.current.submitBridgeTx({
+      quoteResponse: mockQuoteResponse as BridgeQuoteResponse,
+    });
+
+    expect(mockSubmitTx).toHaveBeenCalledWith(
+      '0x1234567890123456789012345678901234567890',
+      {
+        ...mockQuoteResponse,
+        approval: mockQuoteResponse.approval ?? undefined,
+      },
+      true,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      null,
+    );
+    expect(txResult).toEqual({
+      chainId: '0x1',
+      id: '1',
+      networkClientId: '1',
+      status: 'submitted',
+      time: expect.any(Number),
+      txParams: {
+        from: '0x1234567890123456789012345678901234567890',
+      },
+    });
+  });
+
+  it('should propagate errors from approval transaction', async () => {
+    const { result } = renderHook(() => useSubmitBridgeTx(), {
+      wrapper: createWrapper(),
+    });
+
+    const mockQuoteResponse = {
+      ...DummyQuotesWithApproval.ETH_11_USDC_TO_ARB[0],
+      ...DummyQuoteMetadata,
+    };
+
+    const error = new Error('Approval failed');
+    mockSubmitTx.mockRejectedValueOnce(error);
+
+    await expect(
+      result.current.submitBridgeTx({
+        quoteResponse: mockQuoteResponse as BridgeQuoteResponse,
+      }),
+    ).rejects.toThrow('Approval failed');
+  });
+
+  it('should propagate errors from bridge transaction', async () => {
+    const { result } = renderHook(() => useSubmitBridgeTx(), {
+      wrapper: createWrapper(),
+    });
+
+    const mockQuoteResponse = {
+      ...DummyQuotesWithApproval.ETH_11_USDC_TO_ARB[0],
+      ...DummyQuoteMetadata,
+    };
+
+    const error = new Error('Bridge transaction failed');
+    mockSubmitTx.mockRejectedValueOnce(error);
+
+    await expect(
+      result.current.submitBridgeTx({
+        quoteResponse: mockQuoteResponse as BridgeQuoteResponse,
+      }),
+    ).rejects.toThrow('Bridge transaction failed');
+  });
+
+  it('should handle errors from serializeQuoteMetadata', async () => {
+    const { result } = renderHook(() => useSubmitBridgeTx(), {
+      wrapper: createWrapper(),
+    });
+
+    // Create an invalid quote response that will cause serialization to fail
+    const invalidQuoteResponse = {
+      ...DummyQuotesWithApproval.ETH_11_USDC_TO_ARB[0],
+      ...DummyQuoteMetadata,
+      sentAmount: {
+        amount: 'NaN', // This will cause serialization to fail
+        valueInCurrency: '0',
+        usd: '0',
+      },
+    };
+
+    mockSubmitTx.mockRejectedValueOnce(new Error('Serialization failed'));
+
+    await expect(
+      result.current.submitBridgeTx({
+        quoteResponse: invalidQuoteResponse as BridgeQuoteResponse,
+      }),
+    ).rejects.toThrow('Serialization failed');
+  });
+
+  it('should throw error when wallet address is not set', async () => {
+    // Make the mocked selector return undefined for this test
+    jest.mocked(selectSourceWalletAddress).mockReturnValueOnce(undefined);
+
+    const { result } = renderHook(() => useSubmitBridgeTx(), {
+      wrapper: createWrapper(),
+    });
+
+    const mockQuoteResponse = {
+      ...DummyQuotesNoApproval.OP_0_005_ETH_TO_ARB[0],
+      ...DummyQuoteMetadata,
+    };
+
+    await expect(
+      result.current.submitBridgeTx({
+        quoteResponse: mockQuoteResponse as BridgeQuoteResponse,
+      }),
+    ).rejects.toThrow('Wallet address is not set');
+  });
+
+  it('calls submitIntent for quoteResponse with intent', async () => {
+    const { result } = renderHook(() => useSubmitBridgeTx(), {
+      wrapper: createWrapper(),
+    });
+
+    const mockIntentResult = {
+      chainId: '0x1',
+      id: 'intent-1',
+      networkClientId: '1',
+      status: 'submitted',
+      time: Date.now(),
+      txParams: {
+        from: '0x1234567890123456789012345678901234567890',
+      },
+    } as TransactionMeta;
+
+    mockSubmitIntent.mockResolvedValueOnce(mockIntentResult);
+
+    const baseQuote = DummyQuotesNoApproval.OP_0_005_ETH_TO_ARB[0];
+    const mockQuoteResponse = {
+      ...baseQuote,
+      ...DummyQuoteMetadata,
+      quote: {
+        ...baseQuote.quote,
+        intent: {
+          protocol: 'cowswap',
+          order: {
+            sellToken: '0x0000000000000000000000000000000000000000',
+            buyToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+            sellAmount: '1000000000000000000',
+            buyAmount: '2000000000',
+            validTo: '1234567890',
+            appData: '0x',
+            appDataHash:
+              '0x0000000000000000000000000000000000000000000000000000000000000000',
+            receiver: '0x1234567890123456789012345678901234567890',
+            feeAmount: '0',
+            kind: 'sell',
+            partiallyFillable: false,
+            sellTokenBalance: 'erc20',
+            buyTokenBalance: 'erc20',
+          },
+          settlementContract: '0x9008D19f58AAbd9eD0D60971565AA8510560ab41',
+          typedData: {
+            types: {
+              EIP712Domain: [
+                { name: 'name', type: 'string' },
+                { name: 'version', type: 'string' },
+                { name: 'chainId', type: 'uint256' },
+                { name: 'verifyingContract', type: 'address' },
+              ],
+              Order: [
+                { name: 'sellToken', type: 'address' },
+                { name: 'buyToken', type: 'address' },
+                { name: 'receiver', type: 'address' },
+                { name: 'sellAmount', type: 'uint256' },
+                { name: 'buyAmount', type: 'uint256' },
+                { name: 'validTo', type: 'uint32' },
+                { name: 'appData', type: 'bytes32' },
+                { name: 'feeAmount', type: 'uint256' },
+                { name: 'kind', type: 'string' },
+                { name: 'partiallyFillable', type: 'bool' },
+                { name: 'sellTokenBalance', type: 'string' },
+                { name: 'buyTokenBalance', type: 'string' },
+              ],
+            },
+            primaryType: 'Order',
+            domain: {
+              name: 'Gnosis Protocol',
+              version: 'v2',
+              chainId: 1,
+              verifyingContract: '0x9008D19f58AAbd9eD0D60971565AA8510560ab41',
+            },
+            message: {
+              sellToken: '0x0000000000000000000000000000000000000000',
+              buyToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+              receiver: '0x1234567890123456789012345678901234567890',
+              sellAmount: '1000000000000000000',
+              buyAmount: '2000000000',
+              validTo: 1234567890,
+              appData:
+                '0x0000000000000000000000000000000000000000000000000000000000000000',
+              feeAmount: '0',
+              kind: 'sell',
+              partiallyFillable: false,
+              sellTokenBalance: 'erc20',
+              buyTokenBalance: 'erc20',
+            },
+          },
+        },
+      },
+    } as unknown as BridgeQuoteResponse;
+
+    const txResult = await result.current.submitBridgeTx({
+      quoteResponse: mockQuoteResponse,
+    });
+
+    expect(mockSubmitIntent).toHaveBeenCalledWith({
+      quoteResponse: mockQuoteResponse,
+      accountAddress: '0x1234567890123456789012345678901234567890',
+      location: undefined,
+      abTests: undefined,
+      activeAbTests: undefined,
+      tokenSecurityTypeDestination: null,
+    });
+
+    // Re-render with an active assignment to verify submitIntent forwards activeAbTests.
+    mockABTests({
+      tokenSelector: {
+        variant: {},
+        variantName: 'treatment',
+        isActive: true,
+      },
+    });
+    mockSubmitIntent.mockResolvedValueOnce(mockIntentResult);
+
+    const { result: activeResult } = renderHook(() => useSubmitBridgeTx(), {
+      wrapper: createWrapper(),
+    });
+
+    await activeResult.current.submitBridgeTx({
+      quoteResponse: mockQuoteResponse,
+    });
+
+    expect(mockSubmitIntent).toHaveBeenLastCalledWith({
+      quoteResponse: mockQuoteResponse,
+      accountAddress: '0x1234567890123456789012345678901234567890',
+      location: undefined,
+      abTests: undefined,
+      activeAbTests: [
+        expect.objectContaining({
+          key: expect.any(String),
+          value: 'treatment',
+          key_value_pair: expect.stringMatching(/[=]treatment$/u),
+        }),
+      ],
+      tokenSecurityTypeDestination: null,
+    });
+    expect(mockSubmitTx).not.toHaveBeenCalled();
+    expect(txResult).toEqual(mockIntentResult);
+  });
+
+  it('forwards ambient color AB test assignment via submitTx when active', async () => {
+    mockABTests({
+      ambientColor: {
+        variant: {},
+        variantName: 'treatment',
+        isActive: true,
+      },
+    });
+    mockSubmitTx.mockResolvedValueOnce({
+      chainId: '0x1',
+      id: '1',
+      networkClientId: '1',
+      status: 'submitted',
+      time: Date.now(),
+      txParams: {
+        from: '0x1234567890123456789012345678901234567890',
+      },
+    } as TransactionMeta);
+
+    const { result } = renderHook(() => useSubmitBridgeTx(), {
+      wrapper: createWrapper(),
+    });
+
+    const mockQuoteResponse = {
+      ...DummyQuotesNoApproval.OP_0_005_ETH_TO_ARB[0],
+      ...DummyQuoteMetadata,
+    };
+
+    await result.current.submitBridgeTx({
+      quoteResponse: mockQuoteResponse as BridgeQuoteResponse,
+    });
+
+    expect(mockSubmitTx).toHaveBeenLastCalledWith(
+      '0x1234567890123456789012345678901234567890',
+      {
+        ...mockQuoteResponse,
+        approval: undefined,
+      },
+      true,
+      undefined,
+      undefined,
+      undefined,
+      [
+        expect.objectContaining({
+          key: expect.any(String),
+          value: 'treatment',
+          key_value_pair: expect.stringMatching(/[=]treatment$/u),
+        }),
+      ],
+      null,
+    );
+  });
+
+  it('forwards tokenSecurityTypeDestination from destination token securityData', async () => {
+    const { result } = renderHook(() => useSubmitBridgeTx(), {
+      wrapper: createWrapper({
+        bridge: {
+          abTestContext: undefined,
+          destToken: {
+            symbol: 'SCAM',
+            securityData: {
+              type: 'Malicious',
+            },
+          },
+        },
+      }),
+    });
+
+    const mockQuoteResponse = {
+      ...DummyQuotesNoApproval.OP_0_005_ETH_TO_ARB[0],
+      ...DummyQuoteMetadata,
+    };
+
+    mockSubmitTx.mockResolvedValueOnce({
+      chainId: '0x1',
+      id: '1',
+      networkClientId: '1',
+      status: 'submitted',
+      time: Date.now(),
+      txParams: {
+        from: '0x1234567890123456789012345678901234567890',
+      },
+    } as TransactionMeta);
+
+    await result.current.submitBridgeTx({
+      quoteResponse: mockQuoteResponse as BridgeQuoteResponse,
+    });
+
+    expect(mockSubmitTx).toHaveBeenCalledWith(
+      '0x1234567890123456789012345678901234567890',
+      expect.any(Object),
+      expect.any(Boolean),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      'Malicious',
+    );
+  });
+});

@@ -1,0 +1,103 @@
+import { TransactionPayControllerMessenger } from '@metamask/transaction-pay-controller';
+import { RootMessenger } from '../../types';
+import {
+  Messenger,
+  MessengerActions,
+  MessengerEvents,
+} from '@metamask/messenger';
+import { DelegationControllerSignDelegationAction } from '@metamask/delegation-controller';
+import {
+  KeyringControllerSignEip7702AuthorizationAction,
+  KeyringControllerSignPersonalMessageAction,
+  KeyringControllerSignTypedMessageAction,
+} from '@metamask/keyring-controller';
+import { TransactionControllerIsAtomicBatchSupportedAction } from '@metamask/transaction-controller';
+
+export function getTransactionPayControllerMessenger(
+  rootMessenger: RootMessenger,
+): TransactionPayControllerMessenger {
+  const messenger = new Messenger<
+    'TransactionPayController',
+    MessengerActions<TransactionPayControllerMessenger>,
+    MessengerEvents<TransactionPayControllerMessenger>,
+    RootMessenger
+  >({
+    namespace: 'TransactionPayController',
+    parent: rootMessenger,
+  });
+
+  rootMessenger.delegate({
+    actions: [
+      'AccountTrackerController:getState',
+      'AssetsController:getStateForTransactionPay',
+      'BridgeController:fetchQuotes',
+      'BridgeStatusController:submitTx',
+      'CurrencyRateController:getState',
+      'GasFeeController:getState',
+      'NetworkController:findNetworkClientIdByChainId',
+      'NetworkController:getNetworkClientById',
+      'RampsController:getOrder',
+      'RampsController:getQuotes',
+      'RampsController:getState',
+      'RemoteFeatureFlagController:getState',
+      'TokenBalancesController:getState',
+      'TokenRatesController:getState',
+      'TokensController:getState',
+      'TransactionController:estimateGas',
+      'TransactionController:estimateGasBatch',
+      'TransactionController:getGasFeeTokens',
+      'TransactionController:getState',
+      'TransactionController:updateTransaction',
+      'KeyringController:getState',
+      'KeyringController:signTypedMessage',
+    ],
+    events: [
+      'BridgeStatusController:stateChange',
+      'TransactionController:stateChange',
+      'TransactionController:unapprovedTransactionAdded',
+    ],
+    messenger,
+  });
+
+  return messenger;
+}
+
+type InitMessengerActions =
+  | DelegationControllerSignDelegationAction
+  | KeyringControllerSignEip7702AuthorizationAction
+  | KeyringControllerSignPersonalMessageAction
+  | KeyringControllerSignTypedMessageAction
+  | TransactionControllerIsAtomicBatchSupportedAction;
+type InitMessengerEvents = never;
+
+export type TransactionPayControllerInitMessenger = ReturnType<
+  typeof getTransactionPayControllerInitMessenger
+>;
+
+export function getTransactionPayControllerInitMessenger(
+  rootMessenger: RootMessenger,
+) {
+  const messenger = new Messenger<
+    'TransactionPayControllerInit',
+    InitMessengerActions,
+    InitMessengerEvents,
+    RootMessenger
+  >({
+    namespace: 'TransactionPayControllerInit',
+    parent: rootMessenger,
+  });
+
+  rootMessenger.delegate({
+    actions: [
+      'DelegationController:signDelegation',
+      'KeyringController:signEip7702Authorization',
+      'KeyringController:signPersonalMessage',
+      'KeyringController:signTypedMessage',
+      'TransactionController:isAtomicBatchSupported',
+    ],
+    events: [],
+    messenger,
+  });
+
+  return messenger;
+}

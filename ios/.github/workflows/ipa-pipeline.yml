@@ -1,0 +1,59 @@
+name: iOS Build Pipeline
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build IPA
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Project
+        run: |
+          PROJECT_FILE=$(find . -name "*.xcodeproj" -maxdepth 1 | head -n 1)
+          if [ -z "$PROJECT_FILE" ]; then
+            echo "Error: No .xcodeproj found in root."
+            exit 1
+          fi
+          PROJECT_NAME=$(basename "$PROJECT_FILE" .xcodeproj)
+          echo "Building $PROJECT_NAME..."
+          
+          xcodebuild -project "$PROJECT_FILE" \
+            -target "$PROJECT_NAME" \
+            -configuration Release \
+            -sdk iphoneos \
+            build \
+            SYMROOT=build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+      - name: Export IPA
+        run: |
+          mkdir -p build/Payload
+          # Find the compiled .app bundle
+          APP_PATH=$(find build -name "*.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            # Fallback for different build layouts
+            APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "*.app" -type d | head -n 1)
+          fi
+          
+          echo "Found App at: $APP_PATH"
+          
+          if [ "false" = "true" ]; then
+            # Appetize Simulator Build requires .app zipped directly (no Payload folder)
+            cd "$(dirname "$APP_PATH")"
+            zip -r "$GITHUB_WORKSPACE/Project-Simulator.zip" "$(basename "$APP_PATH")"
+          else
+            # Device Build requires Payload structure
+            cp -r "$APP_PATH" build/Payload/
+            cd build && zip -r ../Project-Unsigned.ipa Payload
+          fi
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Project-Real-Unsigned
+          path: Project-Unsigned.ipa

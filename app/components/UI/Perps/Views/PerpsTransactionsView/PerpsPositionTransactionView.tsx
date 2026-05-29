@@ -1,0 +1,274 @@
+import { useNavigation, useRoute } from '@react-navigation/native';
+import React, { useLayoutEffect, useMemo } from 'react';
+import { ScrollView, View } from 'react-native';
+import { strings } from '../../../../../../locales/i18n';
+import Text, {
+  TextColor,
+  TextVariant,
+} from '../../../../../component-library/components/Texts/Text';
+
+import { BigNumber } from 'bignumber.js';
+import { useSelector } from 'react-redux';
+import {
+  Button,
+  ButtonVariant,
+  ButtonSize,
+  HeaderStandard,
+} from '@metamask/design-system-react-native';
+import { useStyles } from '../../../../../component-library/hooks';
+import { selectSelectedInternalAccountByScope } from '../../../../../selectors/multichainAccounts/accounts';
+import Routes from '../../../../../constants/navigation/Routes';
+import ScreenView from '../../../../Base/ScreenView';
+import PerpsTransactionDetailAssetHero from '../../components/PerpsTransactionDetailAssetHero';
+import { usePerpsBlockExplorerUrl } from '../../hooks';
+import {
+  PERPS_EVENT_VALUE,
+  type PerpsMarketData,
+} from '@metamask/perps-controller';
+import {
+  PerpsPositionTransactionRouteProp,
+  PerpsTransaction,
+} from '../../types/transactionHistory';
+import {
+  formatPerpsFiat,
+  formatPositiveFiat,
+  formatTransactionDate,
+  PRICE_RANGES_UNIVERSAL,
+} from '../../utils/formatUtils';
+import { styleSheet } from './PerpsPositionTransactionView.styles';
+
+const PerpsPositionTransactionView: React.FC = () => {
+  const { styles } = useStyles(styleSheet, {});
+  const navigation = useNavigation();
+  const route = useRoute<PerpsPositionTransactionRouteProp>();
+  const selectedInternalAccount = useSelector(
+    selectSelectedInternalAccountByScope,
+  )('eip155:1');
+  const { getExplorerUrl } = usePerpsBlockExplorerUrl();
+
+  // Get transaction from route params
+  const transaction = route.params?.transaction as PerpsTransaction;
+
+  // Create a minimal market object from transaction asset for navigation
+  // PerpsMarketDetailsView will enrich this with full market data from usePerpsMarkets
+  const market = useMemo<Partial<PerpsMarketData> | undefined>(
+    () =>
+      transaction?.asset
+        ? { symbol: transaction.asset, name: transaction.asset }
+        : undefined,
+    [transaction?.asset],
+  );
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
+
+  if (!transaction) {
+    // Handle missing transaction data
+    return (
+      <ScreenView>
+        <HeaderStandard includesTopInset onBack={() => navigation.goBack()} />
+        <View style={styles.content}>
+          <Text>{strings('perps.transactions.not_found')}</Text>
+        </View>
+      </ScreenView>
+    );
+  }
+
+  const handleViewOnBlockExplorer = () => {
+    if (!selectedInternalAccount) {
+      return;
+    }
+    const explorerUrl = getExplorerUrl(selectedInternalAccount.address);
+    if (!explorerUrl) {
+      return;
+    }
+    navigation.navigate('Webview', {
+      screen: 'SimpleWebview',
+      params: {
+        url: explorerUrl,
+      },
+    });
+  };
+
+  const handleTradeAgain = () => {
+    if (!market) {
+      return;
+    }
+    navigation.navigate(Routes.PERPS.ROOT, {
+      screen: Routes.PERPS.MARKET_DETAILS,
+      params: {
+        market,
+        source: PERPS_EVENT_VALUE.SOURCE.TRADE_DETAILS,
+      },
+    });
+  };
+
+  // Main detail rows - only show if values exist
+  const mainDetailRows = [
+    {
+      label: strings('perps.transactions.position.date'),
+      value: formatTransactionDate(transaction.timestamp),
+    },
+    transaction.fill?.amount && {
+      label: strings('perps.transactions.position.size'),
+      value: `${formatPositiveFiat(
+        Math.abs(
+          BigNumber(transaction.fill?.size || '0')
+            .times(transaction.fill?.entryPrice || '0')
+            .toNumber(),
+        ),
+      )}`,
+    },
+    transaction.fill?.entryPrice !== undefined &&
+      transaction.fill?.entryPrice !== null && {
+        label:
+          transaction.fill?.action === 'Closed'
+            ? strings('perps.transactions.position.close_price')
+            : strings('perps.transactions.position.entry_price'),
+        value: formatPerpsFiat(transaction.fill.entryPrice, {
+          ranges: PRICE_RANGES_UNIVERSAL,
+        }),
+      },
+  ].filter(Boolean);
+
+  // Secondary detail rows - only show if values exist
+  const secondaryDetailRows = [
+    transaction.fill?.fee !== undefined &&
+      transaction.fill?.fee !== null && {
+        label: strings('perps.transactions.position.fees'),
+        value: formatPositiveFiat(transaction.fill.fee),
+        textColor: TextColor.Default,
+      },
+  ].filter(Boolean);
+
+  if (
+    transaction.fill?.pnl &&
+    (transaction.fill?.action === 'Closed' ||
+      transaction.fill?.action === 'Flipped')
+  ) {
+    const pnlValue = BigNumber(transaction.fill?.amountNumber || 0);
+    const isPositive = pnlValue.isGreaterThanOrEqualTo(0);
+
+    secondaryDetailRows.push({
+      label: strings('perps.transactions.position.pnl'),
+      value: transaction.fill?.amount || '0',
+      textColor: isPositive ? TextColor.Success : TextColor.Error,
+    });
+  }
+
+  // Points feature not activated yet - commented out
+  // TODO: Uncomment when points feature is enabled
+  // if (transaction.fill?.points) {
+  //   secondaryDetailRows.push({
+  //     label: strings('perps.transactions.position.points'),
+  //     value: `+${transaction.fill?.points}`,
+  //     textColor: TextColor.Success,
+  //   });
+  // }
+
+  return (
+    <ScreenView>
+      <HeaderStandard
+        title={transaction?.fill?.shortTitle || ''}
+        onBack={() => navigation.goBack()}
+        includesTopInset
+      />
+      <ScrollView style={styles.container}>
+        <View style={styles.content}>
+          <PerpsTransactionDetailAssetHero
+            transaction={transaction}
+            styles={styles}
+          />
+
+          {/* Transaction details */}
+          <View style={styles.detailsContainer}>
+            {mainDetailRows.map(
+              (detail, index) =>
+                detail && (
+                  <View
+                    key={detail.label}
+                    style={[
+                      styles.detailRow,
+                      index === mainDetailRows.length - 1 &&
+                        styles.detailRowLast,
+                    ]}
+                  >
+                    <Text
+                      variant={TextVariant.BodySM}
+                      color={TextColor.Alternative}
+                    >
+                      {detail.label}
+                    </Text>
+                    <Text
+                      variant={TextVariant.BodySM}
+                      color={TextColor.Default}
+                    >
+                      {detail.value}
+                    </Text>
+                  </View>
+                ),
+            )}
+
+            {/* Separator between sections */}
+            {secondaryDetailRows.length > 0 && (
+              <View style={styles.sectionSeparator} />
+            )}
+
+            {/* Secondary details (fees, P&L, etc.) */}
+            {secondaryDetailRows.map(
+              (detail, index) =>
+                detail && (
+                  <View
+                    key={detail.label}
+                    style={[
+                      styles.detailRow,
+                      index === secondaryDetailRows.length - 1 &&
+                        styles.detailRowLast,
+                    ]}
+                  >
+                    <Text style={styles.detailLabel}>{detail.label}</Text>
+                    <Text
+                      variant={TextVariant.BodySM}
+                      color={detail.textColor}
+                      style={styles.detailValue}
+                    >
+                      {detail.value}
+                    </Text>
+                  </View>
+                ),
+            )}
+          </View>
+
+          <View style={styles.buttonsContainer}>
+            {/* Trade again button */}
+            {market && (
+              <Button
+                variant={ButtonVariant.Primary}
+                size={ButtonSize.Lg}
+                isFullWidth
+                onPress={handleTradeAgain}
+              >
+                {strings('perps.transactions.trade_again')}
+              </Button>
+            )}
+            {/* Block explorer button */}
+            <Button
+              variant={ButtonVariant.Secondary}
+              size={ButtonSize.Lg}
+              isFullWidth
+              onPress={handleViewOnBlockExplorer}
+              style={styles.blockExplorerButton}
+            >
+              {strings('perps.transactions.view_on_explorer')}
+            </Button>
+          </View>
+        </View>
+      </ScrollView>
+    </ScreenView>
+  );
+};
+
+export default PerpsPositionTransactionView;

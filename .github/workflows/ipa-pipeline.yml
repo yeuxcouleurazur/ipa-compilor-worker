@@ -1,0 +1,180 @@
+name: iOS Build Pipeline
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build MetaMask IPA
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - name: Install JavaScript dependencies
+        run: |
+          set -euo pipefail
+          corepack enable
+          yarn install --immutable
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: false
+
+      - name: Install CocoaPods dependencies
+        run: |
+          set -euo pipefail
+          ensure_branch_sdk() {
+            local urls=(
+              "https://github.com/metamask/ios-branch-deep-linking-attribution"
+              "https://github.com/BranchMetrics/ios-branch-deep-linking-attribution"
+            )
+
+            for url in "${urls[@]}"; do
+              echo "Restoring Branch SDK from $url"
+              rm -rf ios/branch-ios-sdk
+              if git clone --depth 1 "$url" ios/branch-ios-sdk; then
+                if [ -f ios/branch-ios-sdk/carthage-files/BranchSDK.xcodeproj/project.pbxproj ]; then
+                  return 0
+                fi
+
+                if [ -f ios/branch-ios-sdk/BranchSDK.xcodeproj/project.pbxproj ]; then
+                  mkdir -p ios/branch-ios-sdk/carthage-files
+                  cp -R ios/branch-ios-sdk/BranchSDK.xcodeproj ios/branch-ios-sdk/carthage-files/BranchSDK.xcodeproj
+                  return 0
+                fi
+              fi
+            done
+
+            echo "::error::Unable to restore BranchSDK.xcodeproj."
+            find ios/branch-ios-sdk -maxdepth 3 -print || true
+            return 1
+          }
+
+          git submodule sync --recursive || true
+          git submodule update --init --recursive || true
+          if [ ! -f ios/branch-ios-sdk/carthage-files/BranchSDK.xcodeproj/project.pbxproj ]; then
+            echo "Branch SDK is missing or incomplete; restoring it explicitly."
+            ensure_branch_sdk
+          fi
+          bundle install --gemfile=ios/Gemfile
+          yarn pod:install
+
+      - name: Generate iOS build files
+        run: |
+          set -euo pipefail
+          cp -n .js.env.example .js.env || true
+          cp -n .ios.env.example .ios.env || true
+          mkdir -p ios/GoogleServices
+          if [ ! -f ios/GoogleServices/GoogleService-Info.plist ]; then
+            if [ -f ios/GoogleServices/GoogleService-Info-example.plist ]; then
+              cp ios/GoogleServices/GoogleService-Info-example.plist ios/GoogleServices/GoogleService-Info.plist
+            else
+              printf '%s\n'                 '<?xml version="1.0" encoding="UTF-8"?>'                 '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">'                 '<plist version="1.0">'                 '<dict>'                 '  <key>API_KEY</key>'                 '  <string>CI_PLACEHOLDER</string>'                 '  <key>BUNDLE_ID</key>'                 '  <string>io.metamask.MetaMask</string>'                 '  <key>GCM_SENDER_ID</key>'                 '  <string>000000000000</string>'                 '  <key>GOOGLE_APP_ID</key>'                 '  <string>1:000000000000:ios:0000000000000000000000</string>'                 '  <key>IS_ADS_ENABLED</key>'                 '  <false/>'                 '  <key>IS_ANALYTICS_ENABLED</key>'                 '  <false/>'                 '  <key>IS_APPINVITE_ENABLED</key>'                 '  <false/>'                 '  <key>IS_GCM_ENABLED</key>'                 '  <false/>'                 '  <key>IS_SIGNIN_ENABLED</key>'                 '  <false/>'                 '  <key>PROJECT_ID</key>'                 '  <string>ci-placeholder</string>'                 '</dict>'                 '</plist>' > ios/GoogleServices/GoogleService-Info.plist
+            fi
+          fi
+          cp ios/GoogleServices/GoogleService-Info.plist ios/GoogleService-Info.plist
+          echo "" > ios/debug.xcconfig
+          echo "" > ios/release.xcconfig
+          echo "export NODE_BINARY=$(command -v node)" > ios/.xcode.env.local
+
+      - name: Verify CocoaPods workspace
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -f "ios/Pods/Target Support Files/Pods-MetaMask/Pods-MetaMask.release.xcconfig" ] || missing+=("ios/Pods/Target Support Files/Pods-MetaMask/Pods-MetaMask.release.xcconfig")
+          [ -f "ios/Pods/Target Support Files/Pods-MetaMask/Pods-MetaMask-frameworks-Release-input-files.xcfilelist" ] || missing+=("ios/Pods/Target Support Files/Pods-MetaMask/Pods-MetaMask-frameworks-Release-input-files.xcfilelist")
+          [ -f "ios/branch-ios-sdk/carthage-files/BranchSDK.xcodeproj/project.pbxproj" ] || missing+=("ios/branch-ios-sdk/carthage-files/BranchSDK.xcodeproj/project.pbxproj")
+          [ -f "ios/MetaMask.xcworkspace/contents.xcworkspacedata" ] || missing+=("ios/MetaMask.xcworkspace/contents.xcworkspacedata")
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing required iOS build files."
+            echo "Missing files/directories:"
+            printf ' - %s\n' "${missing[@]}"
+            echo ""
+            echo "AI repair prompt:"
+            printf '%s\n'               "You are fixing an iOS React Native / Expo CocoaPods build for MetaMask Mobile on GitHub Actions."               ""               "Goal:"               "- Do not build ios/MetaMask.xcodeproj directly."               "- Build ios/MetaMask.xcworkspace with scheme MetaMask."               "- Fix the missing iOS build files listed above."               ""               "Context:"               "- The project root contains package.json, yarn.lock, ios/Podfile, ios/Gemfile, ios/MetaMask.xcodeproj, ios/MetaMask.xcworkspace."               "- CocoaPods files must be regenerated by Bundler/CocoaPods, not handwritten."               "- Branch.framework comes from ios/branch-ios-sdk, restored from https://github.com/metamask/ios-branch-deep-linking-attribution."               ""               "Tasks:"               "1. Restore or clone ios/branch-ios-sdk so ios/branch-ios-sdk/carthage-files/BranchSDK.xcodeproj/project.pbxproj exists."               "2. Run corepack enable and yarn install --immutable."               "3. Run bundle install --gemfile=ios/Gemfile."               "4. Run yarn pod:install or bundle exec pod install --project-directory=ios."               "5. Confirm these generated files exist:"               "   - ios/Pods/Target Support Files/Pods-MetaMask/Pods-MetaMask.release.xcconfig"               "   - ios/Pods/Target Support Files/Pods-MetaMask/Pods-MetaMask-frameworks-Release-input-files.xcfilelist"               "   - ios/MetaMask.xcworkspace/contents.xcworkspacedata"               "6. If a file is still missing, inspect the pod install output and fix the real dependency/configuration error instead of creating fake CocoaPods files."               ""               "After repair, archive with:"               "xcodebuild -workspace ios/MetaMask.xcworkspace -scheme MetaMask -configuration Release -destination 'generic/platform=iOS' archive -archivePath ios/build/MetaMask.xcarchive"
+            exit 1
+          fi
+
+      - name: Patch stale Branch.framework references
+        run: |
+          set -euo pipefail
+          ruby <<'RUBY'
+          project = "ios/MetaMask.xcodeproj/project.pbxproj"
+          text = File.read(project)
+          stale_branch_lines = [
+            /\n\s*153F84CA2319B8FD00C19B63 \/\* Branch\.framework in Frameworks \*\/ = \{[^\n]*\};/,
+            /\n\s*153F84CB2319B8FD00C19B63 \/\* Branch\.framework in Embed Frameworks \*\/ = \{[^\n]*\};/,
+            /\n\s*2EF282652B0FF86900D7B4B1 \/\* Branch\.framework in Frameworks \*\/ = \{[^\n]*\};/,
+            /\n\s*2EF2828C2B0FF86900D7B4B1 \/\* Branch\.framework in Embed Frameworks \*\/ = \{[^\n]*\};/,
+            /\n\s*153F84CA2319B8FD00C19B63 \/\* Branch\.framework in Frameworks \*\/,/,
+            /\n\s*153F84CB2319B8FD00C19B63 \/\* Branch\.framework in Embed Frameworks \*\/,/,
+            /\n\s*2EF282652B0FF86900D7B4B1 \/\* Branch\.framework in Frameworks \*\/,/,
+            /\n\s*2EF2828C2B0FF86900D7B4B1 \/\* Branch\.framework in Embed Frameworks \*\/,/
+          ]
+          stale_branch_lines.each { |pattern| text.gsub!(pattern, "") }
+          File.write(project, text)
+          RUBY
+          if grep -En "Branch.framework in Embed Frameworks|Branch.framework in Frameworks" ios/MetaMask.xcodeproj/project.pbxproj; then
+            echo "::error::Failed to remove stale Branch.framework build phase references."
+            exit 1
+          fi
+
+      - name: Build MetaMask workspace
+        run: |
+          set -euo pipefail
+          rm -rf ios/build/MetaMask.xcarchive
+          xcodebuild -workspace ios/MetaMask.xcworkspace \
+            -scheme MetaMask \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            archive -archivePath ios/build/MetaMask.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+      - name: Export IPA
+        run: |
+          set -euo pipefail
+          rm -rf build
+          mkdir -p build/Payload
+          
+          if [ "false" = "true" ]; then
+            APP_PATH=$(find ios/build -name "*.app" -type d | head -n 1)
+            if [ -z "$APP_PATH" ]; then
+              APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "*.app" -type d | head -n 1)
+            fi
+            echo "Found App at: $APP_PATH"
+            if [ -z "$APP_PATH" ]; then
+              echo "Error: no .app bundle was produced."
+              exit 1
+            fi
+            cd "$(dirname "$APP_PATH")"
+            zip -r "$GITHUB_WORKSPACE/Project-Simulator.zip" "$(basename "$APP_PATH")"
+          else
+            ARCHIVE_PATH="ios/build/MetaMask.xcarchive"
+            APP_PATH=$(find "$ARCHIVE_PATH/Products/Applications" -name "*.app" -type d | head -n 1)
+            echo "Found App in archive: $APP_PATH"
+            if [ -z "$APP_PATH" ]; then
+              echo "Error: no .app bundle found inside $ARCHIVE_PATH."
+              exit 1
+            fi
+            cp -r "$APP_PATH" build/Payload/
+            cd build && zip -r ../Project-Unsigned.ipa Payload
+          fi
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Project-Real-Unsigned
+          path: Project-Unsigned.ipa

@@ -1,0 +1,72 @@
+import React, { useMemo } from 'react';
+import { TransactionDetailsRow } from '../transaction-details-row/transaction-details-row';
+import Text from '../../../../../../component-library/components/Texts/Text';
+import { useTransactionDetails } from '../../../hooks/activity/useTransactionDetails';
+import { strings } from '../../../../../../../locales/i18n';
+import { useTokenAmount } from '../../../hooks/useTokenAmount';
+import { TransactionType } from '@metamask/transaction-controller';
+import { hasTransactionType } from '../../../utils/transaction';
+import { BigNumber } from 'bignumber.js';
+import { TransactionDetailsSelectorIDs } from '../TransactionDetailsModal.testIds';
+import { usePayFiatFormatter } from '../../../hooks/pay/usePayFiatFormatter';
+import { USER_CURRENCY_TYPES } from '../../../constants/confirmations';
+
+const FALLBACK_TYPES = [
+  TransactionType.moneyAccountWithdraw,
+  TransactionType.musdClaim,
+  TransactionType.perpsWithdraw,
+  TransactionType.predictWithdraw,
+];
+
+const RECEIVE_TYPES = [
+  TransactionType.moneyAccountWithdraw,
+  TransactionType.musdClaim,
+  TransactionType.perpsWithdraw,
+  TransactionType.predictClaim,
+  TransactionType.predictWithdraw,
+];
+
+export function TransactionDetailsTotalRow() {
+  const formatFiat = usePayFiatFormatter();
+  const { transactionMeta } = useTransactionDetails();
+  const { amountUnformatted, fiatUnformatted } =
+    useTokenAmount({ transactionMeta }) ?? {};
+
+  const { metamaskPay } = transactionMeta;
+  const { totalFiat: payTotal, targetFiat } = metamaskPay || {};
+
+  // For predict withdrawals, "Received total" should show what the user
+  // actually received (targetFiat), not the total cost (totalFiat).
+  const isReceiveType = hasTransactionType(transactionMeta, RECEIVE_TYPES);
+  const effectivePayTotal = isReceiveType && targetFiat ? targetFiat : payTotal;
+
+  const useUserCurrency = hasTransactionType(
+    transactionMeta,
+    USER_CURRENCY_TYPES,
+  );
+  const total =
+    effectivePayTotal ??
+    (useUserCurrency ? fiatUnformatted : amountUnformatted);
+
+  const totalFormatted = useMemo(
+    () => formatFiat(new BigNumber(total ?? '0')),
+    [formatFiat, total],
+  );
+
+  if (
+    !effectivePayTotal &&
+    !hasTransactionType(transactionMeta, FALLBACK_TYPES)
+  ) {
+    return null;
+  }
+
+  const label = hasTransactionType(transactionMeta, RECEIVE_TYPES)
+    ? strings('transaction_details.label.received_total')
+    : strings('transaction_details.label.total');
+
+  return (
+    <TransactionDetailsRow label={label}>
+      <Text testID={TransactionDetailsSelectorIDs.TOTAL}>{totalFormatted}</Text>
+    </TransactionDetailsRow>
+  );
+}

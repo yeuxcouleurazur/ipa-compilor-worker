@@ -1,0 +1,234 @@
+import { KeyringController } from '@metamask/keyring-controller';
+import {
+  AccountState,
+  ConnectionStatus,
+  CryptoPriceHistoryPoint,
+  CryptoPriceUpdateCallback,
+  GameUpdateCallback,
+  GeoBlockResponse,
+  GetBalanceParams,
+  GetCryptoPriceHistoryParams,
+  GetCryptoTargetPriceParams,
+  GetMarketsParams,
+  GetMarketsResult,
+  GetPositionsParams,
+  GetPriceHistoryParams,
+  GetPriceParams,
+  GetPriceResponse,
+  GetSeriesParams,
+  OrderbookCallback,
+  OrderPreview,
+  OrderResult,
+  PlaceOrderParams,
+  PredictActivity,
+  PredictFees,
+  PredictMarket,
+  PredictPosition,
+  PredictPriceHistoryPoint,
+  PreviewOrderParams,
+  PriceUpdateCallback,
+  SearchMarketsParams,
+  UnrealizedPnL,
+} from '../types';
+import { Hex } from '@metamask/utils';
+import {
+  TransactionType,
+  type TransactionMeta,
+} from '@metamask/transaction-controller';
+import { PredictFeatureFlags } from '../types/flags';
+
+// Re-export shared types so existing provider-layer imports continue to work
+export type {
+  AccountState,
+  ConnectionStatus,
+  CryptoPriceUpdateCallback,
+  GameUpdateCallback,
+  GeoBlockResponse,
+  GetBalanceParams,
+  GetMarketsParams,
+  GetMarketsResult,
+  GetPositionsParams,
+  OrderbookCallback,
+  OrderPreview,
+  OrderResult,
+  PlaceOrderParams,
+  PredictFees,
+  PreviewOrderParams,
+  PriceUpdateCallback,
+  SearchMarketsParams,
+};
+export type { PredictFeatureFlags };
+
+export interface Signer {
+  address: string;
+  signTypedMessage: KeyringController['signTypedMessage'];
+  signPersonalMessage: KeyringController['signPersonalMessage'];
+}
+
+export interface PrepareDepositParams {
+  signer: Signer;
+}
+
+export interface GetAccountStateParams {
+  ownerAddress: string;
+  forceRefresh?: boolean;
+}
+
+export interface PrepareWithdrawParams {
+  signer: Signer;
+}
+
+export interface PrepareDepositResponse {
+  chainId: Hex;
+  transactions: {
+    params: {
+      to: Hex;
+      data: Hex;
+    };
+    type?: TransactionType;
+  }[];
+}
+
+export interface PrepareWithdrawResponse {
+  chainId: Hex;
+  transaction: {
+    params: {
+      to: Hex;
+      data: Hex;
+      gas?: Hex;
+    };
+    type?: TransactionType;
+  };
+  predictAddress: Hex;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface GetPredictWalletParams {}
+
+export interface ClaimOrderParams {
+  positions: PredictPosition[];
+  signer: Signer;
+}
+
+export interface BeforeSignClaimParams {
+  transactionMeta: TransactionMeta;
+  signer: Signer;
+  positions: PredictPosition[];
+}
+
+export interface BeforeSignClaimResult {
+  updateTransaction?: (transaction: TransactionMeta) => void;
+}
+
+export interface PublishClaimParams {
+  transactionMeta: TransactionMeta;
+  signer: Signer;
+  positions: PredictPosition[];
+}
+
+export interface PublishClaimResult {
+  transactionHash?: string;
+}
+
+export interface ClaimOrderResponse {
+  chainId: number;
+  transactions: {
+    params: {
+      to: Hex;
+      data?: Hex;
+      value?: Hex;
+    };
+    type?: TransactionType;
+  }[];
+}
+
+export interface SignWithdrawParams {
+  callData: Hex;
+  signer: Signer;
+}
+
+export interface SignWithdrawResponse {
+  callData: Hex;
+  amount: number;
+}
+
+export interface PredictProvider {
+  readonly providerId: string;
+  readonly name: string;
+  readonly chainId: number;
+
+  getMarkets(params: GetMarketsParams): Promise<GetMarketsResult>;
+  searchMarkets(
+    params: SearchMarketsParams,
+  ): Promise<{ markets: PredictMarket[]; totalResults: number }>;
+  getCarouselMarkets?(): Promise<PredictMarket[]>;
+  getMarketsByIds?(marketIds: string[]): Promise<PredictMarket[]>;
+  getMarketDetails(params: { marketId: string }): Promise<PredictMarket>;
+  getPriceHistory(
+    params: GetPriceHistoryParams,
+  ): Promise<PredictPriceHistoryPoint[]>;
+  getCryptoPriceHistory?(
+    params: GetCryptoPriceHistoryParams,
+  ): Promise<CryptoPriceHistoryPoint[]>;
+  getCryptoTargetPrice?(
+    params: GetCryptoTargetPriceParams,
+  ): Promise<number | null>;
+  getPrices(params: GetPriceParams): Promise<GetPriceResponse>;
+
+  getPositions(
+    params: GetPositionsParams & { address: string },
+  ): Promise<PredictPosition[]>;
+  getActivity(params: { address: string }): Promise<PredictActivity[]>;
+  getUnrealizedPnL(params: { address: string }): Promise<UnrealizedPnL>;
+
+  previewOrder(
+    params: PreviewOrderParams & {
+      signer: Signer;
+    },
+  ): Promise<OrderPreview>;
+  placeOrder(
+    params: PlaceOrderParams & { signer: Signer },
+  ): Promise<OrderResult>;
+
+  prepareClaim(params: ClaimOrderParams): Promise<ClaimOrderResponse>;
+  beforeSignClaim?(
+    params: BeforeSignClaimParams,
+  ): Promise<BeforeSignClaimResult | undefined>;
+  publishClaim?(params: PublishClaimParams): Promise<PublishClaimResult>;
+  confirmClaim?(params: { positions: PredictPosition[]; signer: Signer }): void;
+
+  isEligible(): Promise<GeoBlockResponse>;
+
+  prepareDeposit(params: PrepareDepositParams): Promise<PrepareDepositResponse>;
+  getAccountState(params: GetAccountStateParams): Promise<AccountState>;
+  prepareWithdraw(
+    params: PrepareWithdrawParams,
+  ): Promise<PrepareWithdrawResponse>;
+  signWithdraw?(params: SignWithdrawParams): Promise<SignWithdrawResponse>;
+
+  getBalance(params: GetBalanceParams): Promise<number>;
+
+  subscribeToGameUpdates?(
+    gameId: string,
+    callback: GameUpdateCallback,
+  ): () => void;
+
+  subscribeToMarketPrices?(
+    tokenIds: string[],
+    callback: PriceUpdateCallback,
+  ): () => void;
+
+  subscribeToOrderbook?(
+    tokenId: string,
+    callback: OrderbookCallback,
+  ): () => void;
+
+  subscribeToCryptoPrices?(
+    symbols: string[],
+    callback: CryptoPriceUpdateCallback,
+  ): () => void;
+
+  getMarketSeries?(params: GetSeriesParams): Promise<PredictMarket[]>;
+
+  getConnectionStatus?(): ConnectionStatus;
+}

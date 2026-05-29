@@ -1,0 +1,121 @@
+import { useCallback } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../../reducers';
+import { BrowserTab } from '../../Tokens/types';
+import { isCardTravelUrl, isCardTosUrl } from '../../../../util/url';
+import AppConstants from '../../../../core/AppConstants';
+import Routes from '../../../../constants/navigation/Routes';
+import { useAnalytics } from '../../../hooks/useAnalytics/useAnalytics';
+import { MetaMetricsEvents } from '../../../../core/Analytics';
+import { CardActions } from '../util/metrics';
+import { Linking } from 'react-native';
+import type { AppNavigationProp } from '../../../../core/NavigationService/types';
+
+export enum CardInternalBrowserPage {
+  TRAVEL = 'travel',
+  TOS = 'tos',
+}
+
+const PAGE_CONFIG: Record<
+  CardInternalBrowserPage,
+  {
+    urlCheck: (url: string) => boolean;
+    getUrl: () => string;
+    action: CardActions;
+  }
+> = {
+  [CardInternalBrowserPage.TRAVEL]: {
+    urlCheck: isCardTravelUrl,
+    getUrl: () => AppConstants.CARD.TRAVEL_URL,
+    action: CardActions.NAVIGATE_TO_TRAVEL_PAGE,
+  },
+  [CardInternalBrowserPage.TOS]: {
+    urlCheck: isCardTosUrl,
+    getUrl: () => AppConstants.CARD.CARD_TOS_URL,
+    action: CardActions.NAVIGATE_TO_CARD_TOS_PAGE,
+  },
+};
+
+export const useNavigateToInternalBrowserPage = (
+  navigation: AppNavigationProp,
+) => {
+  const browserTabs = useSelector((state: RootState) => state.browser.tabs);
+  const { trackEvent, createEventBuilder } = useAnalytics();
+
+  const navigateToInternalBrowserPage = useCallback(
+    (page: CardInternalBrowserPage) => {
+      const { urlCheck, getUrl, action } = PAGE_CONFIG[page];
+
+      if (page === CardInternalBrowserPage.TOS) {
+        Linking.openURL(getUrl());
+        trackEvent(
+          createEventBuilder(MetaMetricsEvents.CARD_BUTTON_CLICKED)
+            .addProperties({
+              action,
+            })
+            .build(),
+        );
+        return;
+      }
+
+      const existingTab = browserTabs?.find(({ url }: BrowserTab) =>
+        urlCheck(url),
+      );
+
+      let existingTabId;
+      let newTabUrl;
+
+      if (existingTab) {
+        existingTabId = existingTab.id;
+      } else {
+        newTabUrl = getUrl();
+      }
+
+      const params = {
+        ...(newTabUrl && { newTabUrl }),
+        ...(existingTabId && { existingTabId, newTabUrl: undefined }),
+        timestamp: Date.now(),
+        fromCard: true,
+      };
+
+      navigation.navigate(Routes.BROWSER.HOME, {
+        screen: Routes.BROWSER.VIEW,
+        params,
+      });
+      trackEvent(
+        createEventBuilder(MetaMetricsEvents.CARD_BUTTON_CLICKED)
+          .addProperties({
+            action,
+          })
+          .build(),
+      );
+    },
+    [browserTabs, navigation, trackEvent, createEventBuilder],
+  );
+
+  return {
+    navigateToInternalBrowserPage,
+  };
+};
+
+/**
+ * Hook that provides navigation functions for Card-related internal browser flows.
+ * Returns convenience methods for Travel (in-app browser) and TOS (external link).
+ */
+export const useNavigateToCardPage = (navigation: AppNavigationProp) => {
+  const { navigateToInternalBrowserPage } =
+    useNavigateToInternalBrowserPage(navigation);
+
+  const navigateToTravelPage = useCallback(() => {
+    navigateToInternalBrowserPage(CardInternalBrowserPage.TRAVEL);
+  }, [navigateToInternalBrowserPage]);
+
+  const navigateToCardTosPage = useCallback(() => {
+    navigateToInternalBrowserPage(CardInternalBrowserPage.TOS);
+  }, [navigateToInternalBrowserPage]);
+
+  return {
+    navigateToTravelPage,
+    navigateToCardTosPage,
+  };
+};

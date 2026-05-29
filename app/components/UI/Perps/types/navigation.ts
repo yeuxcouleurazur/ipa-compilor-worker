@@ -1,0 +1,254 @@
+import { ParamListBase } from '@react-navigation/native';
+import {
+  type Position,
+  type Order,
+  type OrderType,
+  type PerpsMarketData,
+  type TPSLTrackingData,
+  type SortOptionId,
+} from '@metamask/perps-controller';
+import { PerpsTransaction } from './transactionHistory';
+import type { DataMonitorParams } from '../hooks/usePerpsDataMonitor';
+import type { TransactionActiveAbTestEntry } from '../../../../util/transactions/transaction-active-ab-test-attribution-registry';
+
+/**
+ * PERPS navigation parameter types
+ */
+export interface PerpsNavigationParamList extends ParamListBase {
+  [key: string]: object | undefined;
+
+  // Order flow routes
+  PerpsOrder: {
+    direction: 'long' | 'short';
+    asset: string;
+    defaultSzDecimals?: number;
+    defaultMaxLeverage?: number;
+    leverage?: number;
+    amount?: string;
+    price?: string;
+    orderType?: OrderType;
+    existingPosition?: Position; // Pass existing position for leverage consistency when adding to position
+    hideTPSL?: boolean; // Hide TP/SL row when modifying existing position
+    /** When false, confirmation screen uses header: () => null; when true/undefined uses headerLeft/title options */
+    showPerpsHeader?: boolean;
+    /** Analytics: how the user got to the order screen (e.g. trade_action, order_book_long_button, asset_detail_screen) */
+    source?: string;
+    transactionActiveAbTests?: TransactionActiveAbTestEntry[];
+  };
+
+  PerpsOrderSuccess: {
+    orderId: string;
+    direction: 'long' | 'short';
+    asset: string;
+    size: string;
+    price?: string;
+    leverage?: number;
+  };
+
+  // Deposit flow routes
+  PerpsDeposit: undefined;
+
+  PerpsDepositPreview: {
+    amount: string;
+    fromToken: string;
+    toToken?: string;
+    exchangeRate?: string;
+    fees?: string;
+    estimatedGas?: string;
+  };
+
+  PerpsDepositProcessing: {
+    amount: string;
+    fromToken: string;
+    toToken?: string;
+    transactionHash?: string;
+  };
+
+  PerpsDepositSuccess: {
+    amount: string;
+    fromToken: string;
+    toToken?: string;
+    transactionHash: string;
+    finalBalance?: string;
+  };
+
+  // Withdrawal flow routes
+  PerpsWithdraw: undefined;
+
+  // Market and position management routes
+  PerpsMarketList: undefined;
+
+  PerpsMarketListView: {
+    source?: string;
+    variant?: 'full' | 'minimal';
+    title?: string;
+    showBalanceActions?: boolean;
+    showBottomNav?: boolean;
+    showWatchlistOnly?: boolean;
+    defaultMarketTypeFilter?:
+      | 'all'
+      | 'crypto'
+      | 'stocks'
+      | 'commodities'
+      | 'forex'
+      | 'new';
+    defaultSortOptionId?: SortOptionId;
+    fromHome?: boolean;
+    button_clicked?: string;
+    button_location?: string;
+    transactionActiveAbTests?: TransactionActiveAbTestEntry[];
+  };
+
+  PerpsMarketDetails: {
+    market: PerpsMarketData;
+    initialTab?: 'position' | 'orders' | 'info';
+    monitoringIntent?: Partial<DataMonitorParams>;
+    source?: string;
+    button_clicked?: string;
+    button_location?: string;
+    transactionActiveAbTests?: TransactionActiveAbTestEntry[];
+  };
+
+  PerpsPositions: undefined;
+
+  PerpsPositionDetails: {
+    position: Position;
+    action?: 'view' | 'edit' | 'close';
+  };
+
+  PerpsClosePosition: {
+    position: Position;
+    source?: string;
+  };
+
+  PerpsAdjustMargin: {
+    position: Position;
+    mode: 'add' | 'remove';
+  };
+
+  // Action selection routes
+  PerpsSelectModifyAction: {
+    position: Position;
+  };
+
+  PerpsSelectAdjustMarginAction: {
+    position: Position;
+  };
+
+  PerpsSelectOrderType: {
+    currentOrderType: OrderType;
+    asset: string;
+    direction: 'long' | 'short';
+  };
+
+  // Order history routes
+  PerpsOrderHistory: undefined;
+
+  PerpsOrderDetails: {
+    order: Order;
+    action?: 'view' | 'edit' | 'cancel';
+  };
+
+  // Main trading view
+  PerpsTradingView: undefined;
+
+  PerpsPositionTransaction: {
+    transaction: PerpsTransaction;
+  };
+
+  PerpsOrderTransaction: {
+    transaction: PerpsTransaction;
+  };
+
+  PerpsFundingTransaction: {
+    transaction: PerpsTransaction;
+  };
+
+  PerpsTutorial: {
+    isFromDeeplink?: boolean;
+    isFromGTMModal?: boolean;
+    /** Analytics: how the user got to the tutorial (e.g. homescreen_tab, main_action_button) */
+    source?: string;
+    /** Screen to navigate to after tutorial completion instead of the default PerpsHome */
+    redirectScreen?: string;
+    /** Params to pass to the redirect screen */
+    redirectParams?: Record<string, unknown>;
+  };
+
+  // TP/SL screen
+  PerpsTPSL: {
+    asset: string;
+    currentPrice?: number;
+    direction?: 'long' | 'short';
+    position?: Position;
+    initialTakeProfitPrice?: string;
+    initialStopLossPrice?: string;
+    leverage?: number;
+    orderType?: 'market' | 'limit';
+    limitPrice?: string;
+    amount?: string; // For new orders - USD amount to calculate position size for P&L
+    szDecimals?: number; // For new orders - asset decimal precision for P&L
+    /**
+     * Called when user confirms TP/SL. First arg is position when editing existing position (avoids "No position found" from stale ref).
+     * Signature: (position?, takeProfitPrice?, stopLossPrice?, trackingData?) so both edit-flow and order-flow can use it.
+     */
+    onConfirm: (
+      position?: Position,
+      takeProfitPrice?: string,
+      stopLossPrice?: string,
+      trackingData?: TPSLTrackingData,
+    ) => Promise<{ success: boolean } | void>;
+  };
+
+  // PnL Hero Card screen
+  PerpsPnlHeroCard: {
+    position: Position;
+    marketPrice?: string;
+  };
+
+  // Order Book view - Full depth order book display
+  PerpsOrderBook: {
+    symbol: string;
+    marketData?: PerpsMarketData;
+  };
+
+  // Activity view - Stack-based for proper back navigation
+  // Uses the same redirect params as the tab-based TRANSACTIONS_VIEW
+  PerpsActivity: {
+    /**
+     * Redirect to Perps transactions tab
+     */
+    redirectToPerpsTransactions?: boolean;
+    /**
+     * Redirect to Orders tab
+     */
+    redirectToOrders?: boolean;
+    /**
+     * Show back button in header for stack navigation
+     */
+    showBackButton?: boolean;
+  };
+
+  // Root perps view
+  Perps: undefined;
+
+  /** Params for RedesignedConfirmations when shown in Perps stack (header options) */
+  RedesignedConfirmations: {
+    showPerpsHeader?: boolean;
+  };
+
+  /** Params for PerpsOrderRedirect - handles one-click trade from token details */
+  PerpsOrderRedirect: {
+    direction: 'long' | 'short';
+    asset: string;
+    /** When true, the order was initiated from the token details screen */
+    fromTokenDetails?: boolean;
+    transactionActiveAbTests?: TransactionActiveAbTestEntry[];
+  };
+}
+
+/**
+ * Type helper for PERPS route parameters
+ */
+export type PerpsRouteParams<T extends keyof PerpsNavigationParamList> =
+  PerpsNavigationParamList[T];

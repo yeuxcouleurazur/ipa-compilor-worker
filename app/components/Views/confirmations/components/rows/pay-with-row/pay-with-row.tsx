@@ -1,0 +1,358 @@
+import React, { useCallback, useMemo } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { PaymentType } from '@consensys/on-ramp-sdk';
+import Routes from '../../../../../../constants/navigation/Routes';
+import { RootState } from '../../../../../../reducers';
+import { selectPaymentOverrideByTransactionId } from '../../../../../../selectors/transactionPayController';
+import { TokenIcon, TokenIconVariant } from '../../token-icon';
+import { useTransactionPayToken } from '../../../hooks/pay/useTransactionPayToken';
+import { useTransactionPayWithdraw } from '../../../hooks/pay/useTransactionPayWithdraw';
+import { useTransactionPayRequiredTokens } from '../../../hooks/pay/useTransactionPayData';
+import { useTransactionPaySelectedFiatPaymentMethod } from '../../../hooks/pay/useTransactionPaySelectedFiatPaymentMethod';
+import { TouchableOpacity } from 'react-native';
+import { Box } from '../../../../../UI/Box/Box';
+import {
+  AlignItems,
+  FlexDirection,
+  JustifyContent,
+} from '../../../../../UI/Box/box.types';
+import {
+  FontWeight,
+  Skeleton,
+  Text,
+  TextColor,
+  TextVariant,
+} from '@metamask/design-system-react-native';
+import { useStyles } from '../../../../../hooks/useStyles';
+import styleSheet from './pay-with-row.styles';
+import { BigNumber } from 'bignumber.js';
+import { PaymentOverride } from '@metamask/transaction-pay-controller';
+import { strings } from '../../../../../../../locales/i18n';
+import { useTransactionMetadataRequest } from '../../../hooks/transactions/useTransactionMetadataRequest';
+import { isHardwareAccount } from '../../../../../../util/address';
+import Icon, {
+  IconColor,
+  IconName,
+  IconSize,
+} from '../../../../../../component-library/components/Icons/Icon';
+import PaymentMethodIcon from '../../../../../UI/Ramp/Aggregator/components/PaymentMethodIcon';
+import useFiatFormatter from '../../../../../UI/SimulationDetails/FiatDisplay/useFiatFormatter';
+import {
+  ConfirmationRowComponentIDs,
+  TransactionPayComponentIDs,
+} from '../../../ConfirmationView.testIds';
+import { useConfirmationMetricEvents } from '../../../hooks/metrics/useConfirmationMetricEvents';
+import { type PaymentMethod } from '@metamask/ramps-controller';
+import { useParams } from '../../../../../../util/navigation/navUtils';
+import { SetPayTokenRequest } from '../../../hooks/pay/useAutomaticTransactionPayToken';
+import useMoneyAccountBalance from '../../../../../UI/Money/hooks/useMoneyAccountBalance';
+import { useConfirmationContext } from '../../../context/confirmation-context';
+import { useTheme } from '../../../../../../util/theme';
+
+interface PayWithRouteParams {
+  preferredPaymentToken?: SetPayTokenRequest;
+}
+
+export function PayWithRow() {
+  const transactionId = useTransactionMetadataRequest()?.id ?? '';
+  const paymentOverride = useSelector((state: RootState) =>
+    selectPaymentOverrideByTransactionId(state, transactionId),
+  );
+
+  if (paymentOverride === PaymentOverride.MoneyAccount) {
+    return <PayWithRowMoneyAccount />;
+  }
+
+  return <PayWithRowInteractive />;
+}
+
+function PayWithRowInteractive() {
+  const navigation = useNavigation();
+  const { payToken } = useTransactionPayToken();
+  const { isWithdraw } = useTransactionPayWithdraw();
+  const requiredTokens = useTransactionPayRequiredTokens();
+  const selectedFiatPaymentMethod =
+    useTransactionPaySelectedFiatPaymentMethod();
+  const formatFiat = useFiatFormatter({ currency: 'usd' });
+  const { styles } = useStyles(styleSheet, {});
+  const { setConfirmationMetric } = useConfirmationMetricEvents();
+  const { preferredPaymentToken } = useParams<PayWithRouteParams>({});
+
+  const {
+    txParams: { from },
+  } = useTransactionMetadataRequest() ?? { txParams: {} };
+
+  const { isHeadlessBuyInProgress } = useConfirmationContext();
+  const canEdit = !isHardwareAccount(from ?? '');
+
+  const isDisabled = !canEdit || isHeadlessBuyInProgress;
+
+  const handleClick = useCallback(() => {
+    if (isDisabled) return;
+    setConfirmationMetric({
+      properties: {
+        mm_pay_token_list_opened: true,
+      },
+    });
+    navigation.navigate(Routes.CONFIRMATION_PAY_WITH_BOTTOM_SHEET, {
+      preferredPaymentToken,
+    });
+  }, [isDisabled, navigation, preferredPaymentToken, setConfirmationMetric]);
+
+  const label = isWithdraw
+    ? strings('confirm.label.receive_as')
+    : strings('confirm.label.pay_with');
+
+  // For withdrawals, default to the primary required token (where funds are going)
+  // if no payment token has been explicitly selected.
+  // Filter out skipIfBalance (optional if user already holds) and allowUnderMinimum
+  // (fallback/optional) entries — neither represents the primary destination token.
+  const defaultWithdrawToken = requiredTokens?.find(
+    (token) => !token.skipIfBalance && !token.allowUnderMinimum,
+  );
+  const displayToken = useMemo(() => {
+    if (isWithdraw) {
+      return payToken ?? defaultWithdrawToken ?? null;
+    }
+    return payToken ?? null;
+  }, [isWithdraw, payToken, defaultWithdrawToken]);
+
+  // For deposits, show the user's balance of the selected pay token
+  const balanceUsdFormatted = useMemo(
+    () => formatFiat(new BigNumber(payToken?.balanceUsd ?? '0')),
+    [formatFiat, payToken?.balanceUsd],
+  );
+
+  if (selectedFiatPaymentMethod) {
+    return (
+      <PayWithFiatPaymentMethodRow
+        paymentMethod={selectedFiatPaymentMethod}
+        label={label}
+        disabled={isDisabled}
+        hasFrom={Boolean(from)}
+        onPress={handleClick}
+      />
+    );
+  }
+
+  if (!displayToken) {
+    return <PayWithRowSkeleton />;
+  }
+
+  return (
+    <TouchableOpacity
+      onPress={handleClick}
+      disabled={isDisabled}
+      testID={ConfirmationRowComponentIDs.PAY_WITH}
+    >
+      <Box
+        flexDirection={FlexDirection.Row}
+        alignItems={AlignItems.center}
+        justifyContent={JustifyContent.spaceBetween}
+        style={styles.container}
+      >
+        <Text
+          variant={TextVariant.BodyMd}
+          color={isDisabled ? TextColor.TextMuted : TextColor.TextAlternative}
+        >
+          {label}
+        </Text>
+        <Box
+          flexDirection={FlexDirection.Row}
+          alignItems={AlignItems.center}
+          gap={8}
+        >
+          <TokenIcon
+            address={displayToken.address}
+            chainId={displayToken.chainId}
+            symbol={displayToken.symbol}
+            variant={TokenIconVariant.Row}
+          />
+          <Text
+            variant={TextVariant.BodyMd}
+            fontWeight={FontWeight.Medium}
+            color={isDisabled ? TextColor.TextMuted : TextColor.TextDefault}
+            testID={TransactionPayComponentIDs.PAY_WITH_SYMBOL}
+          >
+            {displayToken.symbol}
+            {!isWithdraw && (
+              <Text testID={TransactionPayComponentIDs.PAY_WITH_BALANCE}>
+                {` (${balanceUsdFormatted})`}
+              </Text>
+            )}
+          </Text>
+          {from && (
+            <Icon
+              name={IconName.ArrowDown}
+              size={IconSize.Sm}
+              color={isDisabled ? IconColor.Muted : IconColor.Alternative}
+            />
+          )}
+        </Box>
+      </Box>
+    </TouchableOpacity>
+  );
+}
+
+function PayWithFiatPaymentMethodRow({
+  paymentMethod,
+  label,
+  disabled,
+  hasFrom,
+  onPress,
+}: {
+  paymentMethod: PaymentMethod;
+  label: string;
+  disabled: boolean;
+  hasFrom: boolean;
+  onPress: () => void;
+}) {
+  const { styles } = useStyles(styleSheet, {});
+  const { colors } = useTheme();
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled}
+      testID={ConfirmationRowComponentIDs.PAY_WITH}
+    >
+      <Box
+        flexDirection={FlexDirection.Row}
+        alignItems={AlignItems.center}
+        justifyContent={JustifyContent.spaceBetween}
+        style={styles.container}
+      >
+        <Text
+          variant={TextVariant.BodyMd}
+          color={disabled ? TextColor.TextMuted : TextColor.TextAlternative}
+        >
+          {label}
+        </Text>
+        <Box
+          flexDirection={FlexDirection.Row}
+          alignItems={AlignItems.center}
+          gap={8}
+        >
+          <PaymentMethodIcon
+            paymentMethodType={paymentMethod.paymentType as PaymentType}
+            size={20}
+            color={disabled ? colors.icon.muted : colors.icon.default}
+          />
+          <Text
+            variant={TextVariant.BodyMd}
+            fontWeight={FontWeight.Medium}
+            color={disabled ? TextColor.TextMuted : TextColor.TextDefault}
+            testID={TransactionPayComponentIDs.PAY_WITH_SYMBOL}
+          >
+            {paymentMethod.name}
+          </Text>
+          {hasFrom && (
+            <Icon
+              name={IconName.ArrowDown}
+              size={IconSize.Sm}
+              color={disabled ? IconColor.Muted : IconColor.Alternative}
+            />
+          )}
+        </Box>
+      </Box>
+    </TouchableOpacity>
+  );
+}
+
+function PayWithRowMoneyAccount() {
+  const navigation = useNavigation();
+  const { payToken } = useTransactionPayToken();
+  const { styles } = useStyles(styleSheet, {});
+  const { setConfirmationMetric } = useConfirmationMetricEvents();
+  const { preferredPaymentToken } = useParams<PayWithRouteParams>({});
+  const { totalFiatFormatted } = useMoneyAccountBalance();
+
+  const handleClick = useCallback(() => {
+    setConfirmationMetric({
+      properties: { mm_pay_token_list_opened: true },
+    });
+    navigation.navigate(Routes.CONFIRMATION_PAY_WITH_BOTTOM_SHEET, {
+      preferredPaymentToken,
+    });
+  }, [navigation, preferredPaymentToken, setConfirmationMetric]);
+
+  if (!payToken) {
+    return <PayWithRowSkeleton />;
+  }
+
+  return (
+    <TouchableOpacity
+      onPress={handleClick}
+      testID={ConfirmationRowComponentIDs.PAY_WITH}
+    >
+      <Box
+        flexDirection={FlexDirection.Row}
+        alignItems={AlignItems.center}
+        justifyContent={JustifyContent.spaceBetween}
+        style={styles.container}
+      >
+        <Text variant={TextVariant.BodyMd} color={TextColor.TextAlternative}>
+          {strings('confirm.label.pay_with')}
+        </Text>
+        <Box
+          flexDirection={FlexDirection.Row}
+          alignItems={AlignItems.center}
+          gap={8}
+        >
+          <TokenIcon
+            address={payToken.address}
+            chainId={payToken.chainId}
+            variant={TokenIconVariant.Row}
+          />
+          <Text
+            variant={TextVariant.BodyMd}
+            fontWeight={FontWeight.Medium}
+            color={TextColor.TextDefault}
+            testID={TransactionPayComponentIDs.PAY_WITH_SYMBOL}
+          >
+            {strings('confirm.pay_with_bottom_sheet.money_account')}
+            {totalFiatFormatted && (
+              <Text
+                variant={TextVariant.BodyMd}
+                color={TextColor.TextAlternative}
+                testID={TransactionPayComponentIDs.PAY_WITH_BALANCE}
+              >
+                {` (${totalFiatFormatted})`}
+              </Text>
+            )}
+          </Text>
+          <Icon
+            name={IconName.ArrowDown}
+            size={IconSize.Sm}
+            color={IconColor.Alternative}
+          />
+        </Box>
+      </Box>
+    </TouchableOpacity>
+  );
+}
+
+export function PayWithRowSkeleton() {
+  const { styles } = useStyles(styleSheet, {});
+
+  return (
+    <Box
+      testID="pay-with-row-skeleton"
+      flexDirection={FlexDirection.Row}
+      alignItems={AlignItems.center}
+      justifyContent={JustifyContent.spaceBetween}
+      style={styles.skeletonContainer}
+    >
+      <Skeleton height={18} width={60} style={styles.skeletonTop} />
+      <Box
+        flexDirection={FlexDirection.Row}
+        alignItems={AlignItems.center}
+        gap={8}
+      >
+        <Skeleton height={32} width={32} style={styles.skeletonCircle} />
+        <Skeleton height={18} width={120} style={styles.skeletonTop} />
+      </Box>
+    </Box>
+  );
+}

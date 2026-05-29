@@ -1,0 +1,284 @@
+import React, { ReactNode, useMemo } from 'react';
+import { useTransactionMetadataOrThrow } from '../../../hooks/transactions/useTransactionMetadataRequest';
+import Text, {
+  TextColor,
+  TextVariant,
+} from '../../../../../../component-library/components/Texts/Text';
+import { strings } from '../../../../../../../locales/i18n';
+import {
+  TransactionMeta,
+  TransactionType,
+} from '@metamask/transaction-controller';
+import { Box } from '../../../../../UI/Box/Box';
+import {
+  AlignItems,
+  FlexDirection,
+  JustifyContent,
+} from '../../../../../UI/Box/box.types';
+import { hasTransactionType } from '../../../utils/transaction';
+import {
+  TransactionPayQuote,
+  TransactionPayTotals,
+} from '@metamask/transaction-pay-controller';
+import {
+  useIsTransactionPayLoading,
+  useTransactionPayQuotes,
+  useTransactionPayTotals,
+} from '../../../hooks/pay/useTransactionPayData';
+import { useIsPaidByMetaMask } from '../../../hooks/pay/useIsPaidByMetaMask';
+import { BigNumber } from 'bignumber.js';
+import { InfoRowSkeleton, InfoRowVariant } from '../../UI/info-row/info-row';
+import AlertRow from '../../UI/info-row/alert-row';
+import { RowAlertKey } from '../../UI/info-row/alert-row/constants';
+import { useAlerts } from '../../../context/alert-system-context';
+import useFiatFormatter from '../../../../../UI/SimulationDetails/FiatDisplay/useFiatFormatter';
+import { ConfirmationRowComponentIDs } from '../../../ConfirmationView.testIds';
+import { Json } from '@metamask/utils';
+import { useConfirmationContext } from '../../../context/confirmation-context';
+import Icon, {
+  IconColor,
+  IconName,
+  IconSize,
+} from '../../../../../../component-library/components/Icons/Icon';
+
+export function BridgeFeeRow() {
+  const transactionMetadata = useTransactionMetadataOrThrow();
+  const isLoading = useIsTransactionPayLoading();
+  const quotes = useTransactionPayQuotes();
+  const totals = useTransactionPayTotals();
+  const paidByMetaMask = useIsPaidByMetaMask();
+  const { fieldAlerts } = useAlerts();
+  const hasAlert = fieldAlerts.some((a) => a.field === RowAlertKey.PayWithFee);
+  const { isHeadlessBuyInProgress } = useConfirmationContext();
+
+  return (
+    <TransactionFeeRow
+      totals={totals}
+      quotes={quotes}
+      transactionMeta={transactionMetadata}
+      hasAlert={hasAlert}
+      isLoading={isLoading}
+      paidByMetaMask={paidByMetaMask}
+      tooltipDisabled={isHeadlessBuyInProgress}
+      isDisabled={isHeadlessBuyInProgress}
+    />
+  );
+}
+
+function TransactionFeeRow({
+  transactionMeta,
+  hasAlert,
+  quotes,
+  totals,
+  isLoading,
+  paidByMetaMask,
+  tooltipDisabled,
+  isDisabled,
+}: {
+  transactionMeta: TransactionMeta;
+  hasAlert: boolean;
+  quotes?: TransactionPayQuote<Json>[];
+  totals?: TransactionPayTotals;
+  isLoading: boolean;
+  paidByMetaMask: boolean;
+  tooltipDisabled?: boolean;
+  isDisabled?: boolean;
+}) {
+  const formatFiat = useFiatFormatter({ currency: 'usd' });
+
+  const hasQuotes = Boolean(quotes?.length);
+
+  const feeTotalUsd = useMemo(() => {
+    if (!totals?.fees) return '';
+
+    const metaMask = totals.fees.metaMask.usd ?? 0;
+    const provider = totals.fees.provider.usd;
+    const sourceNetwork = totals.fees.sourceNetwork.estimate.usd;
+    const targetNetwork = totals.fees.targetNetwork.usd;
+
+    return formatFiat(
+      new BigNumber(metaMask)
+        .plus(provider)
+        .plus(sourceNetwork)
+        .plus(targetNetwork),
+    );
+  }, [totals, formatFiat]);
+
+  if (isLoading) return <InfoRowSkeleton testId="bridge-fee-row-skeleton" />;
+
+  const labelColor = isDisabled ? TextColor.Muted : undefined;
+  const valueColor = isDisabled
+    ? TextColor.Muted
+    : hasAlert
+      ? TextColor.Error
+      : TextColor.Alternative;
+
+  return (
+    <AlertRow
+      testID="bridge-fee-row"
+      alertField={RowAlertKey.PayWithFee}
+      label={strings('confirm.label.transaction_fee')}
+      tooltip={
+        !paidByMetaMask && hasQuotes && totals ? (
+          <Tooltip transactionMeta={transactionMeta} totals={totals} />
+        ) : undefined
+      }
+      tooltipTitle={strings('confirm.tooltip.title.transaction_fee')}
+      tooltipDisabled={tooltipDisabled}
+      tooltipColor={isDisabled ? IconColor.Muted : undefined}
+      rowVariant={InfoRowVariant.Small}
+      variant={labelColor}
+    >
+      {paidByMetaMask ? (
+        <PaidByLabel />
+      ) : (
+        <Text
+          variant={TextVariant.BodyMD}
+          color={valueColor}
+          testID={ConfirmationRowComponentIDs.TRANSACTION_FEE}
+        >
+          {feeTotalUsd}
+        </Text>
+      )}
+    </AlertRow>
+  );
+}
+
+function PaidByLabel() {
+  return (
+    <Box
+      flexDirection={FlexDirection.Row}
+      alignItems={AlignItems.center}
+      gap={4}
+      testID={ConfirmationRowComponentIDs.PAID_BY_METAMASK}
+    >
+      <Icon
+        name={IconName.Check}
+        color={IconColor.Success}
+        size={IconSize.Sm}
+      />
+      <Text variant={TextVariant.BodyMD} color={TextColor.Success}>
+        {strings('transactions.paid_by_metamask')}
+      </Text>
+    </Box>
+  );
+}
+
+function getNetworkFeeUsdBN({
+  totals,
+}: {
+  totals?: TransactionPayTotals;
+}): BigNumber | undefined {
+  const sourceNetworkUsd = totals?.fees?.sourceNetwork?.estimate?.usd;
+  const targetNetworkUsd = totals?.fees?.targetNetwork?.usd;
+
+  if (sourceNetworkUsd == null || targetNetworkUsd == null) return undefined;
+
+  return new BigNumber(sourceNetworkUsd).plus(targetNetworkUsd);
+}
+
+function Tooltip({
+  transactionMeta,
+  totals,
+}: {
+  transactionMeta: TransactionMeta;
+  totals: TransactionPayTotals;
+}): ReactNode {
+  let message: string | undefined;
+
+  if (
+    hasTransactionType(transactionMeta, [
+      TransactionType.predictDeposit,
+      TransactionType.predictWithdraw,
+      TransactionType.perpsWithdraw,
+    ])
+  ) {
+    if (hasTransactionType(transactionMeta, [TransactionType.perpsWithdraw])) {
+      message = strings('confirm.tooltip.perps_withdraw.transaction_fee');
+    } else if (
+      hasTransactionType(transactionMeta, [TransactionType.predictWithdraw])
+    ) {
+      message = strings('confirm.tooltip.predict_withdraw.transaction_fee');
+    } else {
+      message = strings('confirm.tooltip.predict_deposit.transaction_fee');
+    }
+  }
+
+  if (hasTransactionType(transactionMeta, [TransactionType.musdConversion])) {
+    message = strings('confirm.tooltip.musd_conversion.transaction_fee');
+  }
+
+  if (
+    hasTransactionType(transactionMeta, [TransactionType.moneyAccountWithdraw])
+  ) {
+    message = strings('confirm.tooltip.money_account_withdraw.transaction_fee');
+  }
+
+  switch (transactionMeta.type) {
+    case TransactionType.perpsDeposit:
+      message = strings('confirm.tooltip.perps_deposit.transaction_fee');
+      break;
+  }
+
+  if (!message) return null;
+
+  return <FeesTooltip message={message} totals={totals} />;
+}
+
+function FeesTooltip({
+  message,
+  totals,
+}: {
+  message: string;
+  totals: TransactionPayTotals;
+}) {
+  const formatFiat = useFiatFormatter({ currency: 'usd' });
+
+  const networkFeeUsd = useMemo(() => {
+    const networkFeeUsdBN = getNetworkFeeUsdBN({ totals });
+    return networkFeeUsdBN ? formatFiat(networkFeeUsdBN) : '';
+  }, [totals, formatFiat]);
+
+  const providerFeeUsd = useMemo(
+    () => formatFiat(new BigNumber(totals.fees.provider.usd)),
+    [totals, formatFiat],
+  );
+
+  const metaMaskFeeUsd = useMemo(
+    () => formatFiat(new BigNumber(totals.fees.metaMask.usd ?? 0)),
+    [totals, formatFiat],
+  );
+
+  return (
+    <Box gap={14}>
+      <Text>{message}</Text>
+      <Box
+        flexDirection={FlexDirection.Row}
+        justifyContent={JustifyContent.spaceBetween}
+      >
+        <Text color={TextColor.Alternative}>
+          {strings('confirm.label.network_fee')}
+        </Text>
+        <Text color={TextColor.Alternative}>{networkFeeUsd}</Text>
+      </Box>
+      <Box
+        flexDirection={FlexDirection.Row}
+        justifyContent={JustifyContent.spaceBetween}
+      >
+        <Text color={TextColor.Alternative}>
+          {strings('confirm.label.provider_fee')}
+        </Text>
+        <Text color={TextColor.Alternative}>{providerFeeUsd}</Text>
+      </Box>
+      <Box
+        flexDirection={FlexDirection.Row}
+        justifyContent={JustifyContent.spaceBetween}
+      >
+        <Text color={TextColor.Alternative}>
+          {strings('confirm.label.metamask_fee')}
+        </Text>
+        <Text color={TextColor.Alternative}>{metaMaskFeeUsd}</Text>
+      </Box>
+    </Box>
+  );
+}

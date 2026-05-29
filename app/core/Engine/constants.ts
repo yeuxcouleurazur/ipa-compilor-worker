@@ -1,0 +1,132 @@
+import { NETWORK_CHAIN_ID } from '../../util/networks/customNetworks';
+
+/**
+ * Messageable modules that are part of the Engine's context, but are not defined with state.
+ * TODO: Replace with type guard once consistent inheritance for non-controllers is implemented. See: https://github.com/MetaMask/decisions/pull/41
+ */
+export const STATELESS_NON_CONTROLLER_NAMES = [
+  'AssetsContractController',
+  'ExecutionService',
+  'NftDetectionController',
+  'RewardsDataService',
+  'StorageService',
+  'TokenDetectionController',
+  'WebSocketService',
+  'BackendWebSocketService',
+  'AccountActivityService',
+  'OHLCVService',
+  'MultichainAccountService',
+  'GeolocationApiService',
+  'ProfileMetricsService',
+  'RampsService',
+  'TransakService',
+  'ComplianceService',
+  'SocialService',
+  'AuthenticatedUserStorageService',
+  'MoneyAccountBalanceService',
+  'ChompApiService',
+] as const;
+
+export const BACKGROUND_STATE_CHANGE_EVENT_NAMES = [
+  'AccountsController:stateChange',
+  'AccountTreeController:stateChange',
+  'AccountTrackerController:stateChange',
+  'AddressBookController:stateChange',
+  'AnalyticsController:stateChange',
+  'AppMetadataController:stateChange',
+  'AssetsController:stateChange',
+  'ConnectivityController:stateChange',
+  'ApprovalController:stateChange',
+  'CurrencyRateController:stateChange',
+  'GasFeeController:stateChange',
+  'GeolocationController:stateChange',
+  'KeyringController:stateChange',
+  'LoggingController:stateChange',
+  'NetworkController:stateChange',
+  'NftController:stateChange',
+  'PermissionController:stateChange',
+  'PhishingController:stateChange',
+  'PreferencesController:stateChange',
+  'RemoteFeatureFlagController:stateChange',
+  'RampsController:stateChange',
+  'SelectedNetworkController:stateChange',
+  'SignatureController:stateChange',
+  'SmartTransactionsController:stateChange',
+  'TokenBalancesController:stateChange',
+  'TokenRatesController:stateChange',
+  'TokensController:stateChange',
+  'TokenSearchDiscoveryDataController:stateChange',
+  'TransactionController:stateChange',
+  'TransactionPayController:stateChange',
+  'MultichainNetworkController:stateChange',
+  ///: BEGIN:ONLY_INCLUDE_IF(snaps)
+  'SnapController:stateChange',
+  'SnapRegistryController:stateChange',
+  'SubjectMetadataController:stateChange',
+  'AuthenticationController:stateChange',
+  'UserStorageController:stateChange',
+  'NotificationServicesController:stateChange',
+  'NotificationServicesPushController:stateChange',
+  'SnapInterfaceController:stateChange',
+  'CronjobController:stateChange',
+  ///: END:ONLY_INCLUDE_IF
+  ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
+  'MultichainBalancesController:stateChange',
+  'MultichainAssetsRatesController:stateChange',
+  // TODO: Export this from the assets controller
+  'MultichainAssetsController:stateChange',
+  'MultichainTransactionsController:stateChange',
+  ///: END:ONLY_INCLUDE_IF
+  'BridgeController:stateChange',
+  'BridgeStatusController:stateChange',
+  'EarnController:stateChange',
+  'MoneyAccountController:stateChange',
+  'MoneyAccountUpgradeController:stateChanged',
+  'PerpsController:stateChange',
+  'RewardsController:stateChange',
+  'DeFiPositionsController:stateChange',
+  'SeedlessOnboardingController:stateChange',
+  ///: BEGIN:ONLY_INCLUDE_IF(sample-feature)
+  'SamplePetnamesController:stateChange',
+  ///: END:ONLY_INCLUDE_IF
+  'NetworkEnablementController:stateChange',
+  'PredictController:stateChange',
+  'CardController:stateChange',
+  'ClientController:stateChange',
+  'DelegationController:stateChange',
+  'ProfileMetricsController:stateChange',
+  'ComplianceController:stateChange',
+  'SocialController:stateChange',
+] as const;
+
+export const MAINNET_DISPLAY_NAME = 'Ethereum';
+export const LINEA_MAINNET_DISPLAY_NAME = 'Linea';
+export const POLYGON_DISPLAY_NAME = 'Polygon';
+export const AVALANCHE_DISPLAY_NAME = 'Avalanche';
+export const ARBITRUM_DISPLAY_NAME = 'Arbitrum';
+export const BNB_DISPLAY_NAME = 'BNB Chain';
+export const OPTIMISM_DISPLAY_NAME = 'OP';
+export const ZK_SYNC_ERA_DISPLAY_NAME = 'zkSync Era';
+export const BASE_DISPLAY_NAME = 'Base';
+export const SOLANA_DISPLAY_NAME = 'Solana';
+export const SEI_DISPLAY_NAME = 'Sei';
+export const MONAD_DISPLAY_NAME = 'Monad';
+export const HYPEREVM_DISPLAY_NAME = 'HyperEVM';
+export const MEGAETH_DISPLAY_NAME = 'MegaETH';
+
+export const NETWORK_TO_NAME_MAP = {
+  [NETWORK_CHAIN_ID.MAINNET]: MAINNET_DISPLAY_NAME,
+  [NETWORK_CHAIN_ID.LINEA_MAINNET]: LINEA_MAINNET_DISPLAY_NAME,
+  [NETWORK_CHAIN_ID.POLYGON]: POLYGON_DISPLAY_NAME,
+  [NETWORK_CHAIN_ID.AVALANCHE]: AVALANCHE_DISPLAY_NAME,
+  [NETWORK_CHAIN_ID.ARBITRUM]: ARBITRUM_DISPLAY_NAME,
+  [NETWORK_CHAIN_ID.BSC]: BNB_DISPLAY_NAME,
+  [NETWORK_CHAIN_ID.OPTIMISM]: OPTIMISM_DISPLAY_NAME,
+  [NETWORK_CHAIN_ID.ZKSYNC_ERA]: ZK_SYNC_ERA_DISPLAY_NAME,
+  [NETWORK_CHAIN_ID.BASE]: BASE_DISPLAY_NAME,
+  [NETWORK_CHAIN_ID.SEI]: SEI_DISPLAY_NAME,
+  // TODO: Update to use CHAIN_IDS.MONAD when it is added to the transaction controller
+  [NETWORK_CHAIN_ID.MONAD]: MONAD_DISPLAY_NAME,
+  [NETWORK_CHAIN_ID.HYPE]: HYPEREVM_DISPLAY_NAME,
+  [NETWORK_CHAIN_ID.MEGAETH_MAINNET]: MEGAETH_DISPLAY_NAME,
+} as const;

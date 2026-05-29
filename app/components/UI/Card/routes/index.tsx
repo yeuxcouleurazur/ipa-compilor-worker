@@ -1,0 +1,160 @@
+import React, { useMemo } from 'react';
+import {
+  createStackNavigator,
+  StackNavigationOptions,
+} from '@react-navigation/stack';
+import Routes from '../../../../constants/navigation/Routes';
+import CardHome from '../Views/CardHome/CardHome';
+import CardWelcome from '../Views/CardWelcome/CardWelcome';
+import CardAuthentication from '../Views/CardAuthentication/CardAuthentication';
+import SpendingLimit from '../Views/SpendingLimit/SpendingLimit';
+import ChooseYourCard from '../Views/ChooseYourCard/ChooseYourCard';
+import ReviewOrder from '../Views/ReviewOrder/ReviewOrder';
+import OnboardingNavigator from './OnboardingNavigator';
+import {
+  selectIsCardAuthenticated,
+  selectIsCardholder,
+} from '../../../../selectors/cardController';
+import { useSelector } from 'react-redux';
+import { withCardSDK } from '../sdk';
+import AddFundsBottomSheet from '../components/AddFundsBottomSheet/AddFundsBottomSheet';
+import AssetSelectionBottomSheet from '../components/AssetSelectionBottomSheet/AssetSelectionBottomSheet';
+import PasswordBottomSheet from '../components/PasswordBottomSheet';
+import RegionSelectorModal from '../components/Onboarding/RegionSelectorModal';
+import ConfirmModal from '../components/Onboarding/ConfirmModal';
+import RecurringFeeModal from '../components/RecurringFeeModal/RecurringFeeModal';
+import DaimoPayModal from '../components/DaimoPayModal/DaimoPayModal';
+import ViewPinBottomSheet from '../components/ViewPinBottomSheet';
+import SpendingLimitOptionsSheet from '../Views/SpendingLimit/components/SpendingLimitOptionsSheet';
+import WaitlistFormModal from '../components/WaitlistFormModal/WaitlistFormModal';
+import OrderCompleted from '../Views/OrderCompleted/OrderCompleted';
+import Cashback from '../Views/Cashback/Cashback';
+import { clearStackNavigatorOptions } from '../../../../constants/navigation/clearStackNavigatorOptions';
+
+const Stack = createStackNavigator();
+const ModalsStack = createStackNavigator();
+
+// All Card main screens render their own header via HeaderStandard, so hide
+// the navigator chrome by default.
+const mainScreenOptions: StackNavigationOptions = { headerShown: false };
+
+// SpendingLimit's onboarding flow renders a close (X) header and must not be
+// swipe-dismissable; all other flows keep the default gesture behavior.
+const spendingLimitScreenOptions = ({
+  route,
+}: {
+  route: { params?: { flow?: 'manage' | 'enable' | 'onboarding' } };
+}): StackNavigationOptions => ({
+  headerShown: false,
+  gestureEnabled: route.params?.flow !== 'onboarding',
+});
+
+const MainRoutes = () => {
+  const isAuthenticated = useSelector(selectIsCardAuthenticated);
+  const isCardholder = useSelector(selectIsCardholder);
+
+  const initialRouteName = useMemo(
+    () =>
+      isAuthenticated || isCardholder ? Routes.CARD.HOME : Routes.CARD.WELCOME,
+    [isAuthenticated, isCardholder],
+  );
+
+  return (
+    <Stack.Navigator
+      initialRouteName={initialRouteName}
+      screenOptions={mainScreenOptions}
+    >
+      <Stack.Screen name={Routes.CARD.HOME} component={CardHome} />
+      <Stack.Screen name={Routes.CARD.WELCOME} component={CardWelcome} />
+      <Stack.Screen
+        name={Routes.CARD.CHOOSE_YOUR_CARD}
+        component={ChooseYourCard}
+      />
+      <Stack.Screen name={Routes.CARD.REVIEW_ORDER} component={ReviewOrder} />
+      <Stack.Screen
+        name={Routes.CARD.ORDER_COMPLETED}
+        component={OrderCompleted}
+      />
+      <Stack.Screen name={Routes.CARD.CASHBACK} component={Cashback} />
+      <Stack.Screen
+        name={Routes.CARD.AUTHENTICATION}
+        component={CardAuthentication}
+      />
+      <Stack.Screen
+        name={Routes.CARD.SPENDING_LIMIT}
+        component={SpendingLimit}
+        options={spendingLimitScreenOptions}
+      />
+      <Stack.Screen
+        name={Routes.CARD.ONBOARDING.ROOT}
+        component={OnboardingNavigator}
+      />
+    </Stack.Navigator>
+  );
+};
+
+const CardModalsRoutes = () => (
+  <ModalsStack.Navigator
+    screenOptions={{ ...clearStackNavigatorOptions, presentation: 'modal' }}
+  >
+    <ModalsStack.Screen
+      name={Routes.CARD.MODALS.ADD_FUNDS}
+      component={AddFundsBottomSheet}
+    />
+    <ModalsStack.Screen
+      name={Routes.CARD.MODALS.ASSET_SELECTION}
+      component={AssetSelectionBottomSheet}
+    />
+    <ModalsStack.Screen
+      name={Routes.CARD.MODALS.REGION_SELECTION}
+      component={RegionSelectorModal}
+    />
+    <ModalsStack.Screen
+      name={Routes.CARD.MODALS.CONFIRM_MODAL}
+      component={ConfirmModal}
+    />
+    <ModalsStack.Screen
+      name={Routes.CARD.MODALS.PASSWORD}
+      component={PasswordBottomSheet}
+    />
+    <ModalsStack.Screen
+      name={Routes.CARD.MODALS.RECURRING_FEE}
+      component={RecurringFeeModal}
+    />
+    <ModalsStack.Screen
+      name={Routes.CARD.MODALS.DAIMO_PAY}
+      component={DaimoPayModal}
+    />
+    <ModalsStack.Screen
+      name={Routes.CARD.MODALS.VIEW_PIN}
+      component={ViewPinBottomSheet}
+    />
+    <ModalsStack.Screen
+      name={Routes.CARD.MODALS.SPENDING_LIMIT_OPTIONS}
+      component={SpendingLimitOptionsSheet}
+    />
+    <ModalsStack.Screen
+      name={Routes.CARD.MODALS.WAITLIST_FORM}
+      component={WaitlistFormModal}
+    />
+  </ModalsStack.Navigator>
+);
+
+const CardRoutes = () => (
+  <Stack.Navigator
+    initialRouteName={Routes.CARD.HOME}
+    screenOptions={{ headerShown: false }}
+  >
+    <Stack.Screen name={Routes.CARD.HOME} component={MainRoutes} />
+    <Stack.Screen
+      name={Routes.CARD.MODALS.ID}
+      component={CardModalsRoutes}
+      options={{
+        ...clearStackNavigatorOptions,
+        detachPreviousScreen: false,
+      }}
+    />
+  </Stack.Navigator>
+);
+
+export default withCardSDK(CardRoutes);

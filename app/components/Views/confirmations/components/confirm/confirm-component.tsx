@@ -1,0 +1,264 @@
+import React, { ReactNode, useEffect } from 'react';
+import {
+  BackHandler,
+  StyleProp,
+  TouchableWithoutFeedback,
+  View,
+  ViewStyle,
+} from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationOptions } from '@react-navigation/native-stack';
+
+import { ConfirmationUIType } from '../../ConfirmationView.testIds';
+import BottomSheet from '../../../../../component-library/components/BottomSheets/BottomSheet';
+import { useStyles } from '../../../../../component-library/hooks';
+import { UnstakeConfirmationViewProps } from '../../../../UI/Stake/Views/UnstakeConfirmationView/UnstakeConfirmationView.types';
+import useConfirmationAlerts from '../../hooks/alerts/useConfirmationAlerts';
+import useApprovalRequest from '../../hooks/useApprovalRequest';
+import { AlertsContextProvider } from '../../context/alert-system-context';
+import { ConfirmationContextProvider } from '../../context/confirmation-context';
+import { QRHardwareContextProvider } from '../../context/qr-hardware-context';
+import { useConfirmActions } from '../../hooks/useConfirmActions';
+import { useFullScreenConfirmation } from '../../hooks/ui/useFullScreenConfirmation';
+import { ConfirmationAssetPollingProvider } from '../confirmation-asset-polling-provider/confirmation-asset-polling-provider';
+import AlertBanner from '../alert-banner';
+import Info from '../info-root';
+import Title from '../title';
+import { Footer, FooterSkeleton } from '../footer';
+import styleSheet from './confirm-component.styles';
+import { TransactionType } from '@metamask/transaction-controller';
+import { Hex } from '@metamask/utils';
+import { useParams } from '../../../../../util/navigation/navUtils';
+import AnimatedSpinner, { SpinnerSize } from '../../../../UI/AnimatedSpinner';
+import { CustomAmountInfoSkeleton } from '../info/custom-amount-info';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTransactionMetadataRequest } from '../../hooks/transactions/useTransactionMetadataRequest';
+import { hasTransactionType } from '../../utils/transaction';
+import { PredictClaimInfoSkeleton } from '../info/predict-claim-info';
+import { TransferInfoSkeleton } from '../info/transfer/transfer';
+
+const TRANSACTION_TYPES_DISABLE_SCROLL = [TransactionType.predictClaim];
+
+const TRANSACTION_TYPES_DISABLE_ALERT_BANNER = [
+  TransactionType.perpsDeposit,
+  TransactionType.perpsDepositAndOrder,
+  TransactionType.perpsWithdraw,
+  TransactionType.predictDeposit,
+  TransactionType.predictWithdraw,
+  TransactionType.moneyAccountDeposit,
+  TransactionType.moneyAccountWithdraw,
+];
+
+export enum ConfirmationLoader {
+  Default = 'default',
+  CustomAmount = 'customAmount',
+  PredictClaim = 'predictClaim',
+  Transfer = 'transfer',
+}
+
+export interface ConfirmationParams {
+  loader?: ConfirmationLoader;
+  maxValueMode?: boolean;
+  forceBottomSheet?: boolean;
+  preferredPaymentToken?: {
+    address: Hex;
+    chainId: Hex;
+  };
+}
+
+const ConfirmWrapped = ({
+  styles,
+  route,
+}: {
+  styles: ReturnType<typeof styleSheet>;
+  route?: UnstakeConfirmationViewProps['route'];
+}) => {
+  const isScrollDisabled = useDisableScroll();
+
+  return (
+    <ConfirmationContextProvider>
+      <ConfirmationAssetPollingProvider>
+        <ConfirmationAlerts>
+          <QRHardwareContextProvider>
+            <Title />
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollViewContent}
+              nestedScrollEnabled
+              scrollEnabled={!isScrollDisabled}
+            >
+              <TouchableWithoutFeedback>
+                <>
+                  <AlertBanner
+                    ignoreTypes={TRANSACTION_TYPES_DISABLE_ALERT_BANNER}
+                  />
+                  <Info route={route} />
+                </>
+              </TouchableWithoutFeedback>
+            </ScrollView>
+            <Footer />
+          </QRHardwareContextProvider>
+        </ConfirmationAlerts>
+      </ConfirmationAssetPollingProvider>
+    </ConfirmationContextProvider>
+  );
+};
+
+interface ConfirmProps {
+  route?: UnstakeConfirmationViewProps['route'];
+  /** When true, disables SafeAreaView insets when confirmation is full screen. Defaults to false. */
+  disableSafeArea?: boolean;
+  /** Optional style applied to the full-screen confirmation container. */
+  fullscreenStyle?: StyleProp<ViewStyle>;
+}
+
+export const Confirm = ({
+  route,
+  disableSafeArea = false,
+  fullscreenStyle,
+}: ConfirmProps) => {
+  const { approvalRequest } = useApprovalRequest();
+  const { isFullScreenConfirmation } = useFullScreenConfirmation();
+  const navigation = useNavigation();
+  const { onReject } = useConfirmActions();
+  const { styles } = useStyles(styleSheet, {
+    isFullScreenConfirmation,
+    disableSafeArea,
+  });
+
+  useEffect(() => {
+    const options: NativeStackNavigationOptions = {
+      // If not, keep the loading state in place until there is a request that can be rejected.
+      gestureEnabled: Boolean(approvalRequest),
+    };
+
+    if (approvalRequest) {
+      options.headerShown = Boolean(isFullScreenConfirmation);
+    }
+
+    navigation.setOptions(options);
+  }, [approvalRequest, isFullScreenConfirmation, navigation]);
+
+  useEffect(() => {
+    if (!approvalRequest) {
+      const backHandlerSubscription = BackHandler.addEventListener(
+        'hardwareBackPress',
+        // Keep users on the loading state until there is an approval request that can be rejected.
+        () => true,
+      );
+
+      return () => {
+        backHandlerSubscription.remove();
+      };
+    }
+  }, [approvalRequest]);
+
+  // Show spinner if there is no approvalRequest
+  if (!approvalRequest) {
+    return <Loader />;
+  }
+
+  // Show confirmation in a flat container if the confirmation is full screen
+  if (isFullScreenConfirmation) {
+    return (
+      <SafeAreaView
+        edges={disableSafeArea ? [] : ['right', 'bottom', 'left']}
+        style={[styles.flatContainer, fullscreenStyle]}
+        testID={ConfirmationUIType.FLAT}
+      >
+        <ConfirmWrapped styles={styles} route={route} />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <BottomSheet
+      onClose={() => onReject()}
+      shouldNavigateBack={false}
+      style={styles.bottomSheetDialogSheet}
+      testID={ConfirmationUIType.MODAL}
+    >
+      <View testID={approvalRequest?.type} style={styles.confirmContainer}>
+        <ConfirmWrapped styles={styles} route={route} />
+      </View>
+    </BottomSheet>
+  );
+};
+
+function ConfirmationAlerts({ children }: { children: ReactNode }) {
+  const alerts = useConfirmationAlerts();
+
+  return (
+    <AlertsContextProvider alerts={alerts}>{children}</AlertsContextProvider>
+  );
+}
+
+function Loader() {
+  const { styles } = useStyles(styleSheet, { isFullScreenConfirmation: true });
+  const params = useParams<ConfirmationParams>();
+  const loader = params?.loader ?? ConfirmationLoader.Default;
+
+  if (loader === ConfirmationLoader.CustomAmount) {
+    return (
+      <InfoLoader testId="confirm-loader-custom-amount" loader={loader}>
+        <CustomAmountInfoSkeleton />
+      </InfoLoader>
+    );
+  }
+
+  if (loader === ConfirmationLoader.PredictClaim) {
+    return (
+      <InfoLoader testId="confirm-loader-predict-claim" loader={loader}>
+        <PredictClaimInfoSkeleton />
+      </InfoLoader>
+    );
+  }
+
+  if (loader === ConfirmationLoader.Transfer) {
+    return (
+      <InfoLoader testId="confirm-loader-transfer" loader={loader}>
+        <TransferInfoSkeleton />
+      </InfoLoader>
+    );
+  }
+
+  return (
+    <View style={styles.spinnerContainer} testID="confirm-loader-default">
+      <AnimatedSpinner size={SpinnerSize.MD} />
+    </View>
+  );
+}
+
+function InfoLoader({
+  children,
+  testId,
+  loader,
+}: {
+  children: ReactNode;
+  testId?: string;
+  loader: ConfirmationLoader;
+}) {
+  const { styles } = useStyles(styleSheet, { isFullScreenConfirmation: true });
+
+  return (
+    <SafeAreaView
+      edges={['right', 'bottom', 'left']}
+      style={styles.flatContainer}
+      testID={testId}
+    >
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+      >
+        {children}
+      </ScrollView>
+      {loader === ConfirmationLoader.Transfer && <FooterSkeleton />}
+    </SafeAreaView>
+  );
+}
+
+function useDisableScroll() {
+  const transaction = useTransactionMetadataRequest();
+  return hasTransactionType(transaction, TRANSACTION_TYPES_DISABLE_SCROLL);
+}

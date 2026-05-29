@@ -1,0 +1,70 @@
+/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports, import-x/no-commonjs */
+import type { ThemeColors } from '@metamask/design-tokens';
+import LottieView from 'lottie-react-native';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Device from '../../../../app/util/device';
+import { useTheme, useAssetFromTheme } from '../../../util/theme';
+
+// Intrinsic dimensions of the Lottie assets (logo-light.json / logo-dark.json).
+const LOTTIE_INTRINSIC_WIDTH = 1000;
+const LOTTIE_INTRINSIC_HEIGHT = 1624;
+
+const animationSize = Device.getDeviceWidth() / 2;
+
+const loadingLight = require('./logo-light.json');
+const loadingDark = require('./logo-dark.json');
+
+const createStyles = (colors: ThemeColors, _safeAreaInsets: EdgeInsets) =>
+  StyleSheet.create({
+    root: {
+      backgroundColor: colors.background.default,
+      paddingTop: 7,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      minHeight: 50,
+      paddingBottom: Device.isIphoneX() ? 20 : 0,
+    },
+
+    actionContainer: {
+      flex: 0,
+      flexDirection: 'row',
+      paddingVertical: 16,
+      paddingHorizontal: 24,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    action: {
+      marginLeft: 10,
+    },
+    animation: {
+      width: animationSize,
+      aspectRatio: LOTTIE_INTRINSIC_WIDTH / LOTTIE_INTRINSIC_HEIGHT,
+      alignSelf: 'center',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });
+
+export const SDKLoading = () => {
+  const safeAreaInsets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = createStyles(colors, safeAreaInsets);
+  const animatedLogo = useAssetFromTheme(loadingLight, loadingDark);
+
+  return (
+    <View style={styles.root}>
+      <View style={styles.actionContainer}>
+        <LottieView
+          style={styles.animation}
+          autoPlay
+          loop
+          source={animatedLogo}
+        />
+      </View>
+    </View>
+  );
+};
+
+export default SDKLoading;

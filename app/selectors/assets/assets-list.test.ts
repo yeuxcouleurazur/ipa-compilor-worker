@@ -1,0 +1,2507 @@
+import {
+  AccountGroupId,
+  AccountGroupType,
+  AccountWalletType,
+} from '@metamask/account-api';
+import {
+  EthAccountType,
+  SolAccountType,
+  TrxScope,
+} from '@metamask/keyring-api';
+import { KnownCaipNamespace } from '@metamask/utils';
+import type { RootState } from '../../reducers';
+import { selectEnabledNetworksByNamespace } from '../networkEnablementController';
+import { createDeepEqualSelector } from '../util';
+import {
+  createSelectSortedAssetsBySelectedAccountGroup,
+  selectAsset,
+  selectAssetsByAccountGroupId,
+  selectAssetsBySelectedAccountGroup,
+  selectHasEligibleSwapSource,
+  selectSortedAssetsBySelectedAccountGroup,
+  selectSortedAssetsBySelectedAccountGroupForChainIds,
+  selectSortedAssetsBySelectedAccountGroupForChainIdsByBalance,
+  selectTronSpecialAssetsBySelectedAccountGroup,
+} from './assets-list';
+import I18n from '../../../locales/i18n';
+
+jest.mock('../../../locales/i18n', () => ({
+  __esModule: true,
+  default: { locale: 'en' },
+}));
+const mockI18n = jest.mocked(I18n);
+
+const mockState = ({
+  filterNetwork,
+}: {
+  filterNetwork?: '0x1' | '0xa' | 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp';
+} = {}) =>
+  ({
+    engine: {
+      backgroundState: {
+        AccountTreeController: {
+          accountTree: {
+            wallets: {
+              'entropy:01K1TJY9QPSCKNBSVGZNG510GJ': {
+                id: 'entropy:01K1TJY9QPSCKNBSVGZNG510GJ',
+                type: AccountWalletType.Entropy,
+                groups: {
+                  'entropy:01K1TJY9QPSCKNBSVGZNG510GJ/0': {
+                    id: 'entropy:01K1TJY9QPSCKNBSVGZNG510GJ/0',
+                    type: AccountGroupType.MultichainAccount,
+                    accounts: [
+                      'd7f11451-9d79-4df4-a012-afd253443639',
+                      '2d89e6a0-b4e6-45a8-a707-f10cef143b42',
+                    ],
+                  },
+                },
+              },
+            },
+          },
+          selectedAccountGroup: 'entropy:01K1TJY9QPSCKNBSVGZNG510GJ/0',
+        },
+        AccountsController: {
+          internalAccounts: {
+            accounts: {
+              'd7f11451-9d79-4df4-a012-afd253443639': {
+                id: 'd7f11451-9d79-4df4-a012-afd253443639',
+                address: '0x2bd63233fe369b0f13eaf25292af5a9b63d2b7ab',
+                options: {
+                  entropySource: '01K1TJY9QPSCKNBSVGZNG510GJ',
+                  derivationPath: "m/44'/60'/0'/0/0",
+                  groupIndex: 0,
+                  entropy: {
+                    type: 'mnemonic',
+                    id: '01K1TJY9QPSCKNBSVGZNG510GJ',
+                    derivationPath: "m/44'/60'/0'/0/0",
+                    groupIndex: 0,
+                  },
+                },
+                methods: [
+                  'personal_sign',
+                  'eth_sign',
+                  'eth_signTransaction',
+                  'eth_signTypedData_v1',
+                  'eth_signTypedData_v3',
+                  'eth_signTypedData_v4',
+                ],
+                scopes: ['eip155:0'],
+                type: 'eip155:eoa',
+                metadata: {
+                  name: 'My main test',
+                  importTime: 1754312681246,
+                  lastSelected: 1754312803548,
+                  keyring: {
+                    type: 'HD Key Tree',
+                  },
+                  nameLastUpdatedAt: 1753697497354,
+                },
+              },
+              '2d89e6a0-b4e6-45a8-a707-f10cef143b42': {
+                type: 'solana:data-account',
+                id: '2d89e6a0-b4e6-45a8-a707-f10cef143b42',
+                address: '4KTpypSSbugxHe67NC9JURQWfCBNKdQTo4K8rZmYapS7',
+                options: {
+                  scope: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+                  derivationPath: "m/44'/501'/0'/0'",
+                  entropySource: '01K1TJY9QPSCKNBSVGZNG510GJ',
+                  synchronize: true,
+                  index: 0,
+                  entropy: {
+                    type: 'mnemonic',
+                    id: '01K1TJY9QPSCKNBSVGZNG510GJ',
+                    groupIndex: 0,
+                    derivationPath: "m/44'/501'/0'/0'",
+                  },
+                },
+                methods: [
+                  'signAndSendTransaction',
+                  'signTransaction',
+                  'signMessage',
+                  'signIn',
+                ],
+                scopes: [
+                  'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+                  'solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z',
+                  'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+                ],
+                metadata: {
+                  name: 'Solana Account 2',
+                  importTime: 1754312691747,
+                  keyring: {
+                    type: 'Snap Keyring',
+                  },
+                  snap: {
+                    id: 'npm:@metamask/solana-wallet-snap',
+                    name: 'Solana',
+                    enabled: true,
+                  },
+                  lastSelected: 1754312843994,
+                },
+              },
+            },
+            selectedAccount: 'd7f11451-9d79-4df4-a012-afd253443639',
+          },
+        },
+        TokensController: {
+          allTokens: {
+            '0x1': {
+              '0x2bd63233fe369b0f13eaf25292af5a9b63d2b7ab': [
+                {
+                  address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+                  decimals: 18,
+                  symbol: 'stETH',
+                  name: 'Lido Staked Ether',
+                  aggregators: ['UniswapLabs', 'Metamask', 'Aave'],
+                  image:
+                    'https://static.cx.metamask.io/api/v1/tokenIcons/10/0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84.png',
+                },
+                {
+                  address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+                  decimals: 18,
+                  symbol: 'DAI',
+                  name: 'Dai Stablecoin',
+                  image:
+                    'https://static.cx.metamask.io/api/v1/tokenIcons/1/0x6B175474E89094C44Da98b954EedeAC495271d0F.png',
+                },
+              ],
+            },
+            '0xa': {
+              '0x2bd63233fe369b0f13eaf25292af5a9b63d2b7ab': [
+                {
+                  address: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+                  decimals: 6,
+                  symbol: 'USDC',
+                  name: 'USDCoin',
+                  image:
+                    'https://static.cx.metamask.io/api/v1/tokenIcons/10/0x0b2c639c533813f4aa9d7837caf62653d097ff85.png',
+                },
+              ],
+            },
+          },
+          allIgnoredTokens: {},
+        },
+        TokenBalancesController: {
+          tokenBalances: {
+            '0x2bd63233fe369b0f13eaf25292af5a9b63d2b7ab': {
+              '0x1': {
+                '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84':
+                  '0x56bc75e2d63100000', // 100000000000000000000 (100 18 decimals)
+                '0x6B175474E89094C44Da98b954EedeAC495271d0F':
+                  '0xad78ebc5ac6200000', // 200000000000000000000 (200 18 decimals)
+              },
+              '0xa': {
+                '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85': '0x3b9aca00', // 1000000000 (1000 6 decimals)
+              },
+            },
+          },
+        },
+        TokenRatesController: {
+          marketData: {
+            '0x1': {
+              '0x0000000000000000000000000000000000000000': {
+                tokenAddress: '0x0000000000000000000000000000000000000000',
+                currency: 'ETH',
+                price: 1,
+              },
+              '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84': {
+                tokenAddress: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+                currency: 'ETH',
+                price: 0.00009,
+              },
+              '0x6B175474E89094C44Da98b954EedeAC495271d0F': {
+                tokenAddress: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+                currency: 'ETH',
+                price: 0.002,
+              },
+            },
+            '0xa': {
+              '0x0000000000000000000000000000000000000000': {
+                tokenAddress: '0x0000000000000000000000000000000000000000',
+                currency: 'ETH',
+                price: 1,
+              },
+              '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85': {
+                tokenAddress: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+                currency: 'ETH',
+                price: 0.005,
+              },
+            },
+          },
+        },
+        MultichainAssetsController: {
+          accountsAssets: {
+            '2d89e6a0-b4e6-45a8-a707-f10cef143b42': [
+              'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501',
+              'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
+            ],
+          },
+          assetsMetadata: {
+            'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501': {
+              fungible: true,
+              iconUrl:
+                'https://static.cx.metamask.io/api/v2/tokenIcons/assets/solana/5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44/501.png',
+              name: 'Solana',
+              symbol: 'SOL',
+              units: [
+                {
+                  decimals: 9,
+                  name: 'Solana',
+                  symbol: 'SOL',
+                },
+              ],
+            },
+            'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN':
+              {
+                name: 'Jupiter',
+                symbol: 'JUP',
+                fungible: true,
+                iconUrl:
+                  'https://static.cx.metamask.io/api/v2/tokenIcons/assets/solana/5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN.png',
+                units: [
+                  {
+                    name: 'Jupiter',
+                    symbol: 'JUP',
+                    decimals: 6,
+                  },
+                ],
+              },
+          },
+          allIgnoredAssets: {},
+        },
+        MultichainBalancesController: {
+          balances: {
+            '2d89e6a0-b4e6-45a8-a707-f10cef143b42': {
+              'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501': {
+                amount: '10',
+                unit: 'SOL',
+              },
+              'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN':
+                {
+                  amount: '200',
+                  unit: 'JUP',
+                },
+            },
+          },
+        },
+        MultichainAssetsRatesController: {
+          conversionRates: {
+            'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501': {
+              rate: '163.55',
+              currency: 'swift:0/iso4217:USD',
+            },
+            'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN':
+              {
+                rate: '0.463731',
+                currency: 'swift:0/iso4217:USD',
+              },
+          },
+        },
+        CurrencyRateController: {
+          currentCurrency: 'USD',
+          currencyRates: {
+            ETH: {
+              conversionRate: 2400,
+            },
+          },
+        },
+        NetworkController: {
+          networkConfigurationsByChainId: {
+            '0x1': {
+              nativeCurrency: 'ETH',
+            },
+            '0xa': {
+              nativeCurrency: 'ETH',
+            },
+          },
+        },
+        AccountTrackerController: {
+          accountsByChainId: {
+            '0x1': {
+              '0x2bd63233fe369b0f13eaf25292af5a9b63d2b7ab': {
+                balance: '0x8ac7230489e80000', // 10000000000000000000 (10 - 18 decimals)
+                stakedBalance: '0x56bc75e2d63100000', // 100000000000000000000 (100 18 decimals)
+              },
+            },
+            '0xa': {
+              '0x2bd63233fe369b0f13eaf25292af5a9b63d2b7ab': {
+                balance: '0xde0b6b3a7640000', // 1000000000000000000 (1 - 18 decimals)
+              },
+            },
+          },
+        },
+        AssetsController: {
+          selectedCurrency: 'USD',
+          assetsInfo: {
+            'eip155:1/slip44:60': {
+              type: 'native',
+              symbol: 'ETH',
+              name: 'Ethereum',
+              decimals: 18,
+            },
+            'eip155:10/slip44:60': {
+              type: 'native',
+              symbol: 'ETH',
+              name: 'Ethereum',
+              decimals: 18,
+            },
+            'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84': {
+              type: 'erc20',
+              symbol: 'stETH',
+              name: 'Lido Staked Ether',
+              decimals: 18,
+              aggregators: ['UniswapLabs', 'Metamask', 'Aave'],
+              image:
+                'https://static.cx.metamask.io/api/v1/tokenIcons/10/0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84.png',
+            },
+            'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F': {
+              type: 'erc20',
+              symbol: 'DAI',
+              name: 'Dai Stablecoin',
+              decimals: 18,
+              image:
+                'https://static.cx.metamask.io/api/v1/tokenIcons/1/0x6B175474E89094C44Da98b954EedeAC495271d0F.png',
+            },
+            'eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85': {
+              type: 'erc20',
+              symbol: 'USDC',
+              name: 'USDCoin',
+              decimals: 6,
+              image:
+                'https://static.cx.metamask.io/api/v1/tokenIcons/10/0x0b2c639c533813f4aa9d7837caf62653d097ff85.png',
+            },
+            'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501': {
+              type: 'native',
+              symbol: 'SOL',
+              name: 'Solana',
+              decimals: 9,
+              image:
+                'https://static.cx.metamask.io/api/v2/tokenIcons/assets/solana/5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44/501.png',
+            },
+            'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN':
+              {
+                type: 'token',
+                symbol: 'JUP',
+                name: 'Jupiter',
+                decimals: 6,
+                image:
+                  'https://static.cx.metamask.io/api/v2/tokenIcons/assets/solana/5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN.png',
+              },
+          },
+          assetsBalance: {
+            'd7f11451-9d79-4df4-a012-afd253443639': {
+              'eip155:1/slip44:60': { amount: '10' },
+              'eip155:10/slip44:60': { amount: '1' },
+              'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84': {
+                amount: '100',
+              },
+              'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F': {
+                amount: '200',
+              },
+              'eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85': {
+                amount: '1000',
+              },
+            },
+            '2d89e6a0-b4e6-45a8-a707-f10cef143b42': {
+              'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501': {
+                amount: '10',
+              },
+              'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN':
+                { amount: '200' },
+            },
+          },
+          assetsPrice: {
+            'eip155:1/slip44:60': {
+              assetPriceType: 'fungible',
+              price: 2400,
+              usdPrice: 2400,
+              lastUpdated: 1717334400000,
+            },
+            'eip155:10/slip44:60': {
+              assetPriceType: 'fungible',
+              price: 2400,
+              usdPrice: 2400,
+              lastUpdated: 1717334400000,
+            },
+            'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84': {
+              assetPriceType: 'fungible',
+              price: 0.216,
+              usdPrice: 0.216,
+              lastUpdated: 1717334400000,
+            },
+            'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F': {
+              assetPriceType: 'fungible',
+              price: 4.8,
+              usdPrice: 4.8,
+              lastUpdated: 1717334400000,
+            },
+            'eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85': {
+              assetPriceType: 'fungible',
+              price: 12,
+              usdPrice: 12,
+              lastUpdated: 1717334400000,
+            },
+            'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501': {
+              assetPriceType: 'fungible',
+              price: 163.55,
+              usdPrice: 163.55,
+              lastUpdated: 1717334400000,
+            },
+            'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN':
+              {
+                assetPriceType: 'fungible',
+                price: 0.463731,
+                usdPrice: 0.463731,
+                lastUpdated: 1717334400000,
+              },
+          },
+          customAssets: {},
+          assetPreferences: {},
+        },
+        NetworkEnablementController: {
+          enabledNetworkMap: {
+            [KnownCaipNamespace.Eip155]: {
+              '0x1': !filterNetwork || filterNetwork === '0x1',
+              '0xa': !filterNetwork || filterNetwork === '0xa',
+            },
+            [KnownCaipNamespace.Solana]: {
+              'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp':
+                !filterNetwork ||
+                filterNetwork === 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+            },
+          },
+        },
+        PreferencesController: {
+          tokenSortConfig: {
+            key: 'tokenFiatAmount',
+            order: 'dsc',
+            sortCallback: 'stringNumeric',
+          },
+        },
+      },
+    },
+    settings: {
+      hideZeroBalanceTokens: false,
+    },
+  }) as unknown as RootState;
+
+describe('selectAssetsBySelectedAccountGroup', () => {
+  it('builds the initial state object', () => {
+    const result = selectAssetsBySelectedAccountGroup(mockState());
+    expect(result).toStrictEqual({
+      '0x1': [
+        {
+          accountType: 'eip155:eoa',
+          assetId: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+          isNative: false,
+          address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+          image:
+            'https://static.cx.metamask.io/api/v1/tokenIcons/10/0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84.png',
+          name: 'Lido Staked Ether',
+          symbol: 'stETH',
+          accountId: 'd7f11451-9d79-4df4-a012-afd253443639',
+          decimals: 18,
+          rawBalance: '0x56bc75e2d63100000',
+          balance: '100',
+          fiat: {
+            balance: 21.6,
+            conversionRate: 2400,
+            currency: 'USD',
+          },
+          chainId: '0x1',
+        },
+        {
+          accountType: 'eip155:eoa',
+          assetId: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+          isNative: false,
+          address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+          image:
+            'https://static.cx.metamask.io/api/v1/tokenIcons/1/0x6B175474E89094C44Da98b954EedeAC495271d0F.png',
+          name: 'Dai Stablecoin',
+          symbol: 'DAI',
+          accountId: 'd7f11451-9d79-4df4-a012-afd253443639',
+          decimals: 18,
+          rawBalance: '0xad78ebc5ac6200000',
+          balance: '200',
+          fiat: {
+            balance: 960,
+            conversionRate: 2400,
+            currency: 'USD',
+          },
+          chainId: '0x1',
+        },
+        {
+          accountType: 'eip155:eoa',
+          assetId: '0x0000000000000000000000000000000000000000',
+          isNative: true,
+          address: '0x0000000000000000000000000000000000000000',
+          image: '',
+          name: 'Ethereum',
+          symbol: 'ETH',
+          accountId: 'd7f11451-9d79-4df4-a012-afd253443639',
+          decimals: 18,
+          rawBalance: '0x8ac7230489e80000',
+          balance: '10',
+          fiat: {
+            balance: 24000,
+            conversionRate: 2400,
+            currency: 'USD',
+          },
+          chainId: '0x1',
+        },
+      ],
+      '0xa': [
+        {
+          accountType: 'eip155:eoa',
+          assetId: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+          isNative: false,
+          address: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+          image:
+            'https://static.cx.metamask.io/api/v1/tokenIcons/10/0x0b2c639c533813f4aa9d7837caf62653d097ff85.png',
+          name: 'USDCoin',
+          symbol: 'USDC',
+          accountId: 'd7f11451-9d79-4df4-a012-afd253443639',
+          decimals: 6,
+          rawBalance: '0x3b9aca00',
+          balance: '1000',
+          fiat: {
+            balance: 12000,
+            conversionRate: 2400,
+            currency: 'USD',
+          },
+          chainId: '0xa',
+        },
+        {
+          accountType: 'eip155:eoa',
+          assetId: '0x0000000000000000000000000000000000000000',
+          isNative: true,
+          address: '0x0000000000000000000000000000000000000000',
+          image: '',
+          name: 'Ethereum',
+          symbol: 'ETH',
+          accountId: 'd7f11451-9d79-4df4-a012-afd253443639',
+          decimals: 18,
+          rawBalance: '0xde0b6b3a7640000',
+          balance: '1',
+          fiat: {
+            balance: 2400,
+            conversionRate: 2400,
+            currency: 'USD',
+          },
+          chainId: '0xa',
+        },
+      ],
+      'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp': [
+        {
+          accountType: 'solana:data-account',
+          accountId: '2d89e6a0-b4e6-45a8-a707-f10cef143b42',
+          assetId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501',
+          balance: '10',
+          chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+          decimals: 9,
+          fiat: {
+            balance: 1635.5,
+            conversionRate: 163.55,
+            currency: 'USD',
+          },
+          image:
+            'https://static.cx.metamask.io/api/v2/tokenIcons/assets/solana/5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44/501.png',
+          isNative: true,
+          name: 'Solana',
+          rawBalance: '0x2540be400',
+          symbol: 'SOL',
+        },
+        {
+          accountType: 'solana:data-account',
+          accountId: '2d89e6a0-b4e6-45a8-a707-f10cef143b42',
+          assetId:
+            'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
+          balance: '200',
+          chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+          decimals: 6,
+          fiat: {
+            balance: 92.7462,
+            conversionRate: 0.463731,
+            currency: 'USD',
+          },
+          image:
+            'https://static.cx.metamask.io/api/v2/tokenIcons/assets/solana/5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN.png',
+          isNative: false,
+          name: 'Jupiter',
+          rawBalance: '0xbebc200',
+          symbol: 'JUP',
+        },
+      ],
+    });
+  });
+});
+
+describe('selectSortedAssetsBySelectedAccountGroup', () => {
+  it('returns all assets sorted by fiat amount when all networks are selected', () => {
+    const state = mockState();
+    const result = selectSortedAssetsBySelectedAccountGroup(state);
+
+    expect(result).toEqual([
+      {
+        address: '0x0000000000000000000000000000000000000000',
+        chainId: '0x1',
+        isStaked: true,
+      },
+      {
+        address: '0x0000000000000000000000000000000000000000',
+        chainId: '0x1',
+        isStaked: false,
+      },
+      {
+        address: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+        chainId: '0xa',
+        isStaked: false,
+      },
+      {
+        address: '0x0000000000000000000000000000000000000000',
+        chainId: '0xa',
+        isStaked: false,
+      },
+      {
+        address: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501',
+        chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+        isStaked: false,
+      },
+      {
+        address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        chainId: '0x1',
+        isStaked: false,
+      },
+      {
+        address:
+          'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
+        chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+        isStaked: false,
+      },
+      {
+        address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+        chainId: '0x1',
+        isStaked: false,
+      },
+    ]);
+  });
+
+  it('filters assets when a single network is selected', () => {
+    const state = mockState({ filterNetwork: '0x1' });
+    const result = selectSortedAssetsBySelectedAccountGroup(state);
+
+    expect(result).toEqual([
+      {
+        address: '0x0000000000000000000000000000000000000000',
+        chainId: '0x1',
+        isStaked: true,
+      },
+      {
+        address: '0x0000000000000000000000000000000000000000',
+        chainId: '0x1',
+        isStaked: false,
+      },
+      {
+        address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        chainId: '0x1',
+        isStaked: false,
+      },
+      {
+        address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+        chainId: '0x1',
+        isStaked: false,
+      },
+    ]);
+  });
+
+  it('includes zero-balance non-native tokens when hideZeroBalanceTokens is false', () => {
+    const state = {
+      ...mockState(),
+      settings: { hideZeroBalanceTokens: false },
+      engine: {
+        ...mockState().engine,
+        backgroundState: {
+          ...mockState().engine.backgroundState,
+          TokenBalancesController: {
+            tokenBalances: {
+              '0x2bd63233fe369b0f13eaf25292af5a9b63d2b7ab': {
+                '0x1': {
+                  // stETH has zero balance
+                  '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84': '0x0',
+                  '0x6B175474E89094C44Da98b954EedeAC495271d0F':
+                    '0xad78ebc5ac6200000',
+                },
+                '0xa': {
+                  '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85': '0x3b9aca00',
+                },
+              },
+            },
+          },
+          AssetsController: {
+            ...mockState().engine.backgroundState.AssetsController,
+            assetsBalance: {
+              ...mockState().engine.backgroundState.AssetsController
+                .assetsBalance,
+              'd7f11451-9d79-4df4-a012-afd253443639': {
+                ...mockState().engine.backgroundState.AssetsController
+                  .assetsBalance['d7f11451-9d79-4df4-a012-afd253443639'],
+                'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84': {
+                  amount: '0',
+                },
+              },
+            },
+          },
+        },
+      },
+    } as unknown as RootState;
+
+    const result = selectSortedAssetsBySelectedAccountGroup(state);
+    const addresses = result.map((r) => r.address);
+
+    // stETH zero-balance token should still be present when flag is off
+    expect(addresses).toContain('0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84');
+  });
+
+  it('filters out zero-balance non-native tokens when hideZeroBalanceTokens is true', () => {
+    const state = {
+      ...mockState(),
+      settings: { hideZeroBalanceTokens: true },
+      engine: {
+        ...mockState().engine,
+        backgroundState: {
+          ...mockState().engine.backgroundState,
+          TokenBalancesController: {
+            tokenBalances: {
+              '0x2bd63233fe369b0f13eaf25292af5a9b63d2b7ab': {
+                '0x1': {
+                  // stETH has zero balance
+                  '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84': '0x0',
+                  // DAI has non-zero balance
+                  '0x6B175474E89094C44Da98b954EedeAC495271d0F':
+                    '0xad78ebc5ac6200000',
+                },
+                '0xa': {
+                  '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85': '0x3b9aca00',
+                },
+              },
+            },
+          },
+          AssetsController: {
+            ...mockState().engine.backgroundState.AssetsController,
+            assetsBalance: {
+              ...mockState().engine.backgroundState.AssetsController
+                .assetsBalance,
+              'd7f11451-9d79-4df4-a012-afd253443639': {
+                ...mockState().engine.backgroundState.AssetsController
+                  .assetsBalance['d7f11451-9d79-4df4-a012-afd253443639'],
+                'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84': {
+                  amount: '0',
+                },
+              },
+            },
+          },
+        },
+      },
+    } as unknown as RootState;
+
+    const result = selectSortedAssetsBySelectedAccountGroup(state);
+    const addresses = result.map((r) => r.address);
+
+    // stETH (zero balance, non-native) should be filtered out
+    expect(addresses).not.toContain(
+      '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+    );
+    // DAI (non-zero balance) should remain
+    expect(addresses).toContain('0x6B175474E89094C44Da98b954EedeAC495271d0F');
+    // USDC (non-zero balance) should remain
+    expect(addresses).toContain('0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85');
+  });
+
+  it('keeps native tokens with zero balance when hideZeroBalanceTokens is true', () => {
+    const state = {
+      ...mockState(),
+      settings: { hideZeroBalanceTokens: true },
+      engine: {
+        ...mockState().engine,
+        backgroundState: {
+          ...mockState().engine.backgroundState,
+          AccountTrackerController: {
+            accountsByChainId: {
+              '0x1': {
+                '0x2bd63233fe369b0f13eaf25292af5a9b63d2b7ab': {
+                  // Native ETH on 0x1 has zero balance
+                  balance: '0x0',
+                  stakedBalance: '0x0',
+                },
+              },
+              '0xa': {
+                '0x2bd63233fe369b0f13eaf25292af5a9b63d2b7ab': {
+                  balance: '0xde0b6b3a7640000',
+                },
+              },
+            },
+          },
+          AssetsController: {
+            ...mockState().engine.backgroundState.AssetsController,
+            assetsBalance: {
+              ...mockState().engine.backgroundState.AssetsController
+                .assetsBalance,
+              'd7f11451-9d79-4df4-a012-afd253443639': {
+                ...mockState().engine.backgroundState.AssetsController
+                  .assetsBalance['d7f11451-9d79-4df4-a012-afd253443639'],
+                'eip155:1/slip44:60': { amount: '0' },
+                'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84': {
+                  amount: '0',
+                },
+              },
+            },
+          },
+        },
+      },
+    } as unknown as RootState;
+
+    const result = selectSortedAssetsBySelectedAccountGroup(state);
+
+    // Native ETH on 0x1 must still appear despite zero balance
+    expect(
+      result.find(
+        (r) =>
+          r.address === '0x0000000000000000000000000000000000000000' &&
+          r.chainId === '0x1' &&
+          !r.isStaked,
+      ),
+    ).toBeDefined();
+  });
+
+  it('filters out Tron special assets from the sorted asset list', () => {
+    const stateWithTronAssets = {
+      ...mockState(),
+      engine: {
+        ...mockState().engine,
+        backgroundState: {
+          ...mockState().engine.backgroundState,
+          MultichainAssetsController: {
+            accountsAssets: {
+              '2d89e6a0-b4e6-45a8-a707-f10cef143b42': [
+                'tron:728126428/slip44:energy',
+                'tron:728126428/slip44:bandwidth',
+                'tron:728126428/slip44:195-ready-for-withdrawal',
+                'tron:728126428/slip44:195-staking-rewards',
+                'tron:728126428/slip44:195-in-lock-period',
+                'tron:728126428/slip44:195',
+              ],
+            },
+            assetsMetadata: {
+              'tron:728126428/slip44:energy': {
+                name: 'Energy',
+                symbol: 'ENERGY',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [{ name: 'Energy', symbol: 'ENERGY', decimals: 0 }],
+              },
+              'tron:728126428/slip44:bandwidth': {
+                name: 'Bandwidth',
+                symbol: 'BANDWIDTH',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  { name: 'Bandwidth', symbol: 'BANDWIDTH', decimals: 0 },
+                ],
+              },
+              'tron:728126428/slip44:195-ready-for-withdrawal': {
+                name: 'Ready for Withdrawal',
+                symbol: 'TRX-READY-FOR-WITHDRAWAL',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  {
+                    name: 'Ready for Withdrawal',
+                    symbol: 'TRX-READY-FOR-WITHDRAWAL',
+                    decimals: 6,
+                  },
+                ],
+              },
+              'tron:728126428/slip44:195-staking-rewards': {
+                name: 'Staking Rewards',
+                symbol: 'TRX-STAKING-REWARDS',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  {
+                    name: 'Staking Rewards',
+                    symbol: 'TRX-STAKING-REWARDS',
+                    decimals: 6,
+                  },
+                ],
+              },
+              'tron:728126428/slip44:195-in-lock-period': {
+                name: 'In Lock Period',
+                symbol: 'TRX-IN-LOCK-PERIOD',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  {
+                    name: 'In Lock Period',
+                    symbol: 'TRX-IN-LOCK-PERIOD',
+                    decimals: 6,
+                  },
+                ],
+              },
+              'tron:728126428/slip44:195': {
+                name: 'TRON',
+                symbol: 'TRX',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [{ name: 'TRON', symbol: 'TRX', decimals: 6 }],
+              },
+            },
+            allIgnoredAssets: {},
+          },
+          MultichainBalancesController: {
+            balances: {
+              '2d89e6a0-b4e6-45a8-a707-f10cef143b42': {
+                'tron:728126428/slip44:energy': {
+                  amount: '400',
+                  unit: 'ENERGY',
+                },
+                'tron:728126428/slip44:bandwidth': {
+                  amount: '604',
+                  unit: 'BANDWIDTH',
+                },
+                'tron:728126428/slip44:195-ready-for-withdrawal': {
+                  amount: '10',
+                  unit: 'TRX-READY-FOR-WITHDRAWAL',
+                },
+                'tron:728126428/slip44:195-staking-rewards': {
+                  amount: '5',
+                  unit: 'TRX-STAKING-REWARDS',
+                },
+                'tron:728126428/slip44:195-in-lock-period': {
+                  amount: '20',
+                  unit: 'TRX-IN-LOCK-PERIOD',
+                },
+                'tron:728126428/slip44:195': { amount: '1000', unit: 'TRX' },
+              },
+            },
+          },
+          MultichainAssetsRatesController: {
+            conversionRates: {
+              'tron:728126428/slip44:195': {
+                rate: '0.12',
+                currency: 'swift:0/iso4217:USD',
+              },
+            },
+          },
+          NetworkEnablementController: {
+            enabledNetworkMap: {
+              [KnownCaipNamespace.Tron]: {
+                [TrxScope.Mainnet]: true,
+              },
+            },
+          },
+        },
+      },
+    } as unknown as RootState;
+
+    const result =
+      selectSortedAssetsBySelectedAccountGroup(stateWithTronAssets);
+
+    const tronAssets = result.filter((asset) =>
+      asset.chainId?.includes('tron:'),
+    );
+
+    const trxAsset = tronAssets.find(
+      (asset) => asset.address === 'tron:728126428/slip44:195',
+    );
+    const energyAsset = tronAssets.find(
+      (asset) => asset.address === 'tron:728126428/slip44:energy',
+    );
+    const bandwidthAsset = tronAssets.find(
+      (asset) => asset.address === 'tron:728126428/slip44:bandwidth',
+    );
+    const readyForWithdrawalAsset = tronAssets.find(
+      (asset) =>
+        asset.address === 'tron:728126428/slip44:195-ready-for-withdrawal',
+    );
+    const stakingRewardsAsset = tronAssets.find(
+      (asset) => asset.address === 'tron:728126428/slip44:195-staking-rewards',
+    );
+    const inLockPeriodAsset = tronAssets.find(
+      (asset) => asset.address === 'tron:728126428/slip44:195-in-lock-period',
+    );
+
+    expect(trxAsset).toBeDefined();
+    expect(energyAsset).toBeUndefined();
+    expect(bandwidthAsset).toBeUndefined();
+    expect(readyForWithdrawalAsset).toBeUndefined();
+    expect(stakingRewardsAsset).toBeUndefined();
+    expect(inLockPeriodAsset).toBeUndefined();
+
+    expect(tronAssets).toHaveLength(1);
+  });
+});
+
+describe('createSelectSortedAssetsBySelectedAccountGroup', () => {
+  it('returns selector that filters by custom enabled-networks selector', () => {
+    const onlyMainnetSelector = createDeepEqualSelector(
+      [selectEnabledNetworksByNamespace],
+      (enabledNetworksByNamespace) => {
+        const enabled = Object.values(enabledNetworksByNamespace).flatMap(
+          (network) =>
+            Object.entries(network)
+              .filter(([_, isEnabled]) => isEnabled)
+              .map(([networkId]) => networkId),
+        );
+        return enabled.filter((id) => id === '0x1');
+      },
+    );
+    const customSelectSorted =
+      createSelectSortedAssetsBySelectedAccountGroup(onlyMainnetSelector);
+    const state = mockState();
+    const result = customSelectSorted(state);
+
+    expect(result.every((item) => item.chainId === '0x1')).toBe(true);
+    expect(result).toEqual(
+      expect.arrayContaining([
+        {
+          address: '0x0000000000000000000000000000000000000000',
+          chainId: '0x1',
+          isStaked: true,
+        },
+        {
+          address: '0x0000000000000000000000000000000000000000',
+          chainId: '0x1',
+          isStaked: false,
+        },
+        {
+          address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+          chainId: '0x1',
+          isStaked: false,
+        },
+        {
+          address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+          chainId: '0x1',
+          isStaked: false,
+        },
+      ]),
+    );
+  });
+
+  it('returns same shape as default selectSortedAssetsBySelectedAccountGroup when using selectEnabledNetworks', () => {
+    const state = mockState();
+    const defaultResult = selectSortedAssetsBySelectedAccountGroup(state);
+    const customResult =
+      createSelectSortedAssetsBySelectedAccountGroup()(state);
+    expect(customResult).toEqual(defaultResult);
+  });
+});
+
+describe('selectSortedAssetsBySelectedAccountGroupForChainIds', () => {
+  it('filters assets by explicit chain IDs (CAIP-2 and Hex)', () => {
+    const state = mockState();
+    const chainIds = ['eip155:1', '0xa'];
+    const result = selectSortedAssetsBySelectedAccountGroupForChainIds(
+      state,
+      chainIds,
+    );
+
+    const chainIdsInResult = [...new Set(result.map((r) => r.chainId))];
+    expect(chainIdsInResult.sort()).toEqual(['0x1', '0xa']);
+    expect(
+      result.every((r) => r.chainId === '0x1' || r.chainId === '0xa'),
+    ).toBe(true);
+  });
+
+  it('returns only mainnet assets when chainIds is [eip155:1]', () => {
+    const state = mockState();
+    const result = selectSortedAssetsBySelectedAccountGroupForChainIds(state, [
+      'eip155:1',
+    ]);
+
+    expect(result.every((item) => item.chainId === '0x1')).toBe(true);
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('returns empty array when chainIds is empty', () => {
+    const state = mockState();
+    const result = selectSortedAssetsBySelectedAccountGroupForChainIds(
+      state,
+      [],
+    );
+    expect(result).toEqual([]);
+  });
+
+  it('includes both 0x1 and eip155:1 in allowed set so EVM assets are included', () => {
+    const state = mockState();
+    const byCaip = selectSortedAssetsBySelectedAccountGroupForChainIds(state, [
+      'eip155:1',
+    ]);
+    const byHex = selectSortedAssetsBySelectedAccountGroupForChainIds(state, [
+      '0x1',
+    ]);
+    expect(byCaip).toEqual(byHex);
+  });
+
+  it('filters out Tron special assets when Tron is in chainIds (Energy, Bandwidth, staking)', () => {
+    const stateWithTronAssets = {
+      ...mockState(),
+      engine: {
+        ...mockState().engine,
+        backgroundState: {
+          ...mockState().engine.backgroundState,
+          MultichainAssetsController: {
+            accountsAssets: {
+              '2d89e6a0-b4e6-45a8-a707-f10cef143b42': [
+                'tron:728126428/slip44:energy',
+                'tron:728126428/slip44:bandwidth',
+                'tron:728126428/slip44:195-ready-for-withdrawal',
+                'tron:728126428/slip44:195-staking-rewards',
+                'tron:728126428/slip44:195-in-lock-period',
+                'tron:728126428/slip44:195',
+              ],
+            },
+            assetsMetadata: {
+              'tron:728126428/slip44:energy': {
+                name: 'Energy',
+                symbol: 'ENERGY',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [{ name: 'Energy', symbol: 'ENERGY', decimals: 0 }],
+              },
+              'tron:728126428/slip44:bandwidth': {
+                name: 'Bandwidth',
+                symbol: 'BANDWIDTH',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  { name: 'Bandwidth', symbol: 'BANDWIDTH', decimals: 0 },
+                ],
+              },
+              'tron:728126428/slip44:195-ready-for-withdrawal': {
+                name: 'Ready for Withdrawal',
+                symbol: 'TRX-READY-FOR-WITHDRAWAL',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  {
+                    name: 'Ready for Withdrawal',
+                    symbol: 'TRX-READY-FOR-WITHDRAWAL',
+                    decimals: 6,
+                  },
+                ],
+              },
+              'tron:728126428/slip44:195-staking-rewards': {
+                name: 'Staking Rewards',
+                symbol: 'TRX-STAKING-REWARDS',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  {
+                    name: 'Staking Rewards',
+                    symbol: 'TRX-STAKING-REWARDS',
+                    decimals: 6,
+                  },
+                ],
+              },
+              'tron:728126428/slip44:195-in-lock-period': {
+                name: 'In Lock Period',
+                symbol: 'TRX-IN-LOCK-PERIOD',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  {
+                    name: 'In Lock Period',
+                    symbol: 'TRX-IN-LOCK-PERIOD',
+                    decimals: 6,
+                  },
+                ],
+              },
+              'tron:728126428/slip44:195': {
+                name: 'TRON',
+                symbol: 'TRX',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [{ name: 'TRON', symbol: 'TRX', decimals: 6 }],
+              },
+            },
+            allIgnoredAssets: {},
+          },
+          MultichainBalancesController: {
+            balances: {
+              '2d89e6a0-b4e6-45a8-a707-f10cef143b42': {
+                'tron:728126428/slip44:energy': {
+                  amount: '400',
+                  unit: 'ENERGY',
+                },
+                'tron:728126428/slip44:bandwidth': {
+                  amount: '604',
+                  unit: 'BANDWIDTH',
+                },
+                'tron:728126428/slip44:195-ready-for-withdrawal': {
+                  amount: '10',
+                  unit: 'TRX-READY-FOR-WITHDRAWAL',
+                },
+                'tron:728126428/slip44:195-staking-rewards': {
+                  amount: '5',
+                  unit: 'TRX-STAKING-REWARDS',
+                },
+                'tron:728126428/slip44:195-in-lock-period': {
+                  amount: '20',
+                  unit: 'TRX-IN-LOCK-PERIOD',
+                },
+                'tron:728126428/slip44:195': { amount: '1000', unit: 'TRX' },
+              },
+            },
+          },
+          MultichainAssetsRatesController: {
+            conversionRates: {
+              'tron:728126428/slip44:195': {
+                rate: '0.12',
+                currency: 'swift:0/iso4217:USD',
+              },
+            },
+          },
+          NetworkEnablementController: {
+            enabledNetworkMap: {
+              [KnownCaipNamespace.Tron]: {
+                [TrxScope.Mainnet]: true,
+              },
+            },
+          },
+        },
+      },
+    } as unknown as RootState;
+
+    const result = selectSortedAssetsBySelectedAccountGroupForChainIds(
+      stateWithTronAssets,
+      ['tron:728126428', 'eip155:1'],
+    );
+
+    const tronAssets = result.filter(
+      (asset) =>
+        asset.chainId?.includes('tron') || asset.chainId === 'tron:728126428',
+    );
+
+    expect(
+      tronAssets.find((a) => a.address === 'tron:728126428/slip44:195'),
+    ).toBeDefined();
+    expect(
+      tronAssets.find((a) => a.address === 'tron:728126428/slip44:energy'),
+    ).toBeUndefined();
+    expect(
+      tronAssets.find((a) => a.address === 'tron:728126428/slip44:bandwidth'),
+    ).toBeUndefined();
+    expect(
+      tronAssets.find((a) => a.address?.includes('195-ready-for-withdrawal')),
+    ).toBeUndefined();
+    expect(
+      tronAssets.find((a) => a.address?.includes('staking-rewards')),
+    ).toBeUndefined();
+    expect(
+      tronAssets.find((a) => a.address?.includes('in-lock-period')),
+    ).toBeUndefined();
+    expect(tronAssets).toHaveLength(1);
+  });
+});
+
+describe('selectSortedAssetsBySelectedAccountGroupForChainIdsByBalance', () => {
+  it('filters assets by explicit chain IDs (same as ForChainIds)', () => {
+    const state = mockState();
+    const chainIds = ['eip155:1', '0xa'];
+    const result = selectSortedAssetsBySelectedAccountGroupForChainIdsByBalance(
+      state,
+      chainIds,
+    );
+
+    const chainIdsInResult = [...new Set(result.map((r) => r.chainId))];
+    expect(chainIdsInResult.sort()).toEqual(['0x1', '0xa']);
+    expect(
+      result.every((r) => r.chainId === '0x1' || r.chainId === '0xa'),
+    ).toBe(true);
+  });
+
+  it('returns empty array when chainIds is empty', () => {
+    const state = mockState();
+    const result = selectSortedAssetsBySelectedAccountGroupForChainIdsByBalance(
+      state,
+      [],
+    );
+    expect(result).toEqual([]);
+  });
+
+  it('includes both 0x1 and eip155:1 in allowed set (same as ForChainIds)', () => {
+    const state = mockState();
+    const byCaip = selectSortedAssetsBySelectedAccountGroupForChainIdsByBalance(
+      state,
+      ['eip155:1'],
+    );
+    const byHex = selectSortedAssetsBySelectedAccountGroupForChainIdsByBalance(
+      state,
+      ['0x1'],
+    );
+    expect(byCaip).toEqual(byHex);
+  });
+
+  it('includes all tokens when hideZeroBalanceTokens is false', () => {
+    const state = {
+      ...mockState(),
+      settings: { hideZeroBalanceTokens: false },
+    } as unknown as RootState;
+
+    const result = selectSortedAssetsBySelectedAccountGroupForChainIdsByBalance(
+      state,
+      ['eip155:1', '0xa'],
+    );
+
+    // All tokens from both chains should be present (all have non-zero balances in mockState)
+    const chainIds = [...new Set(result.map((r) => r.chainId))];
+    expect(chainIds.sort()).toEqual(['0x1', '0xa']);
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('filters out zero-balance tokens when hideZeroBalanceTokens is true', () => {
+    const stateWithZeroBalances = {
+      ...mockState(),
+      settings: { hideZeroBalanceTokens: true },
+      engine: {
+        ...mockState().engine,
+        backgroundState: {
+          ...mockState().engine.backgroundState,
+          TokenBalancesController: {
+            tokenBalances: {
+              '0x2bd63233fe369b0f13eaf25292af5a9b63d2b7ab': {
+                '0x1': {
+                  // stETH has zero balance
+                  '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84': '0x0',
+                  // DAI has non-zero balance
+                  '0x6B175474E89094C44Da98b954EedeAC495271d0F':
+                    '0xad78ebc5ac6200000',
+                },
+                '0xa': {
+                  // USDC has non-zero balance
+                  '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85': '0x3b9aca00',
+                },
+              },
+            },
+          },
+          // Native ETH on 0x1 has zero balance
+          AccountTrackerController: {
+            accountsByChainId: {
+              '0x1': {
+                '0x2bd63233fe369b0f13eaf25292af5a9b63d2b7ab': {
+                  balance: '0x0',
+                  stakedBalance: '0x0',
+                },
+              },
+              '0xa': {
+                '0x2bd63233fe369b0f13eaf25292af5a9b63d2b7ab': {
+                  balance: '0xde0b6b3a7640000',
+                },
+              },
+            },
+          },
+          AssetsController: {
+            ...mockState().engine.backgroundState.AssetsController,
+            assetsBalance: {
+              ...mockState().engine.backgroundState.AssetsController
+                .assetsBalance,
+              'd7f11451-9d79-4df4-a012-afd253443639': {
+                ...mockState().engine.backgroundState.AssetsController
+                  .assetsBalance['d7f11451-9d79-4df4-a012-afd253443639'],
+                'eip155:1/slip44:60': { amount: '0' },
+                'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84': {
+                  amount: '0',
+                },
+              },
+            },
+          },
+        },
+      },
+    } as unknown as RootState;
+
+    const result = selectSortedAssetsBySelectedAccountGroupForChainIdsByBalance(
+      stateWithZeroBalances,
+      ['eip155:1', '0xa'],
+    );
+
+    const addresses = result.map((r) => r.address);
+
+    // stETH (zero balance) should be filtered out
+    expect(addresses).not.toContain(
+      '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+    );
+    // ETH on 0x1 (zero balance) should be filtered out
+    expect(
+      result.find(
+        (r) =>
+          r.address === '0x0000000000000000000000000000000000000000' &&
+          r.chainId === '0x1' &&
+          !r.isStaked,
+      ),
+    ).toBeUndefined();
+    // DAI (non-zero balance) should remain
+    expect(addresses).toContain('0x6B175474E89094C44Da98b954EedeAC495271d0F');
+    // USDC (non-zero balance) should remain
+    expect(addresses).toContain('0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85');
+    // ETH on 0xa (non-zero balance) should remain
+    expect(
+      result.find(
+        (r) =>
+          r.address === '0x0000000000000000000000000000000000000000' &&
+          r.chainId === '0xa',
+      ),
+    ).toBeDefined();
+  });
+
+  it('keeps all tokens when hideZeroBalanceTokens is true but all have non-zero balances', () => {
+    const state = {
+      ...mockState(),
+      settings: { hideZeroBalanceTokens: true },
+    } as unknown as RootState;
+
+    const withFilter =
+      selectSortedAssetsBySelectedAccountGroupForChainIdsByBalance(state, [
+        'eip155:1',
+        '0xa',
+      ]);
+    const withoutFilter =
+      selectSortedAssetsBySelectedAccountGroupForChainIdsByBalance(
+        {
+          ...mockState(),
+          settings: { hideZeroBalanceTokens: false },
+        } as unknown as RootState,
+        ['eip155:1', '0xa'],
+      );
+
+    // All tokens in mockState have non-zero balances so counts should match
+    expect(withFilter.length).toBe(withoutFilter.length);
+  });
+
+  it('always sorts by balance and ignores PreferencesController tokenSortConfig', () => {
+    const stateWithNameSort = {
+      ...mockState(),
+      engine: {
+        ...mockState().engine,
+        backgroundState: {
+          ...mockState().engine.backgroundState,
+          PreferencesController: {
+            ...mockState().engine.backgroundState.PreferencesController,
+            tokenSortConfig: {
+              key: 'name',
+              order: 'asc',
+              sortCallback: 'alphaNumeric',
+            },
+          },
+        },
+      },
+    } as unknown as RootState;
+
+    const byBalance =
+      selectSortedAssetsBySelectedAccountGroupForChainIdsByBalance(
+        stateWithNameSort,
+        ['eip155:1'],
+      );
+    const byUserPref = selectSortedAssetsBySelectedAccountGroupForChainIds(
+      stateWithNameSort,
+      ['eip155:1'],
+    );
+
+    expect(byBalance).toHaveLength(byUserPref.length);
+    expect(byBalance.every((r) => r.chainId === '0x1')).toBe(true);
+    // ByBalance uses balance sort; ForChainIds with name sort can produce different order
+    expect(byBalance.map((r) => r.address)).toEqual(
+      expect.arrayContaining(byUserPref.map((r) => r.address)),
+    );
+  });
+});
+
+describe('selectAsset', () => {
+  beforeEach(() => {
+    mockI18n.locale = 'en';
+  });
+
+  it('returns formatted evm native asset based on filter criteria', () => {
+    const state = mockState();
+    const result = selectAsset(state, {
+      address: '0x0000000000000000000000000000000000000000',
+      chainId: '0x1',
+      isStaked: false,
+    });
+
+    expect(result).toEqual({
+      chainId: '0x1',
+      address: '0x0000000000000000000000000000000000000000',
+      symbol: 'ETH',
+      ticker: 'ETH',
+      name: 'Ethereum',
+      decimals: 18,
+      balance: '10',
+      balanceFiat: '$24,000.00',
+      isETH: true,
+      isNative: true,
+      isStaked: false,
+      logo: '../images/eth-logo-new.png',
+      image: '',
+      aggregators: [],
+      accountType: EthAccountType.Eoa,
+    });
+  });
+
+  it('returns formatted staked evm native asset based on filter criteria', () => {
+    const state = mockState();
+    const result = selectAsset(state, {
+      address: '0x0000000000000000000000000000000000000000',
+      chainId: '0x1',
+      isStaked: true,
+    });
+
+    expect(result).toEqual({
+      chainId: '0x1',
+      address: '0x0000000000000000000000000000000000000000',
+      symbol: 'ETH',
+      ticker: 'ETH',
+      name: 'Staked Ethereum',
+      decimals: 18,
+      balance: '100',
+      balanceFiat: '$240,000.00',
+      isETH: true,
+      isNative: true,
+      isStaked: true,
+      logo: '../images/eth-logo-new.png',
+      image: '',
+      aggregators: [],
+      accountType: EthAccountType.Eoa,
+    });
+  });
+
+  it('scopes native and staked lookups to selected account group', () => {
+    const baseState = mockState();
+
+    // Account 1 info (already exists in mockState)
+    const account1Id = 'd7f11451-9d79-4df4-a012-afd253443639';
+    const group1Id = 'entropy:01K1TJY9QPSCKNBSVGZNG510GJ/0';
+
+    // Create second account group with different EVM account
+    const account2Id = '11111111-1111-1111-1111-111111111111';
+    const account2Address = '0x1111111111111111111111111111111111111111';
+    const account2AddressLowercased = account2Address.toLowerCase();
+    const group2Id = 'entropy:01K1TJY9QPSCKNBSVGZNG510GJ/1';
+    const walletId = 'entropy:01K1TJY9QPSCKNBSVGZNG510GJ';
+
+    const withSelectedGroup = (
+      state: RootState,
+      selectedGroup: AccountGroupId,
+      selectedAccount: string,
+    ): RootState => ({
+      ...state,
+      engine: {
+        ...state.engine,
+        backgroundState: {
+          ...state.engine.backgroundState,
+          AccountTreeController: {
+            ...state.engine.backgroundState.AccountTreeController,
+            selectedAccountGroup: selectedGroup,
+          },
+          AccountsController: {
+            ...state.engine.backgroundState.AccountsController,
+            internalAccounts: {
+              ...state.engine.backgroundState.AccountsController
+                .internalAccounts,
+              selectedAccount,
+            },
+          },
+        },
+      },
+    });
+
+    // Add second EVM account to AccountsController
+    baseState.engine.backgroundState.AccountsController.internalAccounts.accounts[
+      account2Id
+    ] = {
+      id: account2Id,
+      address: account2Address,
+      options: {},
+      methods: [],
+      scopes: ['eip155:0'],
+      type: 'eip155:eoa',
+      metadata: {
+        name: 'Account 2',
+        importTime: 0,
+        keyring: {
+          type: 'HD Key Tree',
+        },
+      },
+    };
+
+    // Create second account group with the second EVM account
+    baseState.engine.backgroundState.AccountTreeController.accountTree.wallets[
+      walletId
+    ].groups[group2Id] = {
+      id: group2Id,
+      type: AccountGroupType.MultichainAccount,
+      accounts: [account2Id],
+      metadata: {
+        name: 'Account Group 2',
+        pinned: false,
+        hidden: false,
+        lastSelected: 0,
+        entropy: {
+          groupIndex: 1,
+        },
+      },
+    };
+
+    // Provide AccountTracker balances for second account on mainnet
+    baseState.engine.backgroundState.AccountTrackerController.accountsByChainId[
+      '0x1'
+    ][account2AddressLowercased] = {
+      balance: '0x0DE0B6B3A7640000', // 1 ETH
+      stakedBalance: '0x1BC16D674EC80000', // 2 ETH
+    };
+
+    // Provide empty token lists/balances for second address
+    baseState.engine.backgroundState.TokensController.allTokens['0x1'][
+      account2AddressLowercased
+    ] = [];
+    baseState.engine.backgroundState.TokensController.allTokens['0xa'][
+      account2AddressLowercased
+    ] = [];
+    (
+      baseState.engine.backgroundState.TokenBalancesController
+        .tokenBalances as Record<string, unknown>
+    )[account2AddressLowercased] = {};
+    baseState.engine.backgroundState.AssetsController.assetsBalance[
+      account2Id
+    ] = {
+      'eip155:1/slip44:60': { amount: '1' },
+    };
+
+    // Test Group 1: should return account 1 balances
+    const stateForGroup1 = withSelectedGroup(baseState, group1Id, account1Id);
+
+    const stakedForGroup1 = selectAsset(stateForGroup1, {
+      address: '0x0000000000000000000000000000000000000000',
+      chainId: '0x1',
+      isStaked: true,
+    });
+    expect(stakedForGroup1?.balance).toBe('100');
+    expect(stakedForGroup1?.balanceFiat).toBe('$240,000.00');
+
+    // Test Group 2: should return account 2 balances
+    const stateForGroup2 = withSelectedGroup(baseState, group2Id, account2Id);
+
+    const nativeForGroup2 = selectAsset(stateForGroup2, {
+      address: '0x0000000000000000000000000000000000000000',
+      chainId: '0x1',
+      isStaked: false,
+    });
+    expect(nativeForGroup2).toMatchObject({
+      name: 'Ethereum',
+      balance: '1',
+      balanceFiat: '$2,400.00',
+      isStaked: false,
+    });
+
+    const stakedForGroup2 = selectAsset(stateForGroup2, {
+      address: '0x0000000000000000000000000000000000000000',
+      chainId: '0x1',
+      isStaked: true,
+    });
+    expect(stakedForGroup2).toMatchObject({
+      name: 'Staked Ethereum',
+      balance: '2',
+      balanceFiat: '$4,800.00',
+      isStaked: true,
+    });
+  });
+
+  it('returns formatted evm token asset based on filter criteria', () => {
+    const state = mockState();
+    const result = selectAsset(state, {
+      address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+      chainId: '0x1',
+      isStaked: false,
+    });
+
+    expect(result).toEqual({
+      chainId: '0x1',
+      address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+      symbol: 'DAI',
+      ticker: 'DAI',
+      name: 'Dai Stablecoin',
+      decimals: 18,
+      balance: '200',
+      balanceFiat: '$960.00',
+      isETH: false,
+      isNative: false,
+      isStaked: false,
+      logo: 'https://static.cx.metamask.io/api/v1/tokenIcons/1/0x6B175474E89094C44Da98b954EedeAC495271d0F.png',
+      image:
+        'https://static.cx.metamask.io/api/v1/tokenIcons/1/0x6B175474E89094C44Da98b954EedeAC495271d0F.png',
+      aggregators: [],
+      accountType: EthAccountType.Eoa,
+    });
+  });
+
+  it('returns formatted non-evm asset based on filter criteria', () => {
+    const state = mockState();
+    const result = selectAsset(state, {
+      address: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501',
+      chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+      isStaked: false,
+    });
+
+    expect(result).toEqual({
+      chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+      address: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501',
+      symbol: 'SOL',
+      ticker: 'SOL',
+      name: 'Solana',
+      decimals: 9,
+      balance: '10',
+      balanceFiat: '$1,635.50',
+      isETH: false,
+      isNative: true,
+      isStaked: false,
+      logo: 'https://static.cx.metamask.io/api/v2/tokenIcons/assets/solana/5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44/501.png',
+      image:
+        'https://static.cx.metamask.io/api/v2/tokenIcons/assets/solana/5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44/501.png',
+      aggregators: [],
+      accountType: SolAccountType.DataAccount,
+    });
+  });
+
+  it('returns asset with aggregators', () => {
+    const state = mockState();
+    const result = selectAsset(state, {
+      address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+      chainId: '0x1',
+      isStaked: false,
+    });
+
+    expect(result).toEqual({
+      chainId: '0x1',
+      address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+      symbol: 'stETH',
+      ticker: 'stETH',
+      name: 'Lido Staked Ether',
+      decimals: 18,
+      balance: '100',
+      balanceFiat: '$21.60',
+      isETH: false,
+      isNative: false,
+      isStaked: false,
+      logo: 'https://static.cx.metamask.io/api/v1/tokenIcons/10/0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84.png',
+      image:
+        'https://static.cx.metamask.io/api/v1/tokenIcons/10/0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84.png',
+      aggregators: ['UniswapLabs', 'Metamask', 'Aave'],
+      accountType: EthAccountType.Eoa,
+    });
+  });
+
+  it('returns isStaked as false when asset.isStaked is undefined', () => {
+    // Arrange - Create a mock asset without the isStaked property
+    const state = mockState();
+
+    // Act - Get an asset that doesn't have isStaked property
+    const result = selectAsset(state, {
+      address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+      chainId: '0x1',
+      isStaked: false,
+    });
+
+    // Assert - isStaked should be false instead of undefined
+    expect(result?.isStaked).toBe(false);
+    expect(result?.isStaked).not.toBeUndefined();
+  });
+
+  describe('balanceFiat locale formatting', () => {
+    beforeEach(() => {
+      const actualNumberFormat = Intl.NumberFormat;
+      jest.spyOn(Intl, 'NumberFormat').mockImplementation((locale, options) => {
+        // Mobile (Android & IOS do not support currencyDisplay and are unable to use 'narrowSymbol')
+        // We can remove these mocks once this becomes supported.
+        delete options?.currencyDisplay;
+        return actualNumberFormat(locale, options);
+      });
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    const enLocaleTestCases = [
+      'en',
+      'en-US',
+      'en-GB',
+      'en-CA',
+      'en-AU',
+      'en-NZ',
+    ];
+    it.each(enLocaleTestCases.map((locale) => [locale]))(
+      'returns $24,000.00, never US$ (locale: %s)',
+      (locale) => {
+        mockI18n.locale = locale;
+        const state = mockState();
+        const result = selectAsset(state, {
+          address: '0x0000000000000000000000000000000000000000',
+          chainId: '0x1',
+          isStaked: false,
+        });
+
+        expect(result?.balanceFiat).toBe('$24,000.00');
+        expect(result?.balanceFiat).not.toContain('US$');
+      },
+    );
+  });
+});
+
+describe('selectTronSpecialAssetsBySelectedAccountGroup', () => {
+  it('returns Tron energy and bandwidth resources when Tron network is enabled', () => {
+    const stateWithTronAssets = {
+      ...mockState(),
+      engine: {
+        ...mockState().engine,
+        backgroundState: {
+          ...mockState().engine.backgroundState,
+          MultichainAssetsController: {
+            accountsAssets: {
+              '2d89e6a0-b4e6-45a8-a707-f10cef143b42': [
+                'tron:728126428/slip44:energy',
+                'tron:728126428/slip44:bandwidth',
+                'tron:728126428/slip44:195',
+              ],
+            },
+            assetsMetadata: {
+              'tron:728126428/slip44:energy': {
+                name: 'Energy',
+                symbol: 'ENERGY',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [{ name: 'Energy', symbol: 'ENERGY', decimals: 0 }],
+              },
+              'tron:728126428/slip44:bandwidth': {
+                name: 'Bandwidth',
+                symbol: 'BANDWIDTH',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  { name: 'Bandwidth', symbol: 'BANDWIDTH', decimals: 0 },
+                ],
+              },
+              'tron:728126428/slip44:195': {
+                name: 'TRON',
+                symbol: 'TRX',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [{ name: 'TRON', symbol: 'TRX', decimals: 6 }],
+              },
+            },
+            allIgnoredAssets: {},
+          },
+          MultichainBalancesController: {
+            balances: {
+              '2d89e6a0-b4e6-45a8-a707-f10cef143b42': {
+                'tron:728126428/slip44:energy': {
+                  amount: '400',
+                  unit: 'ENERGY',
+                },
+                'tron:728126428/slip44:bandwidth': {
+                  amount: '604',
+                  unit: 'BANDWIDTH',
+                },
+                'tron:728126428/slip44:195': { amount: '1000', unit: 'TRX' },
+              },
+            },
+          },
+          MultichainAssetsRatesController: {
+            conversionRates: {
+              'tron:728126428/slip44:195': {
+                rate: '0.12',
+                currency: 'swift:0/iso4217:USD',
+              },
+            },
+          },
+          NetworkEnablementController: {
+            enabledNetworkMap: {
+              [KnownCaipNamespace.Tron]: {
+                [TrxScope.Mainnet]: true,
+              },
+            },
+          },
+        },
+      },
+    } as unknown as RootState;
+
+    const result =
+      selectTronSpecialAssetsBySelectedAccountGroup(stateWithTronAssets);
+
+    // Verify the object structure with named properties
+    expect(result.energy?.assetId).toBe('tron:728126428/slip44:energy');
+    expect(result.bandwidth?.assetId).toBe('tron:728126428/slip44:bandwidth');
+    expect(result.maxEnergy).toBeUndefined();
+    expect(result.maxBandwidth).toBeUndefined();
+    expect(result.stakedTrxForEnergy).toBeUndefined();
+    expect(result.stakedTrxForBandwidth).toBeUndefined();
+  });
+
+  it('maps all resource types and computes totalStakedTrx with BigNumber precision', () => {
+    const stateWithAllSpecialAssets = {
+      ...mockState(),
+      engine: {
+        ...mockState().engine,
+        backgroundState: {
+          ...mockState().engine.backgroundState,
+          MultichainAssetsController: {
+            accountsAssets: {
+              '2d89e6a0-b4e6-45a8-a707-f10cef143b42': [
+                'tron:728126428/slip44:energy',
+                'tron:728126428/slip44:bandwidth',
+                'tron:728126428/slip44:max-energy',
+                'tron:728126428/slip44:max-bandwidth',
+                'tron:728126428/slip44:strx-energy',
+                'tron:728126428/slip44:strx-bandwidth',
+                'tron:728126428/slip44:195-ready-for-withdrawal',
+                'tron:728126428/slip44:195-staking-rewards',
+                'tron:728126428/slip44:195-in-lock-period',
+                'tron:728126428/slip44:195',
+              ],
+            },
+            assetsMetadata: {
+              'tron:728126428/slip44:energy': {
+                name: 'Energy',
+                symbol: 'ENERGY',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [{ name: 'Energy', symbol: 'ENERGY', decimals: 0 }],
+              },
+              'tron:728126428/slip44:bandwidth': {
+                name: 'Bandwidth',
+                symbol: 'BANDWIDTH',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  { name: 'Bandwidth', symbol: 'BANDWIDTH', decimals: 0 },
+                ],
+              },
+              'tron:728126428/slip44:max-energy': {
+                name: 'Max Energy',
+                symbol: 'MAX-ENERGY',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  { name: 'Max Energy', symbol: 'MAX-ENERGY', decimals: 0 },
+                ],
+              },
+              'tron:728126428/slip44:max-bandwidth': {
+                name: 'Max Bandwidth',
+                symbol: 'MAX-BANDWIDTH',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  {
+                    name: 'Max Bandwidth',
+                    symbol: 'MAX-BANDWIDTH',
+                    decimals: 0,
+                  },
+                ],
+              },
+              'tron:728126428/slip44:strx-energy': {
+                name: 'Staked TRX Energy',
+                symbol: 'STRX-ENERGY',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  {
+                    name: 'Staked TRX Energy',
+                    symbol: 'STRX-ENERGY',
+                    decimals: 6,
+                  },
+                ],
+              },
+              'tron:728126428/slip44:strx-bandwidth': {
+                name: 'Staked TRX Bandwidth',
+                symbol: 'STRX-BANDWIDTH',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  {
+                    name: 'Staked TRX Bandwidth',
+                    symbol: 'STRX-BANDWIDTH',
+                    decimals: 6,
+                  },
+                ],
+              },
+              'tron:728126428/slip44:195-ready-for-withdrawal': {
+                name: 'Ready for Withdrawal',
+                symbol: 'TRX-READY-FOR-WITHDRAWAL',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  {
+                    name: 'Ready for Withdrawal',
+                    symbol: 'TRX-READY-FOR-WITHDRAWAL',
+                    decimals: 6,
+                  },
+                ],
+              },
+              'tron:728126428/slip44:195-staking-rewards': {
+                name: 'Staking Rewards',
+                symbol: 'TRX-STAKING-REWARDS',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  {
+                    name: 'Staking Rewards',
+                    symbol: 'TRX-STAKING-REWARDS',
+                    decimals: 6,
+                  },
+                ],
+              },
+              'tron:728126428/slip44:195-in-lock-period': {
+                name: 'In Lock Period',
+                symbol: 'TRX-IN-LOCK-PERIOD',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  {
+                    name: 'In Lock Period',
+                    symbol: 'TRX-IN-LOCK-PERIOD',
+                    decimals: 6,
+                  },
+                ],
+              },
+              'tron:728126428/slip44:195': {
+                name: 'TRON',
+                symbol: 'TRX',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [{ name: 'TRON', symbol: 'TRX', decimals: 6 }],
+              },
+            },
+            allIgnoredAssets: {},
+          },
+          MultichainBalancesController: {
+            balances: {
+              '2d89e6a0-b4e6-45a8-a707-f10cef143b42': {
+                'tron:728126428/slip44:energy': {
+                  amount: '130000',
+                  unit: 'ENERGY',
+                },
+                'tron:728126428/slip44:bandwidth': {
+                  amount: '560',
+                  unit: 'BANDWIDTH',
+                },
+                'tron:728126428/slip44:max-energy': {
+                  amount: '200000',
+                  unit: 'MAX-ENERGY',
+                },
+                'tron:728126428/slip44:max-bandwidth': {
+                  amount: '1000',
+                  unit: 'MAX-BANDWIDTH',
+                },
+                'tron:728126428/slip44:strx-energy': {
+                  amount: '65.48463',
+                  unit: 'STRX-ENERGY',
+                },
+                'tron:728126428/slip44:strx-bandwidth': {
+                  amount: '65.48463',
+                  unit: 'STRX-BANDWIDTH',
+                },
+                'tron:728126428/slip44:195-ready-for-withdrawal': {
+                  amount: '25.5',
+                  unit: 'TRX-READY-FOR-WITHDRAWAL',
+                },
+                'tron:728126428/slip44:195-staking-rewards': {
+                  amount: '12.3',
+                  unit: 'TRX-STAKING-REWARDS',
+                },
+                'tron:728126428/slip44:195-in-lock-period': {
+                  amount: '50',
+                  unit: 'TRX-IN-LOCK-PERIOD',
+                },
+                'tron:728126428/slip44:195': {
+                  amount: '1000',
+                  unit: 'TRX',
+                },
+              },
+            },
+          },
+          MultichainAssetsRatesController: {
+            conversionRates: {
+              'tron:728126428/slip44:195': {
+                rate: '0.12',
+                currency: 'swift:0/iso4217:USD',
+              },
+            },
+          },
+          NetworkEnablementController: {
+            enabledNetworkMap: {
+              [KnownCaipNamespace.Tron]: {
+                [TrxScope.Mainnet]: true,
+              },
+            },
+          },
+        },
+      },
+    } as unknown as RootState;
+
+    const result = selectTronSpecialAssetsBySelectedAccountGroup(
+      stateWithAllSpecialAssets,
+    );
+
+    // All 9 special assets should be mapped
+    expect(result.energy?.assetId).toBe('tron:728126428/slip44:energy');
+    expect(result.bandwidth?.assetId).toBe('tron:728126428/slip44:bandwidth');
+    expect(result.maxEnergy?.assetId).toBe('tron:728126428/slip44:max-energy');
+    expect(result.maxBandwidth?.assetId).toBe(
+      'tron:728126428/slip44:max-bandwidth',
+    );
+    expect(result.stakedTrxForEnergy?.assetId).toBe(
+      'tron:728126428/slip44:strx-energy',
+    );
+    expect(result.stakedTrxForBandwidth?.assetId).toBe(
+      'tron:728126428/slip44:strx-bandwidth',
+    );
+    expect(result.trxReadyForWithdrawal?.assetId).toBe(
+      'tron:728126428/slip44:195-ready-for-withdrawal',
+    );
+    expect(result.trxStakingRewards?.assetId).toBe(
+      'tron:728126428/slip44:195-staking-rewards',
+    );
+    expect(result.trxInLockPeriod?.assetId).toBe(
+      'tron:728126428/slip44:195-in-lock-period',
+    );
+
+    // totalStakedTrx computed via BigNumber avoids floating-point errors
+    // 65.48463 + 65.48463 = 130.96926 (not 130.96926000000002)
+    expect(result.totalStakedTrx).toBe(130.96926);
+  });
+
+  it('returns empty object when Tron network is disabled', () => {
+    const stateWithTronDisabled = {
+      ...mockState(),
+      engine: {
+        ...mockState().engine,
+        backgroundState: {
+          ...mockState().engine.backgroundState,
+          MultichainAssetsController: {
+            accountsAssets: {
+              '2d89e6a0-b4e6-45a8-a707-f10cef143b42': [
+                'tron:728126428/slip44:energy',
+                'tron:728126428/slip44:bandwidth',
+              ],
+            },
+            assetsMetadata: {
+              'tron:728126428/slip44:energy': {
+                name: 'Energy',
+                symbol: 'ENERGY',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [{ name: 'Energy', symbol: 'ENERGY', decimals: 0 }],
+              },
+              'tron:728126428/slip44:bandwidth': {
+                name: 'Bandwidth',
+                symbol: 'BANDWIDTH',
+                fungible: true as const,
+                iconUrl: 'test-url',
+                units: [
+                  { name: 'Bandwidth', symbol: 'BANDWIDTH', decimals: 0 },
+                ],
+              },
+            },
+            allIgnoredAssets: {},
+          },
+          MultichainBalancesController: {
+            balances: {
+              '2d89e6a0-b4e6-45a8-a707-f10cef143b42': {
+                'tron:728126428/slip44:energy': {
+                  amount: '400',
+                  unit: 'ENERGY',
+                },
+                'tron:728126428/slip44:bandwidth': {
+                  amount: '604',
+                  unit: 'BANDWIDTH',
+                },
+              },
+            },
+          },
+          NetworkEnablementController: {
+            enabledNetworkMap: {
+              [KnownCaipNamespace.Tron]: {
+                [TrxScope.Mainnet]: false,
+              },
+            },
+          },
+        },
+      },
+    } as unknown as RootState;
+
+    const result = selectTronSpecialAssetsBySelectedAccountGroup(
+      stateWithTronDisabled,
+    );
+
+    // When Tron is disabled, all asset properties should be undefined and total should be 0
+    expect(result).toEqual({
+      energy: undefined,
+      bandwidth: undefined,
+      maxEnergy: undefined,
+      maxBandwidth: undefined,
+      stakedTrxForEnergy: undefined,
+      stakedTrxForBandwidth: undefined,
+      totalStakedTrx: 0,
+      trxReadyForWithdrawal: undefined,
+      trxStakingRewards: undefined,
+      trxInLockPeriod: undefined,
+    });
+  });
+});
+
+describe('selectAssetsByAccountGroupId', () => {
+  it('returns empty object when accountGroupId is undefined', () => {
+    const state = mockState();
+
+    const result = selectAssetsByAccountGroupId(state, undefined);
+
+    expect(result).toStrictEqual({});
+  });
+
+  it('returns empty object when accountGroupId does not exist in assets', () => {
+    const state = mockState();
+
+    const result = selectAssetsByAccountGroupId(
+      state,
+      'entropy:nonexistent/0' as AccountGroupId,
+    );
+
+    expect(result).toStrictEqual({});
+  });
+});
+
+describe('selectHasEligibleSwapSource', () => {
+  const ETH_MAINNET = '0x1';
+  const OPTIMISM = '0xa';
+  const SOLANA = 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp';
+  const DAI_ADDRESS = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
+  const USDC_ADDRESS = '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85';
+  const STETH_ADDRESS = '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84';
+
+  interface AssetFixture {
+    assetId: string;
+    chainId: string;
+    fiat?: { balance: number };
+  }
+
+  // Arrange utilities ----------------------------------------------------
+
+  /** Build a single asset fixture with sensible defaults (positive fiat balance). */
+  const buildAsset = (overrides: Partial<AssetFixture> = {}): AssetFixture => ({
+    assetId: DAI_ADDRESS,
+    chainId: ETH_MAINNET,
+    fiat: { balance: 100 },
+    ...overrides,
+  });
+
+  /** Group a flat list of assets by chainId into the shape produced by selectAssetsBySelectedAccountGroup. */
+  const buildAssetsByChain = (
+    assets: AssetFixture[],
+  ): Record<string, AssetFixture[]> =>
+    assets.reduce<Record<string, AssetFixture[]>>((acc, asset) => {
+      (acc[asset.chainId] ??= []).push(asset);
+      return acc;
+    }, {});
+
+  /**
+   * Invokes the selector's pure result function so each test can focus on
+   * behavior rather than rebuilding the full Redux state shape.
+   */
+  const runSelector = (
+    assets: AssetFixture[],
+    excludedChainId?: string,
+    excludedAddress?: string,
+  ): boolean =>
+    selectHasEligibleSwapSource.resultFunc(
+      buildAssetsByChain(assets) as never,
+      excludedChainId,
+      excludedAddress,
+    );
+
+  describe('when no exclusion is provided', () => {
+    const noExclusionReturnsTrueCases = [
+      {
+        description: 'returns true when any asset has positive fiat balance',
+        getAssets: () => [buildAsset({ fiat: { balance: 50 } })],
+        expected: true,
+      },
+      {
+        description:
+          'returns true when at least one chain holds a positive-fiat asset',
+        getAssets: () => [
+          buildAsset({ chainId: ETH_MAINNET, fiat: { balance: 0 } }),
+          buildAsset({ chainId: OPTIMISM, fiat: { balance: 50 } }),
+        ],
+        expected: true,
+      },
+    ];
+
+    const noExclusionReturnsFalseCases = [
+      {
+        description: 'returns false when the asset map is empty',
+        getAssets: () => [] as AssetFixture[],
+        expected: false,
+      },
+      {
+        description: 'returns false when every asset has a zero fiat balance',
+        getAssets: () => [
+          buildAsset({ assetId: DAI_ADDRESS, fiat: { balance: 0 } }),
+          buildAsset({ assetId: USDC_ADDRESS, fiat: { balance: 0 } }),
+        ],
+        expected: false,
+      },
+      {
+        description:
+          'returns false when every asset has a negative fiat balance',
+        getAssets: () => [buildAsset({ fiat: { balance: -1 } })],
+        expected: false,
+      },
+      {
+        description: 'returns false when no asset has a fiat property',
+        getAssets: () => [buildAsset({ fiat: undefined })],
+        expected: false,
+      },
+    ];
+
+    it.each([...noExclusionReturnsTrueCases, ...noExclusionReturnsFalseCases])(
+      '$description',
+      ({ getAssets, expected }) => {
+        expect(runSelector(getAssets())).toBe(expected);
+      },
+    );
+  });
+
+  describe('when an excluded chainId and address are provided', () => {
+    type TestAsset = '0x1:DAI' | '0xa:DAI' | '0x1:USDC' | '0xa:USDC';
+    const buildAssets = (testAsset: TestAsset[]) =>
+      testAsset.map((asset) => {
+        const [chainId, testAssetName] = asset.split(':');
+
+        let assetId = DAI_ADDRESS;
+        if (testAssetName === 'USDC') {
+          assetId = USDC_ADDRESS;
+        } else if (testAssetName === 'DAI') {
+          assetId = DAI_ADDRESS;
+        }
+
+        return buildAsset({ assetId, chainId });
+      });
+
+    const buildOmitInput = (testAsset: TestAsset) => {
+      const [chainId, testAssetName] = testAsset.split(':');
+      const excludedChainId = chainId;
+      let assetId = DAI_ADDRESS;
+      if (testAssetName === 'USDC') {
+        assetId = USDC_ADDRESS;
+      } else if (testAssetName === 'DAI') {
+        assetId = DAI_ADDRESS;
+      }
+
+      return {
+        excludedChainId,
+        excludedAddress: assetId,
+      };
+    };
+
+    const exclusionProvidedCases = [
+      {
+        description:
+          'returns false when the only positive-fiat asset matches the exclusion',
+        getInputs: () => ({
+          assets: buildAssets(['0x1:DAI']),
+          ...buildOmitInput('0x1:DAI'), // 0x1:DAI is excluded
+        }),
+        assertResult: (result: boolean) => expect(result).toBe(false),
+      },
+      {
+        description:
+          'returns true when a non-excluded asset on another chain still qualifies',
+        getInputs: () => ({
+          assets: buildAssets(['0x1:DAI', '0xa:USDC']),
+          ...buildOmitInput('0x1:DAI'), // 0xa:USDC is still valid
+        }),
+        assertResult: (result: boolean) => expect(result).toBe(true),
+      },
+      {
+        description:
+          'returns true when the excluded chainId matches but the address differs',
+        getInputs: () => ({
+          assets: buildAssets(['0x1:DAI']),
+          ...buildOmitInput('0x1:USDC'), // 0x1:DAI is still valid
+        }),
+        assertResult: (result: boolean) => expect(result).toBe(true),
+      },
+      {
+        description:
+          'returns true when the excluded address matches but the chainId differs',
+        getInputs: () => ({
+          assets: buildAssets(['0xa:DAI']),
+          ...buildOmitInput('0x1:DAI'), // 0x1:DAI is still valid
+        }),
+        assertResult: (result: boolean) => expect(result).toBe(true),
+      },
+      {
+        description:
+          'skips assets with non-positive fiat before checking exclusion',
+        getInputs: () => {
+          const assets = buildAssets(['0x1:USDC', '0x1:DAI']);
+          assets[0].fiat = { balance: 0 };
+          return {
+            assets,
+            ...buildOmitInput('0x1:DAI'), // 0x1:USDC skipped, 0x1:DAI is excluded
+          };
+        },
+        assertResult: (result: boolean) => expect(result).toBe(false),
+      },
+    ];
+
+    it.each(exclusionProvidedCases)(
+      '$description',
+      ({ getInputs, assertResult }) => {
+        const { assets, excludedChainId, excludedAddress } = getInputs();
+        assertResult(runSelector(assets, excludedChainId, excludedAddress));
+      },
+    );
+  });
+
+  describe('integrated with Redux state', () => {
+    const integratedReturnsTrueCases = [
+      {
+        description:
+          'returns true for the default mockState since multiple positive-fiat assets exist',
+        excludedChainId: undefined,
+        excludedAddress: undefined,
+      },
+      {
+        description:
+          'returns true when one EVM asset is excluded but other positive-fiat assets remain',
+        excludedChainId: ETH_MAINNET,
+        excludedAddress: STETH_ADDRESS,
+      },
+      {
+        description:
+          'returns true when a non-EVM asset is the exclusion target',
+        excludedChainId: SOLANA,
+        excludedAddress: `${SOLANA}/slip44:501`,
+      },
+    ];
+
+    it.each(integratedReturnsTrueCases)(
+      '$description',
+      ({ excludedChainId, excludedAddress }) => {
+        const state = mockState();
+        expect(
+          selectHasEligibleSwapSource(state, excludedChainId, excludedAddress),
+        ).toBe(true);
+      },
+    );
+  });
+});

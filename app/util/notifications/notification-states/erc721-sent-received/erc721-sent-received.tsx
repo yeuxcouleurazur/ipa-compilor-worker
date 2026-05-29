@@ -1,0 +1,120 @@
+import { TRIGGER_TYPES } from '@metamask/notification-services-controller/notification-services';
+import { strings } from '../../../../../locales/i18n';
+import {
+  ModalFieldType,
+  ModalFooterType,
+  ModalHeaderType,
+} from '../../constants';
+import { ExtractedNotification, isOfTypeNodeGuard } from '../node-guard';
+import {
+  label_address_from,
+  label_address_to,
+  NotificationState,
+} from '../types/NotificationState';
+import {
+  getNetworkDetailsFromNotifPayload,
+  getNetworkImageByChainId,
+  getNotificationBadge,
+} from '../../methods/common';
+import { formatAddress } from '../../../address';
+
+type ERC721Notification = ExtractedNotification<
+  TRIGGER_TYPES.ERC721_RECEIVED | TRIGGER_TYPES.ERC721_SENT
+>;
+const isERC721Notification = isOfTypeNodeGuard([
+  TRIGGER_TYPES.ERC721_RECEIVED,
+  TRIGGER_TYPES.ERC721_SENT,
+]);
+
+const isSent = (n: ERC721Notification) => n.type === TRIGGER_TYPES.ERC721_SENT;
+
+const title = (n: ERC721Notification) => {
+  const address = formatAddress(
+    isSent(n) ? n.payload.data.to : n.payload.data.from,
+    'short',
+  );
+  return strings(`notifications.menu_item_title.${n.type}`, {
+    address,
+  });
+};
+
+const modalTitle = (n: ERC721Notification) =>
+  isSent(n)
+    ? strings('notifications.modal.title_sent', { symbol: 'NFT' })
+    : strings('notifications.modal.title_received', {
+        symbol: 'NFT',
+      });
+
+const state: NotificationState<ERC721Notification> = {
+  guardFn: [
+    isERC721Notification,
+    (notification) =>
+      !!getNetworkDetailsFromNotifPayload(notification.payload.network),
+  ],
+  createMenuItem: (notification) => ({
+    title: title(notification),
+
+    description: {
+      start: notification.payload.data.nft.collection.name,
+      end: `#${notification.payload.data.nft.token_id}`,
+    },
+
+    image: {
+      url: notification.payload.data.nft.image,
+      variant: 'square',
+    },
+
+    badgeIcon: getNotificationBadge(notification.type),
+
+    createdAt: notification.createdAt.toString(),
+  }),
+  createModalDetails: (notification) => {
+    const networkLogo = getNetworkImageByChainId(notification.payload.chain_id);
+    const { networkName } = getNetworkDetailsFromNotifPayload(
+      notification.payload.network,
+    );
+    return {
+      title: modalTitle(notification),
+      createdAt: notification.createdAt.toString(),
+      header: {
+        type: ModalHeaderType.NFT_IMAGE,
+        nftImageUrl: notification.payload.data.nft.image,
+        networkBadgeUrl: networkLogo,
+      },
+      fields: [
+        {
+          type: ModalFieldType.ADDRESS,
+          label: label_address_from(notification),
+          address: notification.payload.data.from,
+        },
+        {
+          type: ModalFieldType.ADDRESS,
+          label: label_address_to(notification),
+          address: notification.payload.data.to,
+        },
+        {
+          type: ModalFieldType.TRANSACTION,
+          txHash: notification.payload.tx_hash,
+        },
+        {
+          type: ModalFieldType.NFT_COLLECTION_IMAGE,
+          collectionName: notification.payload.data.nft.collection.name,
+          collectionImageUrl: notification.payload.data.nft.collection.image,
+          networkBadgeUrl: networkLogo,
+        },
+        {
+          type: ModalFieldType.NETWORK,
+          iconUrl: networkLogo,
+          name: networkName,
+        },
+      ],
+      footer: {
+        type: ModalFooterType.BLOCK_EXPLORER,
+        chainId: notification.payload.chain_id,
+        txHash: notification.payload.tx_hash,
+      },
+    };
+  },
+};
+
+export default state;

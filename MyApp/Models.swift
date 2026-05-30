@@ -100,12 +100,12 @@ struct Transaction: Identifiable {
 // MARK: - ViewModel
 
 class WalletViewModel: ObservableObject {
-    @Published var walletName: String = "GhostWallet"
-    @Published var walletAddress: String = "7xKp...mR9f"
-    @Published var totalBalance: Double = 1_745_385.83
-    @Published var change24h: Double = -22_749.13
-    @Published var changePercent24h: Double = -1.30
-    @Published var cashBalance: Double = 0.00
+    @Published var walletName: String = "Account 1"
+    @Published var walletAddress: String = "@blizvix"
+    @Published var totalBalance: Double = 6_423.91
+    @Published var change24h: Double = 559.32
+    @Published var changePercent24h: Double = 8.71
+    @Published var cashBalance: Double = 653.48
     @Published var selectedTab: Tab = .home
     @Published var currentRoute: AppRoute = .welcome
     @Published var isRefreshing: Bool = false
@@ -113,161 +113,57 @@ class WalletViewModel: ObservableObject {
 
     @Published var tokens: [Token] = [
         Token(
-            name: "Just a chill guy",
-            symbol: "CHILLGUY",
-            amount: 0,
-            valueUSD: 0.33,
-            change24h: 0.03,
-            changePercent24h: 9.81,
-            iconName: "chillguy",
-            color: Color(hex: "#A8D8B9"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/36209/large/chillguy.jpeg",
-            rank: 1
-        ),
-        Token(
-            name: "Goatseus Maximus",
-            symbol: "GOAT",
-            amount: 0,
-            valueUSD: 0.85,
-            change24h: 0.02,
-            changePercent24h: 2.34,
-            iconName: "goat",
-            color: Color(hex: "#FFD700"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/35882/large/goat.png",
-            rank: 2
-        ),
-        Token(
-            name: "zerebro",
-            symbol: "ZEREBRO",
-            amount: 0,
-            valueUSD: 0.48,
-            change24h: 0.03,
-            changePercent24h: 5.72,
-            iconName: "zerebro",
-            color: Color(hex: "#8A2BE2"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/36021/large/zerebro.png",
-            rank: 3
-        ),
-        Token(
-            name: "dogwifhat",
-            symbol: "$WIF",
-            amount: 0,
-            valueUSD: 3.11,
-            change24h: -0.05,
-            changePercent24h: -1.72,
-            iconName: "wif",
-            color: Color(hex: "#D2B48C"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/33566/large/dogwifhat.jpg",
-            rank: 4
-        ),
-        Token(
-            name: "Bonk",
-            symbol: "Bonk",
-            amount: 0,
-            valueUSD: 0.00004855,
-            change24h: 0.000001,
-            changePercent24h: 2.13,
-            iconName: "bonk",
-            color: Color(hex: "#FF8C00"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/28600/large/bonk.jpg",
-            rank: 5
-        ),
-        Token(
-            name: "POPCAT",
-            symbol: "POPCAT",
-            amount: 0,
-            valueUSD: 1.47,
-            change24h: 0.07,
-            changePercent24h: 4.65,
-            iconName: "popcat",
-            color: Color(hex: "#FFC0CB"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/28741/large/popcat.png",
-            rank: 6
-        ),
-        Token(
-            name: "Peanut the Squirrel",
-            symbol: "Pnut",
-            amount: 0,
-            valueUSD: 1.11,
-            change24h: -0.03,
-            changePercent24h: -2.31,
-            iconName: "pnut",
-            color: Color(hex: "#A0522D"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/32585/large/pnut.png",
-            rank: 7
-        ),
-        Token(
-            name: "FWOG",
-            symbol: "FWOG",
-            amount: 0,
-            valueUSD: 0.41,
-            change24h: 0.01,
-            changePercent24h: 2.95,
-            iconName: "fwog",
-            color: Color(hex: "#228B22"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/35161/large/fwog.png",
-            rank: 8
-        ),
-        Token(
-            name: "cat in a dogs world",
-            symbol: "MEW",
-            amount: 0,
-            valueUSD: 0.009715,
-            change24h: 0.0001,
-            changePercent24h: 1.05,
-            iconName: "mew",
-            color: Color(hex: "#FFE4E1"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/35071/large/mew.png",
-            rank: 9
-        ),
-        Token(
-            name: "Bitcoin",
-            symbol: "BTC",
-            amount: 47.0,
-            valueUSD: 3_707_454.00,
-            change24h: 160_450.64,
-            changePercent24h: 4.33,
-            iconName: "bitcoin",
-            color: Color(hex: "#F7931A"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
-            rank: 10
-        ),
-        Token(
-            name: "Ethereum",
-            symbol: "ETH",
-            amount: 0.0,
-            valueUSD: 0.0,
-            change24h: 0.0,
-            changePercent24h: 0.0,
-            iconName: "ethereum",
-            color: Color(hex: "#627EEA"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
-            rank: 11
-        ),
-        Token(
             name: "Solana",
             symbol: "SOL",
-            amount: 0.0,
-            valueUSD: 0.0,
-            change24h: 0.0,
-            changePercent24h: 0.0,
+            amount: 64.63,
+            valueUSD: 5444.43,
+            change24h: 339.73, // arbitrary to make +6.24% work or we just use formatted string
+            changePercent24h: 6.24,
             iconName: "solana",
             color: Color(hex: "#9945FF"),
             isVerified: true,
             imageUrl: "https://assets.coingecko.com/coins/images/4128/large/solana.png",
-            rank: 12
-        )
+            rank: nil
+        ),
+        Token(
+            name: "USDT",
+            symbol: "USDT",
+            amount: 324.0,
+            valueUSD: 324.0,
+            change24h: 0.0,
+            changePercent24h: 0.0,
+            iconName: "usdt",
+            color: Color(hex: "#26A17B"),
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/325/large/Tether.png",
+            rank: nil
+        ),
+        Token(
+            name: "solanaclawd",
+            symbol: "CLAWD",
+            amount: 6382.52,
+            valueUSD: 2.00,
+            change24h: 0.02,
+            changePercent24h: 8121.66,
+            iconName: "clawd",
+            color: Color(hex: "#5C2E91"),
+            isVerified: false,
+            imageUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png", // Will be replaced by local asset or fallback
+            rank: nil
+        ),
+        Token(
+            name: "Bitcoin",
+            symbol: "BTC",
+            amount: 0.0,
+            valueUSD: 0.0,
+            change24h: 0.0,
+            changePercent24h: 0.0,
+            iconName: "bitcoin",
+            color: Color(hex: "#F7931A"),
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
+            rank: nil
+        ),
     ]
 
     @Published var transactions: [Transaction] = [
@@ -324,15 +220,15 @@ class WalletViewModel: ObservableObject {
     }
 
     enum Tab: String, CaseIterable {
-        case home, activity, swap, collectibles, settings
+        case home, wallet, swap, activity, browser
 
         var icon: String {
             switch self {
             case .home: return "house.fill"
-            case .activity: return "clock.fill"
-            case .swap: return "arrow.2.squarepath"
-            case .collectibles: return "square.grid.2x2.fill"
-            case .settings: return "person.fill"
+            case .wallet: return "creditcard.fill"
+            case .swap: return "arrow.left.arrow.right"
+            case .activity: return "message.fill"
+            case .browser: return "magnifyingglass"
             }
         }
     }

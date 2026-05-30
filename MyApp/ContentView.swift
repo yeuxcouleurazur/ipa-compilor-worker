@@ -35,21 +35,21 @@ struct MainWalletView: View {
                     .environmentObject(viewModel)
                     .tag(WalletViewModel.Tab.home)
 
-                ActivityView()
+                CollectiblesView() // Using this as placeholder for .wallet
                     .environmentObject(viewModel)
-                    .tag(WalletViewModel.Tab.activity)
+                    .tag(WalletViewModel.Tab.wallet)
 
                 SwapView()
                     .environmentObject(viewModel)
                     .tag(WalletViewModel.Tab.swap)
 
-                CollectiblesView()
+                ActivityView()
                     .environmentObject(viewModel)
-                    .tag(WalletViewModel.Tab.collectibles)
+                    .tag(WalletViewModel.Tab.activity)
 
-                SettingsView()
+                SettingsView() // Using this as placeholder for .browser
                     .environmentObject(viewModel)
-                    .tag(WalletViewModel.Tab.settings)
+                    .tag(WalletViewModel.Tab.browser)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
 
@@ -57,11 +57,6 @@ struct MainWalletView: View {
             VStack {
                 Spacer()
                 CustomTabBar(selectedTab: $viewModel.selectedTab)
-            }
-
-            // Demo Overlay Banner
-            if viewModel.showDemoOverlay {
-                DemoBanner(isVisible: $viewModel.showDemoOverlay)
             }
         }
     }

@@ -27,6 +27,10 @@ struct HomeView: View {
                     cashBalanceCard
                         .padding(.top, 24)
 
+                    // Predictions Section
+                    predictionsSection
+                        .padding(.top, 24)
+
                     // Tokens Section
                     tokensSection
                         .padding(.top, 24)
@@ -122,16 +126,16 @@ struct HomeView: View {
             HStack(spacing: 8) {
                 Text(viewModel.formattedChange)
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(viewModel.change24h >= 0 ? Color(hex: "#5EBA7D") : Color(hex: "#FF453A"))
+                    .foregroundColor(viewModel.change24h >= 0 ? Color(hex: "#3DD68C") : Color(hex: "#FF453A"))
 
                 Text(viewModel.formattedChangePercent)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(viewModel.change24h >= 0 ? Color.black : .white) // Black text for positive
+                    .foregroundColor(viewModel.change24h >= 0 ? Color(hex: "#3DD68C") : Color(hex: "#FF453A")) // Green text for positive
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
                         Capsule()
-                            .fill(viewModel.change24h >= 0 ? Color(hex: "#5EBA7D") : Color(hex: "#FF453A")) // Solid green/red background
+                            .fill(viewModel.change24h >= 0 ? Color(hex: "#163324") : Color(hex: "#3A1D1D")) // Dark green/red background
                     )
                 Spacer()
             }
@@ -146,7 +150,7 @@ struct HomeView: View {
         HStack(spacing: 12) {
             actionButton(icon: "qrcode", label: "Receive")
             actionButton(icon: "paperplane", label: "Send")
-            actionButton(icon: "arrow.right.arrow.left", label: "Swap")
+            actionButton(icon: "repeat", label: "Swap")
             actionButton(icon: "dollarsign", label: "Buy")
         }
         .opacity(appearAnimation ? 1 : 0)
@@ -159,16 +163,16 @@ struct HomeView: View {
         } label: {
             VStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 20, weight: .regular))
-                    .foregroundColor(.white) // Icons are white in the reference!
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(Color(hex: "#A393FA")) // Purple icons
                 Text(label)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "#EBEBEB"))
             }
             .frame(maxWidth: .infinity)
             .frame(height: 76) // Rectangular shape
-            .background(Color(hex: "#262626")) // Lighter dark grey matching reference
-            .cornerRadius(20)
+            .background(Color(hex: "#1C1C1E")) // Darker grey
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous)) // Ultra smooth squircle like iOS icons
         }
     }
 
@@ -190,13 +194,13 @@ struct HomeView: View {
             Button {
             } label: {
                 Text("Add Cash")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(Color(hex: "#221C35")) // Very dark purple/black text
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color(hex: "#EBEBEB")) // Light grey text
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(hex: "#AB9FF2")) // Bright Phantom purple background
+                            .fill(Color(hex: "#2C2C2E")) // Dark background
                     )
             }
         }
@@ -206,6 +210,70 @@ struct HomeView: View {
             RoundedRectangle(cornerRadius: 18)
                 .fill(Color(hex: "#181818"))
         )
+    }
+
+    // MARK: - Predictions Section
+
+    private var predictionsSection: some View {
+        VStack(spacing: 8) {
+            // Header
+            HStack {
+                Button {
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Predictions")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                }
+                Spacer()
+            }
+            .padding(.bottom, 4)
+
+            // Prediction Card
+            HStack(spacing: 12) {
+                // Icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color(hex: "#A393FA").opacity(0.4))
+                        .frame(width: 40, height: 40)
+                    Image(systemName: "dollarsign")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(Color(hex: "#A393FA"))
+                }
+
+                // Info
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Above $99999...")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                    Text("Will Bitcoin be abo...")
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(Color(hex: "#8E8E93"))
+                }
+
+                Spacer()
+
+                // Value
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("+$134.00")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(Color(hex: "#3DD68C"))
+                    Text("Claim Payout")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color(hex: "#A393FA"))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(hex: "#181818")) // Dark card background
+            )
+        }
     }
 
     // MARK: - Tokens Section

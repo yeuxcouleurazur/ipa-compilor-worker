@@ -99,13 +99,14 @@ struct HomeView: View {
             HStack {
                 if balanceVisible {
                     Text(viewModel.formattedTotalBalance)
-                        .font(.system(size: 48, weight: .bold))
+                        .font(.system(size: 44, weight: .heavy, design: .rounded))
+                        .tracking(-1)
                         .foregroundColor(.white)
                         .minimumScaleFactor(0.6)
                         .lineLimit(1)
                 } else {
                     Text("••••••••")
-                        .font(.system(size: 48, weight: .bold))
+                        .font(.system(size: 44, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                 }
                 Spacer()
@@ -114,17 +115,17 @@ struct HomeView: View {
             // 24h Change
             HStack(spacing: 8) {
                 Text(viewModel.formattedChange)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(Color(hex: "#42C779")) // Green from Image 1
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(viewModel.change24h >= 0 ? Color(hex: "#42C779") : Color(hex: "#FF453A"))
 
                 Text(viewModel.formattedChangePercent)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(Color(hex: "#42C779"))
+                    .foregroundColor(viewModel.change24h >= 0 ? Color(hex: "#42C779") : Color(hex: "#FF453A"))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
                         Capsule()
-                            .fill(Color(hex: "#1F382E")) // Dark green background badge
+                            .fill(viewModel.change24h >= 0 ? Color(hex: "#1F382E") : Color(hex: "#3A1D1D"))
                     )
                 Spacer()
             }
@@ -137,9 +138,9 @@ struct HomeView: View {
 
     private var actionButtons: some View {
         HStack(spacing: 12) {
-            actionButton(icon: "qrcode", label: "Receive")
             actionButton(icon: "paperplane.fill", label: "Send")
             actionButton(icon: "arrow.left.arrow.right", label: "Swap")
+            actionButton(icon: "qrcode", label: "Receive")
             actionButton(icon: "dollarsign", label: "Buy")
         }
         .opacity(appearAnimation ? 1 : 0)
@@ -152,16 +153,16 @@ struct HomeView: View {
         } label: {
             VStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(Color(hex: "#AB9FF2"))
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(Color(hex: "#A393FA")) // Slightly brighter purple for icons
                 Text(label)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.white)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 72)
-            .background(Color(hex: "#1E1E1E"))
-            .cornerRadius(16)
+            .frame(height: 76)
+            .background(Color(hex: "#232323")) // Lighter grey than background
+            .cornerRadius(20) // More rounded corners
         }
     }
 
@@ -172,9 +173,9 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Cash Balance")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Color(hex: "#B3B3B3"))
+                    .foregroundColor(Color(hex: "#8B8B8B"))
                 Text(String(format: "$%.2f", viewModel.cashBalance))
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: 22, weight: .bold))
                     .foregroundColor(.white)
             }
 
@@ -183,21 +184,21 @@ struct HomeView: View {
             Button {
             } label: {
                 Text("Add Cash")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color(hex: "#B3B3B3"))
-                    .padding(.horizontal, 16)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(Color(hex: "#312859")) // Dark purple text
+                    .padding(.horizontal, 18)
                     .padding(.vertical, 10)
                     .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(hex: "#2A2A2A"))
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Color(hex: "#D0C4FF")) // Soft light purple background
                     )
             }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(hex: "#1E1E1E"))
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(hex: "#232323"))
         )
     }
 

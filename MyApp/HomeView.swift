@@ -53,9 +53,9 @@ struct HomeView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(Color(hex: "#1E1E1E"))
+                            .fill(Color(hex: "#2A2A2A")) // Lighter grey circle
                             .frame(width: 36, height: 36)
-                        Text("👻") // Ghost avatar like in LarpzWallet
+                        Text("💸") // Winged money avatar
                             .font(.system(size: 18))
                     }
 
@@ -98,8 +98,15 @@ struct HomeView: View {
             // Total Balance
             HStack {
                 if balanceVisible {
-                    Text(viewModel.formattedTotalBalance)
-                        .font(.system(size: 46, weight: .bold)) // Not heavy, just bold
+                    // Force comma for thousands
+                    let balanceString = String(format: "%.2f", viewModel.totalBalance)
+                    let parts = balanceString.components(separatedBy: ".")
+                    let integerPart = parts[0]
+                    let decimalPart = parts.count > 1 ? ".\(parts[1])" : ""
+                    let formattedInteger = integerPart.count > 3 ? "\(integerPart.prefix(integerPart.count - 3)),\(integerPart.suffix(3))" : integerPart
+                    
+                    Text("$\(formattedInteger)\(decimalPart)")
+                        .font(.system(size: 46, weight: .bold))
                         .foregroundColor(.white)
                         .minimumScaleFactor(0.6)
                         .lineLimit(1)
@@ -114,17 +121,17 @@ struct HomeView: View {
             // 24h Change
             HStack(spacing: 8) {
                 Text(viewModel.formattedChange)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(viewModel.change24h >= 0 ? Color(hex: "#3DD68C") : Color(hex: "#FF453A"))
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(viewModel.change24h >= 0 ? Color(hex: "#5EBA7D") : Color(hex: "#FF453A"))
 
                 Text(viewModel.formattedChangePercent)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(viewModel.change24h >= 0 ? Color(hex: "#3DD68C") : Color(hex: "#FF453A"))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(viewModel.change24h >= 0 ? Color.black : .white) // Black text for positive
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                     .background(
                         Capsule()
-                            .fill(viewModel.change24h >= 0 ? Color(hex: "#163324") : Color(hex: "#3A1D1D"))
+                            .fill(viewModel.change24h >= 0 ? Color(hex: "#5EBA7D") : Color(hex: "#FF453A")) // Solid green/red background
                     )
                 Spacer()
             }
@@ -137,9 +144,9 @@ struct HomeView: View {
 
     private var actionButtons: some View {
         HStack(spacing: 12) {
+            actionButton(icon: "qrcode", label: "Receive")
             actionButton(icon: "paperplane", label: "Send")
             actionButton(icon: "arrow.right.arrow.left", label: "Swap")
-            actionButton(icon: "qrcode", label: "Receive")
             actionButton(icon: "dollarsign", label: "Buy")
         }
         .opacity(appearAnimation ? 1 : 0)
@@ -153,15 +160,15 @@ struct HomeView: View {
             VStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 20, weight: .regular))
-                    .foregroundColor(Color(hex: "#AB9FF2")) // Signature purple
+                    .foregroundColor(.white) // Icons are white in the reference!
                 Text(label)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color(hex: "#EBEBEB"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
             }
             .frame(maxWidth: .infinity)
-            .aspectRatio(1, contentMode: .fit) // Perfect square
-            .background(Color(hex: "#1E1E1E")) // Dark grey
-            .cornerRadius(20) // Squircle shape
+            .frame(height: 76) // Rectangular shape
+            .background(Color(hex: "#262626")) // Lighter dark grey matching reference
+            .cornerRadius(20)
         }
     }
 
@@ -251,19 +258,37 @@ struct TokenRowView: View {
                     .frame(width: 44, height: 44)
 
                 if token.symbol == "USDT" || token.symbol == "CLAWD" {
-                    Circle()
-                        .fill(Color.black)
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.white)
                         .frame(width: 18, height: 18)
                         .overlay(
-                            Image("solana_logo_tiny")
-                                .resizable()
-                                .scaledToFit()
-                                .padding(2)
-                                .overlay(
-                                    Image(systemName: "line.3.horizontal")
-                                        .font(.system(size: 8, weight: .bold))
-                                        .foregroundColor(.white)
-                                )
+                            GeometryReader { geometry in
+                                let w = geometry.size.width
+                                let h = geometry.size.height
+                                Path { path in
+                                    // Top shape /
+                                    path.move(to: CGPoint(x: w*0.15, y: h*0.35))
+                                    path.addLine(to: CGPoint(x: w*0.70, y: h*0.35))
+                                    path.addLine(to: CGPoint(x: w*0.85, y: h*0.20))
+                                    path.addLine(to: CGPoint(x: w*0.30, y: h*0.20))
+                                    path.closeSubpath()
+                                    
+                                    // Middle shape \
+                                    path.move(to: CGPoint(x: w*0.15, y: h*0.45))
+                                    path.addLine(to: CGPoint(x: w*0.70, y: h*0.45))
+                                    path.addLine(to: CGPoint(x: w*0.85, y: h*0.60))
+                                    path.addLine(to: CGPoint(x: w*0.30, y: h*0.60))
+                                    path.closeSubpath()
+                                    
+                                    // Bottom shape /
+                                    path.move(to: CGPoint(x: w*0.15, y: h*0.80))
+                                    path.addLine(to: CGPoint(x: w*0.70, y: h*0.80))
+                                    path.addLine(to: CGPoint(x: w*0.85, y: h*0.65))
+                                    path.addLine(to: CGPoint(x: w*0.30, y: h*0.65))
+                                    path.closeSubpath()
+                                }
+                                .fill(Color.black)
+                            }
                         )
                         .offset(x: 14, y: 14)
                 }

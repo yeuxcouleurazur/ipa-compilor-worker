@@ -3,6 +3,12 @@ import Combine
 
 // MARK: - Models
 
+enum AppRoute {
+    case welcome
+    case biometricSetup
+    case mainWallet
+}
+
 struct Token: Identifiable {
     let id = UUID()
     let name: String
@@ -14,6 +20,8 @@ struct Token: Identifiable {
     let iconName: String
     let color: Color
     let isVerified: Bool
+    var imageUrl: String?
+    var rank: Int?
 
     var formattedValue: String {
         if valueUSD == 0 { return "$0.00" }
@@ -99,64 +107,166 @@ class WalletViewModel: ObservableObject {
     @Published var changePercent24h: Double = -1.30
     @Published var cashBalance: Double = 0.00
     @Published var selectedTab: Tab = .home
+    @Published var currentRoute: AppRoute = .welcome
     @Published var isRefreshing: Bool = false
     @Published var showDemoOverlay: Bool = true
 
     @Published var tokens: [Token] = [
         Token(
-            name: "Bitcoin",
-            symbol: "BTC",
-            amount: 21.36523,
-            valueUSD: 1_463_454.16,
-            change24h: -14_190.84,
-            changePercent24h: -0.96,
-            iconName: "bitcoin",
-            color: Color(hex: "#F7931A"),
-            isVerified: true
+            name: "Just a chill guy",
+            symbol: "CHILLGUY",
+            amount: 0,
+            valueUSD: 0.33,
+            change24h: 0.03,
+            changePercent24h: 9.81,
+            iconName: "chillguy",
+            color: Color(hex: "#A8D8B9"),
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/36209/large/chillguy.jpeg",
+            rank: 1
         ),
         Token(
-            name: "Solana",
-            symbol: "SOL",
-            amount: 2523.91040,
-            valueUSD: 212_588.97,
-            change24h: -7_487.02,
-            changePercent24h: -3.40,
-            iconName: "solana",
-            color: Color(hex: "#9945FF"),
-            isVerified: true
+            name: "Goatseus Maximus",
+            symbol: "GOAT",
+            amount: 0,
+            valueUSD: 0.85,
+            change24h: 0.02,
+            changePercent24h: 2.34,
+            iconName: "goat",
+            color: Color(hex: "#FFD700"),
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/35882/large/goat.png",
+            rank: 2
+        ),
+        Token(
+            name: "zerebro",
+            symbol: "ZEREBRO",
+            amount: 0,
+            valueUSD: 0.48,
+            change24h: 0.03,
+            changePercent24h: 5.72,
+            iconName: "zerebro",
+            color: Color(hex: "#8A2BE2"),
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/36021/large/zerebro.png",
+            rank: 3
+        ),
+        Token(
+            name: "dogwifhat",
+            symbol: "$WIF",
+            amount: 0,
+            valueUSD: 3.11,
+            change24h: -0.05,
+            changePercent24h: -1.72,
+            iconName: "wif",
+            color: Color(hex: "#D2B48C"),
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/33566/large/dogwifhat.jpg",
+            rank: 4
+        ),
+        Token(
+            name: "Bonk",
+            symbol: "Bonk",
+            amount: 0,
+            valueUSD: 0.00004855,
+            change24h: 0.000001,
+            changePercent24h: 2.13,
+            iconName: "bonk",
+            color: Color(hex: "#FF8C00"),
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/28600/large/bonk.jpg",
+            rank: 5
+        ),
+        Token(
+            name: "POPCAT",
+            symbol: "POPCAT",
+            amount: 0,
+            valueUSD: 1.47,
+            change24h: 0.07,
+            changePercent24h: 4.65,
+            iconName: "popcat",
+            color: Color(hex: "#FFC0CB"),
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/28741/large/popcat.png",
+            rank: 6
+        ),
+        Token(
+            name: "Peanut the Squirrel",
+            symbol: "Pnut",
+            amount: 0,
+            valueUSD: 1.11,
+            change24h: -0.03,
+            changePercent24h: -2.31,
+            iconName: "pnut",
+            color: Color(hex: "#A0522D"),
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/32585/large/pnut.png",
+            rank: 7
+        ),
+        Token(
+            name: "FWOG",
+            symbol: "FWOG",
+            amount: 0,
+            valueUSD: 0.41,
+            change24h: 0.01,
+            changePercent24h: 2.95,
+            iconName: "fwog",
+            color: Color(hex: "#228B22"),
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/35161/large/fwog.png",
+            rank: 8
+        ),
+        Token(
+            name: "cat in a dogs world",
+            symbol: "MEW",
+            amount: 0,
+            valueUSD: 0.009715,
+            change24h: 0.0001,
+            changePercent24h: 1.05,
+            iconName: "mew",
+            color: Color(hex: "#FFE4E1"),
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/35071/large/mew.png",
+            rank: 9
+        ),
+        Token(
+            name: "Bitcoin",
+            symbol: "BTC",
+            amount: 47.0,
+            valueUSD: 3_707_454.00,
+            change24h: 160_450.64,
+            changePercent24h: 4.33,
+            iconName: "bitcoin",
+            color: Color(hex: "#F7931A"),
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
+            rank: 10
         ),
         Token(
             name: "Ethereum",
             symbol: "ETH",
-            amount: 35.00000,
-            valueUSD: 69_342.70,
-            change24h: -1_071.27,
-            changePercent24h: -1.52,
+            amount: 0.0,
+            valueUSD: 0.0,
+            change24h: 0.0,
+            changePercent24h: 0.0,
             iconName: "ethereum",
             color: Color(hex: "#627EEA"),
-            isVerified: true
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
+            rank: 11
         ),
         Token(
-            name: "Monad",
-            symbol: "MON",
-            amount: 0,
-            valueUSD: 0.00,
-            change24h: 0.00,
-            changePercent24h: 0.00,
-            iconName: "monad",
-            color: Color(hex: "#836EF9"),
-            isVerified: true
-        ),
-        Token(
-            name: "USDC",
-            symbol: "USDC",
-            amount: 0,
-            valueUSD: 0.00,
-            change24h: 0.00,
-            changePercent24h: 0.00,
-            iconName: "usdc",
-            color: Color(hex: "#2775CA"),
-            isVerified: true
+            name: "Solana",
+            symbol: "SOL",
+            amount: 0.0,
+            valueUSD: 0.0,
+            change24h: 0.0,
+            changePercent24h: 0.0,
+            iconName: "solana",
+            color: Color(hex: "#9945FF"),
+            isVerified: true,
+            imageUrl: "https://assets.coingecko.com/coins/images/4128/large/solana.png",
+            rank: 12
         )
     ]
 

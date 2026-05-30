@@ -285,6 +285,26 @@ struct TokenRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
+            // Rank
+            if let rank = token.rank, rank <= 9 {
+                HStack(spacing: 4) {
+                    Text("\(rank)")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color(hex: "#6B6B6B"))
+                        .frame(width: 12, alignment: .leading)
+                    
+                    if rank == 1 {
+                        Text("🥇").font(.system(size: 14))
+                    } else if rank == 2 {
+                        Text("🥈").font(.system(size: 14))
+                    } else if rank == 3 {
+                        Text("🥉").font(.system(size: 14))
+                    } else {
+                        Color.clear.frame(width: 14, height: 14)
+                    }
+                }
+            }
+
             // Token Icon
             ZStack {
                 Circle()
@@ -292,7 +312,7 @@ struct TokenRowView: View {
                     .frame(width: 44, height: 44)
 
                 tokenIcon
-                    .frame(width: 28, height: 28)
+                    .frame(width: 44, height: 44)
 
                 // Verified badge
                 if token.isVerified {
@@ -316,9 +336,16 @@ struct TokenRowView: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white)
                 }
-                Text(token.formattedAmount)
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundColor(Color(hex: "#6B6B6B"))
+                
+                if token.amount > 0 {
+                    Text(token.formattedAmount)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(Color(hex: "#6B6B6B"))
+                } else {
+                    Text(token.symbol)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(Color(hex: "#6B6B6B"))
+                }
             }
 
             Spacer()
@@ -341,6 +368,29 @@ struct TokenRowView: View {
 
     @ViewBuilder
     private var tokenIcon: some View {
+        if let imageUrl = token.imageUrl, let url = URL(string: imageUrl) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .empty:
+                    Circle().fill(Color(hex: "#2A2A2A"))
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .clipShape(Circle())
+                case .failure:
+                    fallbackIcon
+                @unknown default:
+                    fallbackIcon
+                }
+            }
+        } else {
+            fallbackIcon
+        }
+    }
+
+    @ViewBuilder
+    private var fallbackIcon: some View {
         switch token.symbol {
         case "BTC":
             ZStack {

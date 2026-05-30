@@ -4,6 +4,29 @@ struct ContentView: View {
     @StateObject private var viewModel = WalletViewModel()
 
     var body: some View {
+        Group {
+            switch viewModel.currentRoute {
+            case .welcome:
+                WelcomeView()
+                    .environmentObject(viewModel)
+            case .biometricSetup:
+                BiometricAuthView()
+                    .environmentObject(viewModel)
+            case .mainWallet:
+                MainWalletView()
+                    .environmentObject(viewModel)
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
+// MARK: - Main Wallet View (Formerly ContentView body)
+
+struct MainWalletView: View {
+    @EnvironmentObject var viewModel: WalletViewModel
+
+    var body: some View {
         ZStack {
             Color(hex: "#1A1A1A").ignoresSafeArea()
 
@@ -41,7 +64,6 @@ struct ContentView: View {
                 DemoBanner(isVisible: $viewModel.showDemoOverlay)
             }
         }
-        .preferredColorScheme(.dark)
     }
 }
 

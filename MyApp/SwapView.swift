@@ -2,13 +2,11 @@ import SwiftUI
 
 struct SwapView: View {
     @EnvironmentObject var viewModel: WalletViewModel
-    @State private var fromToken: String = "SOL"
-    @State private var toToken: String = "USDC"
-    @State private var fromAmount: String = ""
-    @State private var toAmount: String = ""
-    @State private var slippage: Double = 0.5
-    @State private var isSwapping = false
-    @State private var showSlippageSheet = false
+    @State private var fromToken: String = "ETH"
+    @State private var toToken: String = "SOL"
+    @State private var fromAmount: String = "0.0075"
+    @State private var toAmount: String = "0.1103"
+    @State private var slippage: Double = 2.0
     @FocusState private var fromFieldFocused: Bool
 
     var body: some View {
@@ -16,214 +14,221 @@ struct SwapView: View {
             Color(hex: "#1A1A1A").ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Nav
+                // Top Nav Bar
                 HStack {
-                    Text("Swap")
-                        .font(.system(size: 22, weight: .bold))
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.white)
+                        .opacity(0) // Hide action, just for layout balance if needed
+                    
                     Spacer()
+                    
+                    Text("Swap Tokens")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
                     Button {
-                        showSlippageSheet = true
+                        // Slippage action
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "slider.horizontal.3")
                                 .font(.system(size: 14))
-                            Text("\(String(format: "%.1f", slippage))%")
+                            Text("\(String(format: "%.0f", slippage))%")
                                 .font(.system(size: 13, weight: .semibold))
                         }
-                        .foregroundColor(Color(hex: "#AB9FF2"))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(
-                            Capsule()
-                                .fill(Color(hex: "#AB9FF2").opacity(0.15))
-                        )
+                        .foregroundColor(.white)
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
                 .padding(.bottom, 24)
 
-                // Swap Card
-                VStack(spacing: 4) {
-                    // From
+                // Main Swap Card
+                VStack(spacing: 0) {
+                    // From Field
                     swapField(
-                        label: "You pay",
-                        tokenSymbol: $fromToken,
+                        title: "You Pay",
                         amount: $fromAmount,
-                        balance: "2523.91040",
+                        tokenSymbol: $fromToken,
+                        usdValue: "$20.04",
+                        balance: "0.03976 ETH",
                         isFocused: $fromFieldFocused
                     )
-
-                    // Swap Button Center
+                    
+                    // Middle Separator + Swap Button
                     ZStack {
-                        Button {
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                        Divider()
+                            .background(Color(hex: "#3A3A3A"))
+                            .padding(.horizontal, 16)
+                        
+                        Button(action: {
+                            withAnimation(.spring()) {
                                 let temp = fromToken
                                 fromToken = toToken
                                 toToken = temp
-                                let tempAmount = fromAmount
+                                
+                                let tempAmt = fromAmount
                                 fromAmount = toAmount
-                                toAmount = tempAmount
+                                toAmount = tempAmt
                             }
-                        } label: {
+                        }) {
                             ZStack {
                                 Circle()
-                                    .fill(Color(hex: "#1A1A1A"))
-                                    .frame(width: 40, height: 40)
+                                    .fill(Color(hex: "#2A2A2A"))
+                                    .frame(width: 32, height: 32)
                                 Circle()
-                                    .strokeBorder(Color(hex: "#2A2A2A"), lineWidth: 2)
-                                    .frame(width: 40, height: 40)
+                                    .fill(Color(hex: "#3A3A3A"))
+                                    .frame(width: 28, height: 28)
                                 Image(systemName: "arrow.up.arrow.down")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(Color(hex: "#AB9FF2"))
                             }
                         }
                     }
-                    .frame(height: 0)
+                    .frame(height: 32)
                     .zIndex(1)
-
-                    // To
+                    
+                    // To Field
                     swapField(
-                        label: "You receive",
-                        tokenSymbol: $toToken,
+                        title: "You Receive",
                         amount: $toAmount,
-                        balance: "0.00",
-                        isFocused: $fromFieldFocused,
+                        tokenSymbol: $toToken,
+                        usdValue: "$17.34",
+                        balance: "0.28317 SOL",
+                        isFocused: FocusState<Bool>().projectedValue, // Not focused
                         isReadOnly: true
                     )
+                    
+                    Divider()
+                        .background(Color(hex: "#3A3A3A"))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                    
+                    // Provider Info
+                    infoRow(title: "Provider", value: "Mayan >")
+                    infoRow(title: "Price", value: "1 \(fromToken) = 14.6 \(toToken) ⇅")
+                        .padding(.bottom, 16)
                 }
+                .background(
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(Color(hex: "#2A2A2A"))
+                )
                 .padding(.horizontal, 16)
-
-                // Rate Info
-                if !fromAmount.isEmpty {
-                    HStack {
-                        Image(systemName: "arrow.2.squarepath")
-                            .font(.system(size: 12))
-                            .foregroundColor(Color(hex: "#6B6B6B"))
-                        Text("1 \(fromToken) ≈ 145.32 \(toToken)")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(Color(hex: "#6B6B6B"))
-                        Spacer()
-                        Text("Best rate")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(Color(hex: "#3DD68C"))
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
 
                 Spacer()
 
-                // Swap CTA
+                // Review Order Button
                 Button {
-                    guard !fromAmount.isEmpty else { return }
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                        isSwapping = true
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        withAnimation { isSwapping = false }
-                    }
+                    // Action
                 } label: {
-                    HStack(spacing: 10) {
-                        if isSwapping {
-                            ProgressView()
-                                .tint(.white)
-                                .scaleEffect(0.9)
-                        }
-                        Text(isSwapping ? "Swapping..." : fromAmount.isEmpty ? "Enter amount" : "Swap \(fromToken) → \(toToken)")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(
-                                fromAmount.isEmpty
-                                ? AnyShapeStyle(Color(hex: "#2A2A2A"))
-                                : AnyShapeStyle(LinearGradient(
-                                    colors: [Color(hex: "#AB9FF2"), Color(hex: "#7C5CFC")],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                ))
-                            )
-                    )
+                    Text("Review Order")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Color(hex: "#AB9FF2"))
+                        .cornerRadius(28)
                 }
-                .disabled(fromAmount.isEmpty || isSwapping)
                 .padding(.horizontal, 16)
-                .padding(.bottom, 100)
+                .padding(.bottom, 100) // Space for custom tab bar
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: fromAmount)
     }
-
+    
     @ViewBuilder
     func swapField(
-        label: String,
-        tokenSymbol: Binding<String>,
+        title: String,
         amount: Binding<String>,
+        tokenSymbol: Binding<String>,
+        usdValue: String,
         balance: String,
         isFocused: FocusState<Bool>.Binding,
         isReadOnly: Bool = false
     ) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(spacing: 8) {
             HStack {
-                Text(label)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: "#6B6B6B"))
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(Color(hex: "#8B8B8B"))
                 Spacer()
-                Button {
-                    if !isReadOnly {
-                        amount.wrappedValue = balance
-                    }
-                } label: {
-                    Text("Balance: \(balance) \(tokenSymbol.wrappedValue)")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(Color(hex: "#AB9FF2"))
-                }
             }
-
-            HStack(spacing: 12) {
-                // Token Badge
-                HStack(spacing: 8) {
-                    CryptoIconSmall(symbol: tokenSymbol.wrappedValue)
-                    Text(tokenSymbol.wrappedValue)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(Color(hex: "#6B6B6B"))
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(
-                    Capsule()
-                        .fill(Color(hex: "#2A2A2A"))
-                )
-
+            
+            HStack(alignment: .center) {
+                // Amount input
                 if isReadOnly {
-                    Text(amount.wrappedValue.isEmpty ? "0.00" : amount.wrappedValue)
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(amount.wrappedValue.isEmpty ? Color(hex: "#3A3A3A") : .white)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+                    Text(amount.wrappedValue)
+                        .font(.system(size: 32, weight: .regular))
+                        .foregroundColor(.white)
                 } else {
                     TextField("0", text: amount)
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.system(size: 32, weight: .regular))
                         .foregroundColor(.white)
-                        .multilineTextAlignment(.trailing)
                         .keyboardType(.decimalPad)
                         .focused(isFocused)
-                        .frame(maxWidth: .infinity)
                 }
+                
+                Spacer()
+                
+                // Token Pill
+                Button(action: {}) {
+                    HStack(spacing: 6) {
+                        CryptoIconSmall(symbol: tokenSymbol.wrappedValue)
+                        Text(tokenSymbol.wrappedValue)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(Color(hex: "#8B8B8B"))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(Color(hex: "#1A1A1A"))
+                    .cornerRadius(20)
+                }
+            }
+            
+            HStack {
+                // USD Value
+                HStack(spacing: 4) {
+                    Text(usdValue)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color(hex: "#8B8B8B"))
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.system(size: 10))
+                        .foregroundColor(Color(hex: "#8B8B8B"))
+                }
+                
+                Spacer()
+                
+                // Balance
+                Text(balance)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color(hex: "#8B8B8B"))
             }
         }
         .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(hex: "#232323"))
-        )
+    }
+    
+    @ViewBuilder
+    func infoRow(title: String, value: String) -> some View {
+        HStack {
+            HStack(spacing: 4) {
+                Text(title)
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundColor(Color(hex: "#8B8B8B"))
+                Image(systemName: "info.circle")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "#8B8B8B"))
+            }
+            Spacer()
+            Text(value)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(Color(hex: "#8B8B8B"))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
     }
 }
 
@@ -234,9 +239,9 @@ struct CryptoIconSmall: View {
         ZStack {
             Circle()
                 .fill(iconColor)
-                .frame(width: 28, height: 28)
+                .frame(width: 24, height: 24)
             Text(iconText)
-                .font(.system(size: 12, weight: .bold))
+                .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.white)
         }
     }
@@ -254,7 +259,7 @@ struct CryptoIconSmall: View {
     var iconText: String {
         switch symbol {
         case "BTC": return "₿"
-        case "SOL": return "S"
+        case "SOL": return "S" // A simple fallback, a real icon is better.
         case "ETH": return "Ξ"
         case "USDC": return "$"
         default: return String(symbol.prefix(1))

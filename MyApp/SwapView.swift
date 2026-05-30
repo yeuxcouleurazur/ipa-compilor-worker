@@ -142,12 +142,12 @@ struct SwapView: View {
                         RoundedRectangle(cornerRadius: 16)
                             .fill(
                                 fromAmount.isEmpty
-                                ? Color(hex: "#2A2A2A")
-                                : LinearGradient(
+                                ? AnyShapeStyle(Color(hex: "#2A2A2A"))
+                                : AnyShapeStyle(LinearGradient(
                                     colors: [Color(hex: "#AB9FF2"), Color(hex: "#7C5CFC")],
                                     startPoint: .leading,
                                     endPoint: .trailing
-                                )
+                                ))
                             )
                     )
                 }

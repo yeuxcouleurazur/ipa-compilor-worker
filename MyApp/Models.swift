@@ -18,24 +18,24 @@ struct Token: Identifiable {
     var formattedValue: String {
         if valueUSD == 0 { return "$0.00" }
         if valueUSD < 0.01 { return "<$0.01" }
-        return String(format: "$%,.2f", valueUSD)
+        return String(format: "$%.2f", valueUSD)
     }
 
     var formattedAmount: String {
         if amount == 0 { return "0 \(symbol)" }
         if amount < 0.001 {
-            return String(format: "< 0.001 \(symbol)")
+            return "< 0.001 \(symbol)"
         }
         if amount >= 1000 {
-            return String(format: "%.5f \(symbol)", amount)
+            return "\(String(format: "%.5f", amount)) \(symbol)"
         }
-        return String(format: "%.5g \(symbol)", amount)
+        return "\(String(format: "%.5g", amount)) \(symbol)"
     }
 
     var formattedChange: String {
         let prefix = change24h >= 0 ? "+" : ""
         if abs(change24h) < 0.01 { return change24h >= 0 ? "+<$0.01" : "-<$0.01" }
-        return "\(prefix)\(String(format: "$%,.2f", change24h))"
+        return "\(prefix)\(String(format: "$%.2f", change24h))"
     }
 
     var changeColor: Color {
@@ -196,12 +196,12 @@ class WalletViewModel: ObservableObject {
     ]
 
     var formattedTotalBalance: String {
-        String(format: "$%,.2f", totalBalance)
+        String(format: "$%.2f", totalBalance)
     }
 
     var formattedChange: String {
         let prefix = change24h >= 0 ? "+" : ""
-        return "\(prefix)\(String(format: "$%,.2f", change24h))"
+        return "\(prefix)\(String(format: "$%.2f", change24h))"
     }
 
     var formattedChangePercent: String {

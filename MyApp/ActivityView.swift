@@ -122,7 +122,7 @@ struct TransactionRowView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 3) {
-                Text(String(format: "$%,.2f", transaction.valueUSD))
+                Text(String(format: "$%.2f", transaction.valueUSD))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white)
                 Text(timeAgo(from: transaction.date))

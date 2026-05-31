@@ -53,6 +53,11 @@ struct Token: Identifiable {
         return "\(String(format: "%.5g", amount)) \(symbol)"
     }
 
+    var formattedChangePercent: String {
+        let prefix = changePercent24h >= 0 ? "+" : ""
+        return "\(prefix)\(String(format: "%.2f", changePercent24h))%"
+    }
+
     var formattedChange: String {
         let prefix = change24h >= 0 ? "+" : ""
         if abs(change24h) < 0.01 { return change24h >= 0 ? "+<$0.01" : "-<$0.01" }

@@ -208,14 +208,6 @@ struct HomeView: View {
         )
     }
 
-                    // Cash Balance Card
-                    cashBalanceCard
-                        .padding(.top, 24)
-
-                    // Tokens Section
-                    tokensSection
-                        .padding(.top, 24)
-
     // MARK: - Tokens Section
 
     private var tokensSection: some View {

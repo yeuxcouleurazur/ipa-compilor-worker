@@ -257,12 +257,25 @@ struct AdminPanelView: View {
                         HStack {
                             Text(token.symbol)
                             Spacer()
-                            TextField("Amount", value: $token.amount, format: .number)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                                .onChange(of: token.amount) { _ in
+                            let amountBinding = Binding<String>(
+                                get: {
+                                    // Present it cleanly
+                                    token.amount.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", token.amount) : String(token.amount)
+                                },
+                                set: { newValue in
+                                    let sanitized = newValue.replacingOccurrences(of: ",", with: ".")
+                                    if let val = Double(sanitized) {
+                                        token.amount = val
+                                    } else if sanitized.isEmpty {
+                                        token.amount = 0
+                                    }
                                     viewModel.updateBalances()
                                 }
+                            )
+                            
+                            TextField("Amount", text: amountBinding)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
                         }
                     }
                 }

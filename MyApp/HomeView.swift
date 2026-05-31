@@ -71,17 +71,17 @@ struct HomeView: View {
                     ZStack {
                         Circle()
                             .fill(Color(hex: "#FFE5B4")) // Light peach background
-                            .frame(width: 48, height: 48)
+                            .frame(width: 54, height: 54)
                         Text(viewModel.profileEmoji) // Avatar
-                            .font(.system(size: 26))
+                            .font(.system(size: 30))
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(viewModel.username)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: 15, weight: .medium))
                             .foregroundColor(Color(hex: "#8E8E93"))
                         Text(viewModel.walletName)
-                            .font(.system(size: 20, weight: .bold))
+                            .font(.system(size: 22, weight: .bold))
                             .foregroundColor(.white)
                     }
                 }

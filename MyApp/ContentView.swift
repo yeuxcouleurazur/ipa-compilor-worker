@@ -65,63 +65,149 @@ struct MainWalletView: View {
     }
 }
 
-// MARK: - Custom Tab Bar
+// MARK: - Custom Icons
 
-struct CustomTabBar: View {
-    @Binding var selectedTab: WalletViewModel.Tab
-
+struct PhantomChatView: View {
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(WalletViewModel.Tab.allCases, id: \.self) { tab in
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        selectedTab = tab
-                    }
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: selectedTab == tab && tab == .home ? "house.fill" : (tab == .home ? "house" : (tab == .wallet ? "creditcard" : (tab == .swap ? "arrow.left.arrow.right" : (tab == .activity ? "message" : "magnifyingglass")))))
-                            .font(.system(size: 22, weight: selectedTab == tab ? .semibold : .regular))
-                            .foregroundColor(selectedTab == tab ? (tab == .home ? Color(hex: "#AB9FF2") : .white) : Color(hex: "#6B6B6B"))
-                            .scaleEffect(selectedTab == tab ? 1.05 : 1.0)
-                            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedTab)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                }
+        GeometryReader { geo in
+            ZStack {
+                PhantomChatOutline()
+                    .stroke(style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
+                PhantomChatLines()
+                    .stroke(style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 8)
-        .background(
-            Rectangle()
-                .fill(Color(hex: "#121212"))
-                .overlay(
-                    Rectangle()
-                        .frame(height: 0.5)
-                        .foregroundColor(Color(hex: "#2A2A2A")),
-                    alignment: .top
-                )
-                .ignoresSafeArea(edges: .bottom)
-        )
     }
 }
 
-// MARK: - Demo Banner
+struct PhantomChatOutline: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        
+        let leftX = w * 0.1
+        let rightX = w * 0.9
+        let topY = h * 0.15
+        let botY = h * 0.75
+        let rad = w * 0.15
+        
+        path.move(to: CGPoint(x: leftX, y: topY + rad))
+        path.addArc(center: CGPoint(x: leftX + rad, y: topY + rad), radius: rad, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        
+        path.addLine(to: CGPoint(x: rightX - rad, y: topY))
+        path.addArc(center: CGPoint(x: rightX - rad, y: topY + rad), radius: rad, startAngle: .degrees(270), endAngle: .degrees(360), clockwise: false)
+        
+        path.addLine(to: CGPoint(x: rightX, y: botY - rad))
+        path.addArc(center: CGPoint(x: rightX - rad, y: botY - rad), radius: rad, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+        
+        path.addLine(to: CGPoint(x: leftX + rad * 2.5, y: botY))
+        
+        // Tail
+        path.addCurve(to: CGPoint(x: leftX + rad * 0.8, y: botY + rad * 1.5), 
+                      control1: CGPoint(x: leftX + rad * 1.5, y: botY), 
+                      control2: CGPoint(x: leftX + rad * 1.2, y: botY + rad * 1.5))
+                      
+        path.addCurve(to: CGPoint(x: leftX, y: botY - rad * 0.2), 
+                      control1: CGPoint(x: leftX + rad * 0.5, y: botY + rad * 1.0), 
+                      control2: CGPoint(x: leftX, y: botY + rad * 0.5))
+                      
+        path.closeSubpath()
+        return path
+    }
+}
 
-struct DemoBanner: View {
-    @Binding var isVisible: Bool
-    @State private var appear = false
+struct PhantomChatLines: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        
+        let lineX = w * 0.32
+        let lineEndX = w * 0.68
+        let line1Y = h * 0.35
+        let line2Y = h * 0.55
+        
+        path.move(to: CGPoint(x: lineX, y: line1Y))
+        path.addLine(to: CGPoint(x: lineEndX, y: line1Y))
+        
+        path.move(to: CGPoint(x: lineX, y: line2Y))
+        path.addLine(to: CGPoint(x: lineEndX, y: line2Y))
+        
+        return path
+    }
+}
 
+struct PhantomCardView: View {
     var body: some View {
-        VStack {
-            HStack(spacing: 10) {
-                Image(systemName: "info.circle.fill")
-                    .foregroundColor(Color(hex: "#AB9FF2"))
-                    .font(.system(size: 14))
+        GeometryReader { geo in
+            ZStack {
+                PhantomCardOutline()
+                    .stroke(style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
+                PhantomCardInnerShapes()
+                    .fill()
+            }
+        }
+    }
+}
 
-                Text("âš¡ DEMO MODE â€” DonnÃ©es fictives Ã  titre d'illustration")
-                    .font(.system(size: 12, weight: .semibold))
+struct PhantomCardOutline: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        
+        let leftX = w * 0.05
+        let rightX = w * 0.95
+        let topY = h * 0.2
+        let botY = h * 0.8
+        let rad = w * 0.15
+        
+        path.move(to: CGPoint(x: leftX, y: topY + rad))
+        path.addArc(center: CGPoint(x: leftX + rad, y: topY + rad), radius: rad, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        
+        path.addLine(to: CGPoint(x: rightX - rad, y: topY))
+        path.addArc(center: CGPoint(x: rightX - rad, y: topY + rad), radius: rad, startAngle: .degrees(270), endAngle: .degrees(360), clockwise: false)
+        
+        path.addLine(to: CGPoint(x: rightX, y: botY - rad))
+        path.addArc(center: CGPoint(x: rightX - rad, y: botY - rad), radius: rad, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+        
+        path.addLine(to: CGPoint(x: leftX + rad, y: botY))
+        path.addArc(center: CGPoint(x: leftX + rad, y: botY - rad), radius: rad, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+        
+        path.closeSubpath()
+        return path
+    }
+}
+
+struct PhantomCardInnerShapes: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        
+        // Chip on top right
+        let chipW = w * 0.15
+        let chipH = h * 0.12
+        let chipX = w * 0.72
+        let chipY = h * 0.32
+        let chipRad = w * 0.03
+        
+        path.addRoundedRect(in: CGRect(x: chipX, y: chipY, width: chipW, height: chipH), cornerSize: CGSize(width: chipRad, height: chipRad))
+        
+        // Line on bottom left
+        let lineW = w * 0.25
+        let lineH = h * 0.06
+        let lineX = w * 0.15
+        let lineY = h * 0.65
+        let lineRad = lineH * 0.5
+        
+        path.addRoundedRect(in: CGRect(x: lineX, y: lineY, width: lineW, height: lineH), cornerSize: CGSize(width: lineRad, height: lineRad))
+        
+        return path
+    }
+}
+
                     .foregroundColor(.white)
 
                 Spacer()
@@ -661,9 +747,9 @@ struct ChatsView: View {
                             }
                         }
                         
-                        // MARK: - Récent
+                        // MARK: - RÃ©cent
                         VStack(alignment: .leading, spacing: 16) {
-                            Text("Récent")
+                            Text("RÃ©cent")
                                 .font(.system(size: 20, weight: .semibold))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 20)
@@ -684,7 +770,7 @@ struct ChatsView: View {
                                         .offset(y: 20)
                                 }
                                 
-                                Text("Aucuns chats à afficher pour le moment.")
+                                Text("Aucuns chats Ã  afficher pour le moment.")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(Color(hex: "#8E8E93"))
                             }
@@ -789,3 +875,4 @@ struct TrendingCardView: View {
         .cornerRadius(24)
     }
 }
+

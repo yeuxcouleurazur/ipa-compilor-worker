@@ -22,6 +22,7 @@ struct Token: Identifiable {
     let isVerified: Bool
     var imageUrl: String?
     var rank: Int?
+    var coinGeckoId: String?
 
     // Extended Information
     var currentPrice: Double {
@@ -141,7 +142,8 @@ class WalletViewModel: ObservableObject {
             color: Color(hex: "#9945FF"),
             isVerified: true,
             imageUrl: "https://assets.coingecko.com/coins/images/4128/large/solana.png",
-            rank: nil
+            rank: nil,
+            coinGeckoId: "solana"
         ),
         Token(
             name: "USDT",
@@ -154,7 +156,8 @@ class WalletViewModel: ObservableObject {
             color: Color(hex: "#26A17B"),
             isVerified: true,
             imageUrl: "https://assets.coingecko.com/coins/images/325/large/Tether.png",
-            rank: nil
+            rank: nil,
+            coinGeckoId: "tether"
         ),
         Token(
             name: "solanaclawd",
@@ -167,7 +170,8 @@ class WalletViewModel: ObservableObject {
             color: Color(hex: "#5C2E91"),
             isVerified: false,
             imageUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png", // Will be replaced by local asset or fallback
-            rank: nil
+            rank: nil,
+            coinGeckoId: nil
         ),
         Token(
             name: "Bitcoin",
@@ -180,7 +184,8 @@ class WalletViewModel: ObservableObject {
             color: Color(hex: "#F7931A"),
             isVerified: true,
             imageUrl: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
-            rank: nil
+            rank: nil,
+            coinGeckoId: "bitcoin"
         ),
     ]
 
@@ -284,5 +289,30 @@ extension Color {
             blue: Double(b) / 255,
             opacity: Double(a) / 255
         )
+    }
+}
+
+// MARK: - Crypto API
+
+class CryptoAPI {
+    struct MarketChartResponse: Decodable {
+        let prices: [[Double]]
+    }
+
+    static func fetchChartData(coinId: String, days: String) async throws -> [Double] {
+        let urlString = "https://api.coingecko.com/api/v3/coins/\(coinId)/market_chart?vs_currency=usd&days=\(days)"
+        guard let url = URL(string: urlString) else { throw URLError(.badURL) }
+        
+        var request = URLRequest(url: url)
+        request.cachePolicy = .returnCacheDataElseLoad // Respect rate limits
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        
+        let decoded = try JSONDecoder().decode(MarketChartResponse.self, from: data)
+        return decoded.prices.compactMap { $0.last }
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct TokenDetailView: View {
     @Environment(\.presentationMode) var presentationMode
@@ -12,10 +13,12 @@ struct TokenDetailView: View {
     @State private var isDragging: Bool = false
     @State private var dragPrice: Double? = nil
     
-    // Chart data (mocked for demo)
-    let chartData: [CGFloat] = [
-        0.2, 0.3, 0.25, 0.4, 0.35, 0.5, 0.45, 0.6, 0.55, 0.7, 0.65, 0.8, 0.75, 0.9, 0.85, 0.7, 0.8, 0.6, 0.7, 0.5, 0.4, 0.3
-    ]
+    // Chart API State
+    @State private var apiChartData: [Double] = []
+    @State private var isLoadingChart: Bool = false
+    @State private var lastDragIndex: Int? = nil
+    
+    let impactGenerator = UIImpactFeedbackGenerator(style: .soft)
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -47,6 +50,10 @@ struct TokenDetailView: View {
                     
                     Spacer(minLength: 120) // Space for floating button
                 }
+                .padding(.bottom, 24)
+            }
+            .onAppear {
+                fetchChartData()
             }
             
             // Sticky Bottom Button
@@ -142,9 +149,17 @@ struct TokenDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             let displayPrice = isDragging && dragPrice != nil ? dragPrice! : token.currentPrice
             
-            Text(String(format: "$%.2f", displayPrice))
-                .font(.system(size: 48, weight: .bold))
-                .foregroundColor(.white)
+            HStack {
+                Text(String(format: "$%.2f", displayPrice))
+                    .font(.system(size: 48, weight: .bold))
+                    .foregroundColor(.white)
+                
+                if isLoadingChart {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: Color(hex: "#A393FA")))
+                        .padding(.leading, 8)
+                }
+            }
             
             HStack(spacing: 8) {
                 Text(token.formattedChange)
@@ -167,6 +182,19 @@ struct TokenDetailView: View {
     }
     
     // MARK: - Chart Section
+    
+    private var normalizedChartData: [CGFloat] {
+        guard !apiChartData.isEmpty else {
+            return [0.5, 0.5] // Flat line fallback
+        }
+        let minPrice = apiChartData.min() ?? 0
+        let maxPrice = apiChartData.max() ?? 1
+        let range = maxPrice - minPrice
+        guard range > 0 else { return apiChartData.map { _ in 0.5 } }
+        
+        return apiChartData.map { CGFloat(($0 - minPrice) / range) }
+    }
+    
     private var chartSection: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
@@ -183,12 +211,14 @@ struct TokenDetailView: View {
                         )
                 }
                 
+                let currentChartData = normalizedChartData
+                
                 // The Chart Line
                 Path { path in
-                    let stepX = geometry.size.width / CGFloat(chartData.count - 1)
+                    let stepX = geometry.size.width / CGFloat(max(1, currentChartData.count - 1))
                     let maxY = geometry.size.height
                     
-                    for (index, value) in chartData.enumerated() {
+                    for (index, value) in currentChartData.enumerated() {
                         let x = CGFloat(index) * stepX
                         let y = maxY - (value * maxY)
                         
@@ -211,9 +241,9 @@ struct TokenDetailView: View {
                             .position(x: dragLocation.x, y: geometry.size.height / 2)
                         
                         // Dot on the line
-                        let stepX = geometry.size.width / CGFloat(chartData.count - 1)
-                        let index = max(0, min(chartData.count - 1, Int(round(dragLocation.x / stepX))))
-                        let dotY = geometry.size.height - (chartData[index] * geometry.size.height)
+                        let stepX = geometry.size.width / CGFloat(max(1, currentChartData.count - 1))
+                        let index = max(0, min(currentChartData.count - 1, Int(round(dragLocation.x / stepX))))
+                        let dotY = geometry.size.height - (currentChartData[index] * geometry.size.height)
                         
                         Circle()
                             .fill(token.changeColor)
@@ -235,16 +265,25 @@ struct TokenDetailView: View {
                     .onChanged { value in
                         isDragging = true
                         dragLocation = value.location
-                        // Calculate mock price based on position
-                        let stepX = geometry.size.width / CGFloat(chartData.count - 1)
-                        let index = max(0, min(chartData.count - 1, Int(round(dragLocation.x / stepX))))
-                        let valueRatio = chartData[index]
-                        // Mock price logic: base price +- 10%
-                        dragPrice = token.currentPrice * (0.9 + Double(valueRatio) * 0.2)
+                        
+                        let stepX = geometry.size.width / CGFloat(max(1, currentChartData.count - 1))
+                        let index = max(0, min(currentChartData.count - 1, Int(round(dragLocation.x / stepX))))
+                        
+                        if lastDragIndex != index {
+                            impactGenerator.impactOccurred()
+                            lastDragIndex = index
+                        }
+                        
+                        if apiChartData.indices.contains(index) {
+                            dragPrice = apiChartData[index]
+                        } else {
+                            dragPrice = token.currentPrice
+                        }
                     }
                     .onEnded { _ in
                         isDragging = false
                         dragPrice = nil
+                        lastDragIndex = nil
                     }
             )
         }
@@ -267,8 +306,12 @@ struct TokenDetailView: View {
                             .fill(selectedTimeRange == range ? Color(hex: "#2C2C2E") : Color.clear)
                     )
                     .onTapGesture {
-                        withAnimation {
-                            selectedTimeRange = range
+                        if selectedTimeRange != range {
+                            withAnimation {
+                                selectedTimeRange = range
+                            }
+                            fetchChartData()
+                            impactGenerator.impactOccurred(intensity: 0.8)
                         }
                     }
             }
@@ -279,8 +322,8 @@ struct TokenDetailView: View {
     // MARK: - Action Buttons
     private var actionButtons: some View {
         HStack(spacing: 12) {
-            detailActionButton(icon: "arrow.up.right", label: "Long", color: "#A393FA")
-            detailActionButton(icon: "arrow.down.right", label: "Court", color: "#A393FA")
+            detailActionButton(icon: "arrow.trend.up", label: "Long", color: "#A393FA")
+            detailActionButton(icon: "arrow.trend.down", label: "Court", color: "#A393FA")
             detailActionButton(icon: "qrcode", label: "Recevoir", color: "#A393FA")
             detailActionButton(icon: "ellipsis", label: "Plus", color: "#A393FA")
         }
@@ -565,6 +608,37 @@ struct TokenDetailView: View {
             }
         } else {
             Circle().fill(token.color)
+        }
+    }
+    
+    // MARK: - API Call
+    private func fetchChartData() {
+        guard let coinId = token.coinGeckoId else { return }
+        isLoadingChart = true
+        
+        let daysMap: [String: String] = [
+            "1H": "0.04", // ~1 hour
+            "1J": "1",
+            "1S": "7",
+            "1M": "30",
+            "YTD": "365",
+            "TOUT": "max"
+        ]
+        let days = daysMap[selectedTimeRange] ?? "1"
+        
+        Task {
+            do {
+                let data = try await CryptoAPI.fetchChartData(coinId: coinId, days: days)
+                DispatchQueue.main.async {
+                    self.apiChartData = data
+                    self.isLoadingChart = false
+                }
+            } catch {
+                print("Error fetching chart data: \(error)")
+                DispatchQueue.main.async {
+                    self.isLoadingChart = false
+                }
+            }
         }
     }
 }

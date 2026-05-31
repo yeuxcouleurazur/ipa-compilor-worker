@@ -148,23 +148,32 @@ struct HomeView: View {
 
     private var actionButtons: some View {
         HStack(spacing: 12) {
-            actionButton(icon: "qrcode", label: "Receive")
-            actionButton(icon: "paperplane", label: "Send")
-            actionButton(icon: "arrow.right.arrow.left", label: "Swap")
-            actionButton(icon: "dollarsign", label: "Buy")
+            actionButton(icon: "qrcode", label: "Receive", isSystem: true)
+            actionButton(icon: "Send", label: "Send", isSystem: false)
+            actionButton(icon: "Swap", label: "Swap", isSystem: false)
+            actionButton(icon: "dollarsign", label: "Buy", isSystem: true)
         }
         .opacity(appearAnimation ? 1 : 0)
         .offset(y: appearAnimation ? 0 : 10)
         .animation(.easeOut(duration: 0.6).delay(0.1), value: appearAnimation)
     }
 
-    private func actionButton(icon: String, label: String) -> some View {
+    private func actionButton(icon: String, label: String, isSystem: Bool = true) -> some View {
         Button {
         } label: {
             VStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(Color(hex: "#A393FA")) // Purple icons
+                if isSystem {
+                    Image(systemName: icon)
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(Color(hex: "#A393FA")) // Purple icons
+                } else {
+                    Image(icon)
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 26, height: 26)
+                        .foregroundColor(Color(hex: "#A393FA"))
+                }
                 Text(label)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color(hex: "#EBEBEB"))

@@ -423,6 +423,7 @@ struct CoinGeckoToken: Codable {
     let market_cap: Double?
     let price_change_24h: Double?
     let price_change_percentage_24h: Double?
+    let market_cap_rank: Double?
 }
 
 struct PolymarketEvent: Codable {

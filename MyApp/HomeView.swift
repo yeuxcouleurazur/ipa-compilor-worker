@@ -23,12 +23,16 @@ struct HomeView: View {
                     actionButtons
                         .padding(.top, 24)
 
-                    // Cash Balance Card
-                    cashBalanceCard
-                        .padding(.top, 24)
-
                     // Tokens Section
                     tokensSection
+                        .padding(.top, 32)
+                        
+                    // Predictions Section
+                    predictionsSection
+                        .padding(.top, 24)
+                        
+                    // Perps Section
+                    perpsSection
                         .padding(.top, 24)
 
                     Spacer(minLength: 100)
@@ -53,18 +57,18 @@ struct HomeView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(Color(hex: "#2A2A2A")) // Lighter grey circle
-                            .frame(width: 36, height: 36)
-                        Text("💸") // Winged money avatar
-                            .font(.system(size: 18))
+                            .fill(Color(hex: "#FFE5B4")) // Light peach background
+                            .frame(width: 44, height: 44)
+                        Text("💜") // Avatar
+                            .font(.system(size: 22))
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(viewModel.walletAddress)
+                        Text("@User")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(Color(hex: "#8E8E93"))
-                        Text(viewModel.walletName)
-                            .font(.system(size: 18, weight: .semibold))
+                        Text("Account 1")
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                     }
                 }
@@ -144,9 +148,9 @@ struct HomeView: View {
 
     private var actionButtons: some View {
         HStack(spacing: 12) {
-            actionButton(icon: "qrcode", label: "Receive")
+            actionButton(icon: "qrcode.viewfinder", label: "Receive")
             actionButton(icon: "paperplane", label: "Send")
-            actionButton(icon: "repeat", label: "Swap")
+            actionButton(icon: "arrow.left.arrow.right", label: "Swap")
             actionButton(icon: "dollarsign", label: "Buy")
         }
         .opacity(appearAnimation ? 1 : 0)
@@ -166,46 +170,10 @@ struct HomeView: View {
                     .foregroundColor(Color(hex: "#EBEBEB"))
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 76) // Rectangular shape
+            .frame(height: 80) // Rectangular squircle shape
             .background(Color(hex: "#1C1C1E")) // Darker grey
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous)) // Ultra smooth squircle like iOS icons
         }
-    }
-
-    // MARK: - Cash Balance Card
-
-    private var cashBalanceCard: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Cash Balance")
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundColor(Color(hex: "#8E8E93"))
-                Text(String(format: "$%.2f", viewModel.cashBalance))
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-            }
-
-            Spacer()
-
-            Button {
-            } label: {
-                Text("Add Cash")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(Color(hex: "#221C35")) // Very dark purple/black text
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(hex: "#AB9FF2")) // Bright Phantom purple background
-                    )
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(
-            RoundedRectangle(cornerRadius: 18)
-                .fill(Color(hex: "#181818"))
-        )
     }
 
     // MARK: - Tokens Section
@@ -218,11 +186,11 @@ struct HomeView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Text("Tokens")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.system(size: 22, weight: .bold))
                             .foregroundColor(.white)
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(Color(hex: "#8E8E93"))
                     }
                 }
                 Spacer()
@@ -243,6 +211,69 @@ struct HomeView: View {
                         value: appearAnimation
                     )
                 }
+            }
+        }
+    }
+    
+    // MARK: - Predictions Section
+    private var predictionsSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Predictions")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.white)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(hex: "#8E8E93"))
+                Spacer()
+            }
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    predictionCard(title: "Pro Football Champion?", volume: "$91M vol", imageColor: "#4A90E2", icon: "football.fill")
+                    predictionCard(title: "Who will Trump nominate...", volume: "$26.5M vol", imageColor: "#D0021B", icon: "person.fill")
+                    predictionCard(title: "Fed rate cut in 2024?", volume: "$7.7M vol", imageColor: "#7ED321", icon: "building.columns.fill")
+                }
+            }
+        }
+    }
+    
+    private func predictionCard(title: String, volume: String, imageColor: String, icon: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(hex: imageColor))
+                    .frame(width: 48, height: 48)
+                Image(systemName: icon)
+                    .foregroundColor(.white)
+                    .font(.system(size: 24))
+            }
+            Spacer()
+            Text(title)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.white)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+            Text(volume)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(Color(hex: "#8E8E93"))
+        }
+        .padding(16)
+        .frame(width: 150, height: 160, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#1C1C1E")))
+    }
+    
+    // MARK: - Perps Section
+    private var perpsSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Perps")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.white)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(hex: "#8E8E93"))
+                Spacer()
             }
         }
     }

@@ -197,6 +197,8 @@ struct TokenDetailView: View {
     
     private var chartSection: some View {
         GeometryReader { geometry in
+            let currentChartData = normalizedChartData
+            
             ZStack(alignment: .leading) {
                 // Background Baseline
                 VStack {
@@ -210,8 +212,6 @@ struct TokenDetailView: View {
                                 .foregroundColor(Color(hex: "#4A4A4A"))
                         )
                 }
-                
-                let currentChartData = normalizedChartData
                 
                 // The Chart Line
                 Path { path in

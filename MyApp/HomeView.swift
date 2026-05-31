@@ -164,15 +164,15 @@ struct HomeView: View {
             VStack(spacing: 8) {
                 if isSystem {
                     Image(systemName: icon)
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.system(size: 26, weight: .bold))
                         .foregroundColor(Color(hex: "#A393FA")) // Purple icons
+                        .frame(width: 34, height: 34)
                 } else {
                     Image(icon)
                         .renderingMode(.template)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 24, height: 24)
-                        .scaleEffect(1.8) // Scale up visually to ignore transparent padding
+                        .frame(width: 34, height: 34)
                         .foregroundColor(Color(hex: "#A393FA"))
                 }
                 Text(label)

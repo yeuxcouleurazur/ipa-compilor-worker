@@ -148,34 +148,38 @@ struct HomeView: View {
 
     private var actionButtons: some View {
         HStack(spacing: 12) {
-            actionButton(icon: "qrcode", label: "Receive", isSystem: true)
-            actionButton(icon: "Send", label: "Send", isSystem: false)
-            actionButton(icon: "Swap", label: "Swap", isSystem: false)
-            actionButton(icon: "dollarsign", label: "Buy", isSystem: true)
+            actionButton(label: "Receive") {
+                Image(systemName: "qrcode")
+                    .font(.system(size: 26, weight: .bold))
+            }
+            actionButton(label: "Send") {
+                PhantomSendIcon()
+                    .stroke(style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                    .frame(width: 26, height: 26)
+            }
+            actionButton(label: "Swap") {
+                PhantomSwapIcon()
+                    .stroke(style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                    .frame(width: 26, height: 26)
+            }
+            actionButton(label: "Buy") {
+                Image(systemName: "dollarsign")
+                    .font(.system(size: 26, weight: .bold))
+            }
         }
         .opacity(appearAnimation ? 1 : 0)
         .offset(y: appearAnimation ? 0 : 10)
         .animation(.easeOut(duration: 0.6).delay(0.1), value: appearAnimation)
     }
 
-    private func actionButton(icon: String, label: String, isSystem: Bool = true) -> some View {
+    private func actionButton<Icon: View>(label: String, @ViewBuilder icon: () -> Icon) -> some View {
         Button {
         } label: {
             VStack(spacing: 8) {
-                if isSystem {
-                    Image(systemName: icon)
-                        .font(.system(size: 26, weight: .bold))
-                        .foregroundColor(Color(hex: "#A393FA")) // Purple icons
-                        .frame(width: 26, height: 26)
-                } else {
-                    Image(icon)
-                        .renderingMode(.template)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 26, height: 26)
-                        .scaleEffect(2.2) // Massive scale to overcome internal PNG padding
-                        .foregroundColor(Color(hex: "#A393FA"))
-                }
+                icon()
+                    .foregroundColor(Color(hex: "#A393FA"))
+                    .frame(width: 34, height: 34) // Consistent container size
+                
                 Text(label)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color(hex: "#EBEBEB"))
@@ -428,5 +432,56 @@ struct TokenRowView: View {
                     .foregroundColor(.white)
             }
         }
+    }
+}
+
+// MARK: - Custom Vector Icons
+
+struct PhantomSendIcon: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        
+        // Main outline (Paper plane)
+        path.move(to: CGPoint(x: w * 0.15, y: h * 0.45)) // Left wing tip
+        path.addLine(to: CGPoint(x: w * 0.90, y: h * 0.10)) // Nose
+        path.addLine(to: CGPoint(x: w * 0.70, y: h * 0.85)) // Right wing tip
+        path.addLine(to: CGPoint(x: w * 0.45, y: h * 0.55)) // Inner tail corner
+        path.closeSubpath()
+        
+        // Inner fold line
+        path.move(to: CGPoint(x: w * 0.45, y: h * 0.55))
+        path.addLine(to: CGPoint(x: w * 0.65, y: h * 0.35))
+        
+        return path
+    }
+}
+
+struct PhantomSwapIcon: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        
+        // Top Arrow (Points Right)
+        let topY = h * 0.35
+        path.move(to: CGPoint(x: w * 0.1, y: topY))
+        path.addLine(to: CGPoint(x: w * 0.9, y: topY))
+        
+        path.move(to: CGPoint(x: w * 0.65, y: topY - h * 0.2))
+        path.addLine(to: CGPoint(x: w * 0.9, y: topY))
+        path.addLine(to: CGPoint(x: w * 0.65, y: topY + h * 0.2))
+        
+        // Bottom Arrow (Points Left)
+        let botY = h * 0.65
+        path.move(to: CGPoint(x: w * 0.9, y: botY))
+        path.addLine(to: CGPoint(x: w * 0.1, y: botY))
+        
+        path.move(to: CGPoint(x: w * 0.35, y: botY - h * 0.2))
+        path.addLine(to: CGPoint(x: w * 0.1, y: botY))
+        path.addLine(to: CGPoint(x: w * 0.35, y: botY + h * 0.2))
+        
+        return path
     }
 }

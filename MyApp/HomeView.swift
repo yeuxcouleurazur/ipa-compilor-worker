@@ -70,23 +70,18 @@ struct HomeView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(Color(hex: "#2C2C2E")) // Dark gray background
-                            .frame(width: 44, height: 44)
-                        
-                        // Extract first letter of username (e.g. "@imakenomistake" -> "I")
-                        let initial = viewModel.username.count > 1 ? String(viewModel.username.dropFirst().prefix(1)).uppercased() : "U"
-                        
-                        Text(initial) // Avatar initial
-                            .font(.system(size: 20, weight: .regular))
-                            .foregroundColor(.white)
+                            .fill(Color(hex: "#FFE5B4")) // Light peach background
+                            .frame(width: 54, height: 54)
+                        Text(viewModel.profileEmoji) // Avatar
+                            .font(.system(size: 30))
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(viewModel.username)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: 15, weight: .medium))
                             .foregroundColor(Color(hex: "#8E8E93"))
-                        Text("Espèces")
-                            .font(.system(size: 24, weight: .bold))
+                        Text(viewModel.walletName)
+                            .font(.system(size: 22, weight: .bold))
                             .foregroundColor(.white)
                     }
                 }
@@ -94,11 +89,20 @@ struct HomeView: View {
 
             Spacer()
 
-            Button {
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(Color(hex: "#EBEBEB"))
+            HStack(spacing: 20) {
+                Button {
+                } label: {
+                    Image(systemName: "clock")
+                        .font(.system(size: 20, weight: .regular))
+                        .foregroundColor(Color(hex: "#EBEBEB"))
+                }
+
+                Button {
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 20, weight: .regular))
+                        .foregroundColor(Color(hex: "#EBEBEB"))
+                }
             }
         }
         .padding(.vertical, 8)
@@ -107,94 +111,46 @@ struct HomeView: View {
     // MARK: - Balance Section
 
     private var balanceSection: some View {
-        VStack(spacing: 24) {
-            
-            // Solde & Card HStack
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Solde")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(Color(hex: "#8E8E93"))
+        VStack(spacing: 8) {
+            // Total Balance
+            HStack {
+                if balanceVisible {
+                    // Force comma for thousands
+                    let balanceString = String(format: "%.2f", viewModel.totalBalance)
+                    let parts = balanceString.components(separatedBy: ".")
+                    let integerPart = parts[0]
+                    let decimalPart = parts.count > 1 ? ".\(parts[1])" : ""
+                    let formattedInteger = integerPart.count > 3 ? "\(integerPart.prefix(integerPart.count - 3)),\(integerPart.suffix(3))" : integerPart
                     
-                    if balanceVisible {
-                        // Force comma for thousands
-                        let balanceString = String(format: "%.2f", viewModel.totalBalance)
-                        let parts = balanceString.components(separatedBy: ".")
-                        let integerPart = parts[0]
-                        let decimalPart = parts.count > 1 ? ".\(parts[1])" : ""
-                        let formattedInteger = integerPart.count > 3 ? "\(integerPart.prefix(integerPart.count - 3)),\(integerPart.suffix(3))" : integerPart
-                        
-                        Text("$\(formattedInteger)\(decimalPart)")
-                            .font(.system(size: 42, weight: .bold))
-                            .foregroundColor(.white)
-                            .minimumScaleFactor(0.6)
-                            .lineLimit(1)
-                    } else {
-                        Text("••••••••")
-                            .font(.system(size: 42, weight: .bold))
-                            .foregroundColor(.white)
-                    }
+                    Text("$\(formattedInteger)\(decimalPart)")
+                        .font(.system(size: 46, weight: .bold))
+                        .foregroundColor(.white)
+                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
+                } else {
+                    Text("••••••••")
+                        .font(.system(size: 46, weight: .bold))
+                        .foregroundColor(.white)
                 }
-                
                 Spacer()
-                
-                // Holographic Card Image
-                Image("PhantomCard")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 80, height: 50)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
             }
-            
-            // Ajouter des espèces section
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Ajouter des espèces")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(.white)
-                
-                // Vente rapide card
-                VStack(alignment: .leading, spacing: 12) {
-                    // Crypto icons overlapping
-                    HStack(spacing: -10) {
-                        Image("bonk")
-                            .resizable()
-                            .frame(width: 32, height: 32)
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(Color(hex: "#1C1C1E"), lineWidth: 2))
-                        Image("usdc")
-                            .resizable()
-                            .frame(width: 32, height: 32)
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(Color(hex: "#1C1C1E"), lineWidth: 2))
-                        Image("solana")
-                            .resizable()
-                            .frame(width: 32, height: 32)
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(Color(hex: "#1C1C1E"), lineWidth: 2))
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Vente rapide de cryptomonnaies")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                        
-                        Text("Instantané · Aucuns frais sur les stablecoins")
-                            .font(.system(size: 13, weight: .regular))
-                            .foregroundColor(Color(hex: "#8E8E93"))
-                    }
-                    
-                    Text("Aucun jeton à vendre")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(Color(hex: "#6B6B6B"))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.05))
-                        .cornerRadius(6)
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(hex: "#1C1C1E"))
-                .cornerRadius(16)
+
+            // 24h Change
+            HStack(spacing: 8) {
+                Text(viewModel.formattedChange)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(viewModel.change24h >= 0 ? Color(hex: "#1FAD66") : Color(hex: "#FF453A"))
+
+                Text(viewModel.formattedChangePercent)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Color(hex: "#121212")) // Black text
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(viewModel.change24h >= 0 ? Color(hex: "#1FAD66") : Color(hex: "#FF453A")) // Solid background
+                    )
+                Spacer()
             }
         }
         .opacity(appearAnimation ? 1 : 0)

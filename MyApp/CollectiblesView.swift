@@ -15,8 +15,13 @@ struct CollectiblesView: View {
                         Circle()
                             .fill(Color(hex: "#2C2C2E"))
                             .frame(width: 44, height: 44)
-                        Text(viewModel.profileEmoji)
-                            .font(.system(size: 24))
+                        
+                        // Extract first letter of username
+                        let initial = viewModel.username.count > 1 ? String(viewModel.username.dropFirst().prefix(1)).uppercased() : "U"
+                        
+                        Text(initial)
+                            .font(.system(size: 20, weight: .regular))
+                            .foregroundColor(.white)
                     }
                     
                     VStack(alignment: .leading, spacing: 2) {
@@ -53,42 +58,12 @@ struct CollectiblesView: View {
                     
                     Spacer()
                     
-                    // Shiny Card Graphic
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color(hex: "#E0C3FC"), Color(hex: "#F9F047"), Color(hex: "#FF9A9E"), Color(hex: "#8EC5FC")],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 96, height: 60)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color.white.opacity(0.8), Color.clear, Color.clear, Color.white.opacity(0.4)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                    .blendMode(.overlay)
-                            )
-                        
-                        // Ghost Logo
-                        Image(systemName: "ghost.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color(hex: "#2B2859"))
-                            .position(x: 18, y: 16)
-                        
-                        // Visa Text
-                        Text("VISA")
-                            .font(.system(size: 10, weight: .heavy, design: .default))
-                            .italic()
-                            .foregroundColor(Color(hex: "#1A1F71"))
-                            .position(x: 74, y: 46)
-                    }
+                    // Holographic Card Image
+                    Image("PhantomCard")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 80, height: 50)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
                 .padding(.horizontal, 20)
                 
@@ -102,38 +77,26 @@ struct CollectiblesView: View {
                     // Card
                     VStack(alignment: .leading, spacing: 20) {
                         // Overlapping Icons
-                        HStack(spacing: -14) {
-                            // Shiba mock
-                            Circle()
-                                .fill(Color(hex: "#F3BA2F")) 
-                                .frame(width: 44, height: 44)
-                                .overlay(Text("🐶").font(.system(size: 20)))
-                                .overlay(Circle().stroke(Color(hex: "#1C1C1E"), lineWidth: 3))
+                        HStack(spacing: -10) {
+                            Image("bonk")
+                                .resizable()
+                                .frame(width: 32, height: 32)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(Color(hex: "#1C1C1E"), lineWidth: 2))
                                 .zIndex(3)
-                            
-                            // USDC mock
-                            Circle()
-                                .fill(Color(hex: "#2775CA"))
-                                .frame(width: 44, height: 44)
-                                .overlay(Text("$").font(.system(size: 20, weight: .bold)).foregroundColor(.white))
-                                .overlay(Circle().stroke(Color(hex: "#1C1C1E"), lineWidth: 3))
+                                
+                            Image("usdc")
+                                .resizable()
+                                .frame(width: 32, height: 32)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(Color(hex: "#1C1C1E"), lineWidth: 2))
                                 .zIndex(2)
-                            
-                            // Solana mock
-                            Circle()
-                                .fill(Color(hex: "#14F195"))
-                                .frame(width: 44, height: 44)
-                                .overlay(
-                                    LinearGradient(colors: [Color(hex: "#9945FF"), Color(hex: "#14F195")], startPoint: .topLeading, endPoint: .bottomTrailing)
-                                        .clipShape(Circle())
-                                )
-                                .overlay(
-                                    Text("S")
-                                        .font(.system(size: 18, weight: .black, design: .rounded))
-                                        .italic()
-                                        .foregroundColor(.white)
-                                )
-                                .overlay(Circle().stroke(Color(hex: "#1C1C1E"), lineWidth: 3))
+                                
+                            Image("solana")
+                                .resizable()
+                                .frame(width: 32, height: 32)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(Color(hex: "#1C1C1E"), lineWidth: 2))
                                 .zIndex(1)
                         }
                         

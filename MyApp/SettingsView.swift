@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var viewModel: WalletViewModel
@@ -78,10 +78,10 @@ struct SettingsView: View {
                                     .foregroundColor(Color(hex: "#AB9FF2"))
                             }
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Application Démo")
+                                Text("Application DÃ©mo")
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundColor(.white)
-                                Text("Toutes les données sont fictives")
+                                Text("Toutes les donnÃ©es sont fictives")
                                     .font(.system(size: 12))
                                     .foregroundColor(Color(hex: "#6B6B6B"))
                             }
@@ -148,10 +148,10 @@ struct SettingsView: View {
                 }
             }
         }
-        .alert("Mode Démo", isPresented: $showDemoInfo) {
+        .alert("Mode DÃ©mo", isPresented: $showDemoInfo) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Cette application est une démonstration uniquement. Aucune vraie cryptomonnaie n'est impliquée. Toutes les données affichées sont fictives à titre d'illustration.")
+            Text("Cette application est une dÃ©monstration uniquement. Aucune vraie cryptomonnaie n'est impliquÃ©e. Toutes les donnÃ©es affichÃ©es sont fictives Ã  titre d'illustration.")
         }
         .sheet(isPresented: $showAdminPanel) {
             AdminPanelView()
@@ -269,7 +269,7 @@ struct AdminPanelView: View {
                                     } else if sanitized.isEmpty {
                                         token.amount = 0
                                     }
-                                    viewModel.updateBalances()
+                                    viewModel.recalculate()
                                 }
                             )
                             
@@ -342,7 +342,7 @@ struct AdminPanelView: View {
             valueUSD: usdValue,
             date: Date(),
             address: simType == .send ? "0xSim...ulated" : "0xExt...ernal",
-            status: "Réussite",
+            status: "RÃ©ussite",
             network: "Ethereum", // Mock network
             tokenImageUrl: token.imageUrl
         )
@@ -435,12 +435,12 @@ struct TokenSearchView: View {
             .listStyle(PlainListStyle())
         }
         .navigationTitle("Add Token")
-        .alert("Succès", isPresented: $showSuccessAlert) {
+        .alert("SuccÃ¨s", isPresented: $showSuccessAlert) {
             Button("OK", role: .cancel) {
                 presentationMode.wrappedValue.dismiss()
             }
         } message: {
-            Text("Le token a été ajouté à votre portefeuille avec succès !")
+            Text("Le token a Ã©tÃ© ajoutÃ© Ã  votre portefeuille avec succÃ¨s !")
         }
         .overlay(
             Group {
@@ -508,3 +508,4 @@ struct TokenSearchView: View {
         }
     }
 }
+

@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 import Combine
 
 // MARK: - Models
@@ -9,19 +9,20 @@ enum AppRoute {
     case mainWallet
 }
 
-struct Token: Identifiable {
-    let id = UUID()
-    let name: String
-    let symbol: String
+struct Token: Identifiable, Codable {
+    var id = UUID()
+    var name: String
+    var symbol: String
     var amount: Double
     var valueUSD: Double {
         return amount * currentPrice
     }
     var change24h: Double
     var changePercent24h: Double
-    let iconName: String
-    let color: Color
-    let isVerified: Bool
+    var iconName: String
+    var colorHex: String
+    var color: Color { Color(hex: colorHex) }
+    var isVerified: Bool
     var imageUrl: String?
     var rank: Int?
     var coinGeckoId: String?
@@ -119,10 +120,10 @@ struct Transaction: Identifiable {
         }
         var label: String {
             switch self {
-            case .send: return "Envoyé"
-            case .receive: return "Reçu"
-            case .swap: return "Échangé"
-            case .buy: return "Acheté"
+            case .send: return "EnvoyÃ©"
+            case .receive: return "ReÃ§u"
+            case .swap: return "Ã‰changÃ©"
+            case .buy: return "AchetÃ©"
             case .interaction: return "Interaction application"
             }
         }
@@ -143,7 +144,7 @@ struct Transaction: Identifiable {
 class WalletViewModel: ObservableObject {
     @Published var walletName: String = "Account 1"
     @Published var username: String = "@MisterAzur075"
-    @Published var profileEmoji: String = "👻"
+    @Published var profileEmoji: String = "ðŸ‘»"
     @Published var totalBalance: Double = 0.0
     @Published var change24h: Double = 559.32
     @Published var changePercent24h: Double = 8.71
@@ -227,7 +228,7 @@ class WalletViewModel: ObservableObject {
         for i in 0..<tokens.count {
             let token = tokens[i]
             if token.amount > 0 {
-                // Fluctuate price by ±0.1% to create live market feel
+                // Fluctuate price by Â±0.1% to create live market feel
                 let noise = Double.random(in: -0.001...0.001)
                 let currentVal = token.valueUSD
                 let diff = currentVal * noise
@@ -257,6 +258,7 @@ class WalletViewModel: ObservableObject {
     func recalculate() {
         updateBalances()
         sortTokens()
+        saveTokens()
     }
     
     func updateBalances() {
@@ -283,7 +285,7 @@ class WalletViewModel: ObservableObject {
             valueUSD: 202100,
             date: Date(),
             address: "0xd90e...f31b",
-            status: "Réussite",
+            status: "RÃ©ussite",
             network: "Ethereum",
             tokenImageUrl: "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png"
         ),
@@ -294,7 +296,7 @@ class WalletViewModel: ObservableObject {
             valueUSD: 0,
             date: Date().addingTimeInterval(-1800),
             address: "Inconnu",
-            status: "Réussite",
+            status: "RÃ©ussite",
             network: "Ethereum",
             tokenImageUrl: nil
         ),
@@ -305,7 +307,7 @@ class WalletViewModel: ObservableObject {
             valueUSD: 0,
             date: Date().addingTimeInterval(-3600),
             address: "Inconnu",
-            status: "Réussite",
+            status: "RÃ©ussite",
             network: "Solana",
             tokenImageUrl: nil
         ),
@@ -316,7 +318,7 @@ class WalletViewModel: ObservableObject {
             valueUSD: 0,
             date: Date().addingTimeInterval(-86400),
             address: "Inconnu",
-            status: "Réussite",
+            status: "RÃ©ussite",
             network: "Solana",
             tokenImageUrl: nil
         )
@@ -624,3 +626,5 @@ struct CryptoIconSmall: View {
         .frame(width: 20, height: 20)
     }
 }
+
+

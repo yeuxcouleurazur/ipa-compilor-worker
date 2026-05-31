@@ -157,12 +157,14 @@ struct HomeView: View {
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 26, height: 26)
+                    .frame(width: 32, height: 32)
             }
             actionButton(label: "Swap") {
-                PhantomSwapIcon()
-                    .stroke(style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
-                    .frame(width: 26, height: 26)
+                Image("Swap")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 32, height: 32)
             }
             actionButton(label: "Buy") {
                 Image(systemName: "dollarsign")

@@ -29,7 +29,7 @@ struct MainWalletView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(hex: "#1A1A1A").ignoresSafeArea()
+                Color(hex: "#121212").ignoresSafeArea()
 
                 TabView(selection: $viewModel.selectedTab) {
                     HomeView()
@@ -79,10 +79,10 @@ struct CustomTabBar: View {
                     }
                 } label: {
                     VStack(spacing: 4) {
-                        Image(systemName: tab.icon)
-                            .font(.system(size: 22, weight: selectedTab == tab ? .bold : .regular))
-                            .foregroundColor(selectedTab == tab ? .white : Color(hex: "#6B6B6B"))
-                            .scaleEffect(selectedTab == tab ? 1.1 : 1.0)
+                        Image(systemName: selectedTab == tab && tab == .home ? "house.fill" : (tab == .home ? "house" : (tab == .wallet ? "creditcard" : (tab == .swap ? "arrow.left.arrow.right" : (tab == .activity ? "message" : "magnifyingglass")))))
+                            .font(.system(size: 22, weight: selectedTab == tab ? .semibold : .regular))
+                            .foregroundColor(selectedTab == tab ? (tab == .home ? Color(hex: "#AB9FF2") : .white) : Color(hex: "#6B6B6B"))
+                            .scaleEffect(selectedTab == tab ? 1.05 : 1.0)
                             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedTab)
                     }
                     .frame(maxWidth: .infinity)
@@ -91,16 +91,18 @@ struct CustomTabBar: View {
             }
         }
         .padding(.horizontal, 16)
+        .padding(.horizontal, 16)
         .padding(.bottom, 8)
         .background(
             Rectangle()
-                .fill(Color(hex: "#1A1A1A"))
+                .fill(Color(hex: "#121212"))
                 .overlay(
                     Rectangle()
                         .frame(height: 0.5)
                         .foregroundColor(Color(hex: "#2A2A2A")),
                     alignment: .top
                 )
+                .ignoresSafeArea(edges: .bottom)
         )
     }
 }

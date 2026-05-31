@@ -336,6 +336,7 @@ class CryptoAPI {
         
         var request = URLRequest(url: url)
         request.cachePolicy = .returnCacheDataElseLoad // Respect rate limits
+        request.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -370,6 +371,7 @@ class CryptoAPI {
         
         var request = URLRequest(url: url)
         request.cachePolicy = .returnCacheDataElseLoad
+        request.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
         
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
@@ -386,6 +388,7 @@ class CryptoAPI {
         
         var request = URLRequest(url: url)
         request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
         
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {

@@ -10,7 +10,7 @@ struct SwapView: View {
     
     var body: some View {
         ZStack {
-            Color.black.edgesIgnoringSafeArea(.all)
+            Color(hex: "#121212").ignoresSafeArea()
             
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
@@ -128,6 +128,18 @@ struct SwapView: View {
             .padding(.vertical, 10)
             .background(Color(hex: "#1C1C1E"))
             .clipShape(Capsule())
+        }
+    }
+    
+    private func reviewButton() -> some View {
+        Button(action: {}) {
+            Text("Review Order")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color(hex: "#AB9FF2"))
+                .cornerRadius(30)
         }
     }
     

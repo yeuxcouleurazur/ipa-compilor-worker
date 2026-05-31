@@ -262,12 +262,165 @@ struct AdminPanelView: View {
                         }
                     }
                 }
+                
+                Section {
+                    NavigationLink(destination: TokenSearchView()) {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundColor(.blue)
+                            Text("Add Crypto (CoinGecko)")
+                        }
+                    }
+                }
             }
             .navigationTitle("Admin Panel")
             .navigationBarItems(trailing: Button("Done") {
                 viewModel.sortTokens()
                 presentationMode.wrappedValue.dismiss()
             })
+        }
+    }
+}
+
+// MARK: - Token Search View
+struct TokenSearchView: View {
+    @EnvironmentObject var viewModel: WalletViewModel
+    @Environment(\.presentationMode) var presentationMode
+    
+    @State private var searchText = ""
+    @State private var searchResults: [CoinGeckoSearchItem] = []
+    @State private var isSearching = false
+    @State private var isAdding = false
+
+    var body: some View {
+        VStack {
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.gray)
+                TextField("Search CoinGecko...", text: $searchText)
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .disableAutocorrection(true)
+                    .onChange(of: searchText) { newValue in
+                        performSearch(query: newValue)
+                    }
+                if isSearching {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                }
+            }
+            .padding()
+            .background(Color(UIColor.secondarySystemBackground))
+            .cornerRadius(10)
+            .padding()
+            
+            List(searchResults) { item in
+                Button(action: {
+                    addToken(item: item)
+                }) {
+                    HStack {
+                        AsyncImage(url: URL(string: item.large)) { phase in
+                            switch phase {
+                            case .empty:
+                                Circle().fill(Color.gray.opacity(0.3))
+                            case .success(let image):
+                                image.resizable().scaledToFit()
+                            case .failure:
+                                Circle().fill(Color.gray.opacity(0.3))
+                            @unknown default:
+                                EmptyView()
+                            }
+                        }
+                        .frame(width: 32, height: 32)
+                        .clipShape(Circle())
+                        
+                        VStack(alignment: .leading) {
+                            Text(item.name)
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            Text(item.symbol.uppercased())
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "plus")
+                            .foregroundColor(.blue)
+                    }
+                }
+                .disabled(isAdding)
+            }
+            .listStyle(PlainListStyle())
+        }
+        .navigationTitle("Add Token")
+        .overlay(
+            Group {
+                if isAdding {
+                    ZStack {
+                        Color.black.opacity(0.4).ignoresSafeArea()
+                        ProgressView("Fetching Market Data...")
+                            .padding()
+                            .background(Color(UIColor.systemBackground))
+                            .cornerRadius(12)
+                    }
+                }
+            }
+        )
+    }
+    
+    private func performSearch(query: String) {
+        guard query.count > 1 else {
+            searchResults = []
+            return
+        }
+        isSearching = true
+        Task {
+            do {
+                let results = try await CryptoAPI.search(query: query)
+                DispatchQueue.main.async {
+                    self.searchResults = results
+                    self.isSearching = false
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.isSearching = false
+                }
+            }
+        }
+    }
+    
+    private func addToken(item: CoinGeckoSearchItem) {
+        isAdding = true
+        Task {
+            do {
+                let details = try await CryptoAPI.fetchSpecificCoin(id: item.id)
+                DispatchQueue.main.async {
+                    if !viewModel.tokens.contains(where: { $0.coinGeckoId == details.id }) {
+                        let newToken = Token(
+                            name: details.name,
+                            symbol: details.symbol.uppercased(),
+                            amount: 0.0,
+                            change24h: details.price_change_24h ?? 0.0,
+                            changePercent24h: details.price_change_percentage_24h ?? 0.0,
+                            iconName: "",
+                            color: Color(hex: "#3DD68C"),
+                            isVerified: true,
+                            imageUrl: details.image,
+                            rank: Int(details.market_cap_rank ?? 0),
+                            coinGeckoId: details.id,
+                            dynamicCurrentPrice: details.current_price ?? 0.0,
+                            marketCapValue: details.market_cap
+                        )
+                        viewModel.tokens.append(newToken)
+                        viewModel.updateBalances()
+                    }
+                    isAdding = false
+                    presentationMode.wrappedValue.dismiss()
+                }
+            } catch {
+                print("Error adding token: \(error)")
+                DispatchQueue.main.async {
+                    isAdding = false
+                }
+            }
         }
     }
 }

@@ -166,12 +166,12 @@ struct TokenDetailView: View {
                 
                 Text(token.formattedChangePercent)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(token.changeColor)
+                    .foregroundColor(Color(hex: "#121212")) // Black text
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
-                        Capsule()
-                            .fill(token.change24h >= 0 ? Color(hex: "#163324") : Color(hex: "#3A1D1D"))
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(token.change24h >= 0 ? Color(hex: "#3DD68C") : Color(hex: "#FF453A")) // Solid background
                     )
             }
         }

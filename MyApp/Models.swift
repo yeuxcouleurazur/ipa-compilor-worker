@@ -25,9 +25,11 @@ struct Token: Identifiable {
     var imageUrl: String?
     var rank: Int?
     var coinGeckoId: String?
+    var dynamicCurrentPrice: Double?
 
     // Extended Information
     var currentPrice: Double {
+        if let dynPrice = dynamicCurrentPrice { return dynPrice }
         if symbol == "BTC" { return 65430.21 }
         if symbol == "SOL" { return 182.61 }
         if symbol == "USDT" { return 1.00 }
@@ -335,18 +337,82 @@ class CryptoAPI {
         var request = URLRequest(url: url)
         request.cachePolicy = .returnCacheDataElseLoad // Respect rate limits
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                return generateMockChart(days: days)
+            }
+            
+            let decoded = try JSONDecoder().decode(MarketChartResponse.self, from: data)
+            return decoded.prices.compactMap { $0.last }
+        } catch {
+            print("API Error, using fallback: \(error)")
+            return generateMockChart(days: days)
+        }
+    }
+    
+    private static func generateMockChart(days: String) -> [Double] {
+        var mockData: [Double] = []
+        var currentPrice = 100.0
+        let points = days == "1" ? 24 : 100 // Simulate points
+        for _ in 0..<points {
+            let change = Double.random(in: -2.0...2.2)
+            currentPrice += change
+            mockData.append(currentPrice)
+        }
+        return mockData
+    }
+    
+    static func search(query: String) async throws -> [CoinGeckoSearchItem] {
+        let urlString = "https://api.coingecko.com/api/v3/search?query=\(query)"
+        guard let url = URL(string: urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "") else { throw URLError(.badURL) }
         
+        var request = URLRequest(url: url)
+        request.cachePolicy = .returnCacheDataElseLoad
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             throw URLError(.badServerResponse)
         }
         
-        let decoded = try JSONDecoder().decode(MarketChartResponse.self, from: data)
-        return decoded.prices.compactMap { $0.last }
+        let decoded = try JSONDecoder().decode(CoinGeckoSearchResponse.self, from: data)
+        return decoded.coins
+    }
+    
+    static func fetchSpecificCoin(id: String) async throws -> CoinGeckoToken {
+        let urlString = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=\(id)"
+        guard let url = URL(string: urlString) else { throw URLError(.badURL) }
+        
+        var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        
+        let decoded = try JSONDecoder().decode([CoinGeckoToken].self, from: data)
+        if let first = decoded.first {
+            return first
+        } else {
+            throw URLError(.cannotDecodeContentData)
+        }
     }
 }
 
 // MARK: - API Models
+
+struct CoinGeckoSearchResponse: Codable {
+    let coins: [CoinGeckoSearchItem]
+}
+
+struct CoinGeckoSearchItem: Codable, Identifiable {
+    let id: String
+    let name: String
+    let symbol: String
+    let large: String // Thumbnail/Image URL
+}
 
 struct CoinGeckoToken: Codable {
     let id: String

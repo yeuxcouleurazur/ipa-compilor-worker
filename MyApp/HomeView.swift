@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HomeView: View {
-    @StateObject private var viewModel = WalletViewModel()
+    @EnvironmentObject var viewModel: WalletViewModel
     @StateObject private var networkManager = NetworkManager()
     @State private var balanceVisible = true
     @State private var appearAnimation = false
@@ -142,12 +142,12 @@ struct HomeView: View {
 
                 Text(viewModel.formattedChangePercent)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(viewModel.change24h >= 0 ? Color(hex: "#3DD68C") : Color(hex: "#FF453A")) // Green text for positive
+                    .foregroundColor(Color(hex: "#121212")) // Black text
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
-                        Capsule()
-                            .fill(viewModel.change24h >= 0 ? Color(hex: "#163324") : Color(hex: "#3A1D1D")) // Dark green/red background
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(viewModel.change24h >= 0 ? Color(hex: "#3DD68C") : Color(hex: "#FF453A")) // Solid background
                     )
                 Spacer()
             }
@@ -169,21 +169,21 @@ struct HomeView: View {
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 24, height: 24)
+                    .frame(width: 28, height: 28)
             }
             actionButton(label: "Swap") {
                 Image("Swap")
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 24, height: 24)
+                    .frame(width: 28, height: 28)
             }
             actionButton(label: "Buy") {
                 Image("Buy")
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 24, height: 24)
+                    .frame(width: 28, height: 28)
             }
         }
         .opacity(appearAnimation ? 1 : 0)

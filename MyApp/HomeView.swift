@@ -148,9 +148,9 @@ struct HomeView: View {
 
     private var actionButtons: some View {
         HStack(spacing: 12) {
-            actionButton(icon: "qrcode.viewfinder", label: "Receive")
+            actionButton(icon: "qrcode", label: "Receive")
             actionButton(icon: "paperplane", label: "Send")
-            actionButton(icon: "arrow.left.arrow.right", label: "Swap")
+            actionButton(icon: "arrow.right.arrow.left", label: "Swap")
             actionButton(icon: "dollarsign", label: "Buy")
         }
         .opacity(appearAnimation ? 1 : 0)
@@ -163,10 +163,10 @@ struct HomeView: View {
         } label: {
             VStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(.system(size: 24, weight: .bold))
                     .foregroundColor(Color(hex: "#A393FA")) // Purple icons
                 Text(label)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color(hex: "#EBEBEB"))
             }
             .frame(maxWidth: .infinity)

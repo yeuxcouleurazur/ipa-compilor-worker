@@ -88,8 +88,6 @@ struct TokenDetailView: View {
             }
             .frame(width: 44, height: 44, alignment: .leading)
             
-            Spacer()
-            
             HStack(spacing: 8) {
                 tokenIcon
                     .frame(width: 32, height: 32)
@@ -328,6 +326,19 @@ struct TokenDetailView: View {
             detailActionButton(icon: "ellipsis", label: "Plus", color: "#A393FA")
         }
         .padding(.horizontal, 16)
+    }
+    
+    private func textActionButton(label: String, color: String) -> some View {
+        Button {
+        } label: {
+            Text(label)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(Color(hex: color))
+                .frame(maxWidth: .infinity)
+                .frame(height: 76)
+                .background(Color(hex: "#1C1C1E"))
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        }
     }
     
     private func detailActionButton(icon: String, label: String, color: String) -> some View {

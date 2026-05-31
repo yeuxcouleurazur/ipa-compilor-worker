@@ -27,37 +27,40 @@ struct MainWalletView: View {
     @EnvironmentObject var viewModel: WalletViewModel
 
     var body: some View {
-        ZStack {
-            Color(hex: "#1A1A1A").ignoresSafeArea()
+        NavigationView {
+            ZStack {
+                Color(hex: "#1A1A1A").ignoresSafeArea()
 
-            TabView(selection: $viewModel.selectedTab) {
-                HomeView()
-                    .environmentObject(viewModel)
-                    .tag(WalletViewModel.Tab.home)
+                TabView(selection: $viewModel.selectedTab) {
+                    HomeView()
+                        .environmentObject(viewModel)
+                        .tag(WalletViewModel.Tab.home)
 
-                CollectiblesView() // Using this as placeholder for .wallet
-                    .environmentObject(viewModel)
-                    .tag(WalletViewModel.Tab.wallet)
+                    CollectiblesView() // Using this as placeholder for .wallet
+                        .environmentObject(viewModel)
+                        .tag(WalletViewModel.Tab.wallet)
 
-                SwapView()
-                    .environmentObject(viewModel)
-                    .tag(WalletViewModel.Tab.swap)
+                    SwapView()
+                        .environmentObject(viewModel)
+                        .tag(WalletViewModel.Tab.swap)
 
-                ActivityView()
-                    .environmentObject(viewModel)
-                    .tag(WalletViewModel.Tab.activity)
+                    ActivityView()
+                        .environmentObject(viewModel)
+                        .tag(WalletViewModel.Tab.activity)
 
-                SettingsView() // Using this as placeholder for .browser
-                    .environmentObject(viewModel)
-                    .tag(WalletViewModel.Tab.browser)
+                    SettingsView() // Using this as placeholder for .browser
+                        .environmentObject(viewModel)
+                        .tag(WalletViewModel.Tab.browser)
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+
+                // Custom Tab Bar
+                VStack {
+                    Spacer()
+                    CustomTabBar(selectedTab: $viewModel.selectedTab)
+                }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-
-            // Custom Tab Bar
-            VStack {
-                Spacer()
-                CustomTabBar(selectedTab: $viewModel.selectedTab)
-            }
+            .navigationBarHidden(true)
         }
     }
 }

@@ -1,264 +1,570 @@
 import SwiftUI
 
 struct TokenDetailView: View {
+    @Environment(\.presentationMode) var presentationMode
     let token: Token
-    @Environment(\.dismiss) var dismiss
-    @State private var selectedPeriod: ChartPeriod = .week
-    @State private var chartPoints: [CGFloat] = []
-
-    enum ChartPeriod: String, CaseIterable {
-        case day = "1D"
-        case week = "1W"
-        case month = "1M"
-        case threeMonth = "3M"
-        case year = "1Y"
-        case all = "ALL"
-    }
-
+    
+    @State private var selectedTimeRange: String = "1J"
+    let timeRanges = ["1H", "1J", "1S", "1M", "YTD", "TOUT"]
+    
+    // Chart Scrubbing State
+    @State private var dragLocation: CGPoint = .zero
+    @State private var isDragging: Bool = false
+    @State private var dragPrice: Double? = nil
+    
+    // Chart data (mocked for demo)
+    let chartData: [CGFloat] = [
+        0.2, 0.3, 0.25, 0.4, 0.35, 0.5, 0.45, 0.6, 0.55, 0.7, 0.65, 0.8, 0.75, 0.9, 0.85, 0.7, 0.8, 0.6, 0.7, 0.5, 0.4, 0.3
+    ]
+    
     var body: some View {
-        ZStack {
-            Color(hex: "#1A1A1A").ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                // Nav
-                HStack {
-                    Button { dismiss() } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                    Spacer()
-                    HStack(spacing: 8) {
-                        Text(token.name)
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundColor(.white)
-                        if token.isVerified {
-                            Image(systemName: "checkmark.seal.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(Color(hex: "#AB9FF2"))
-                        }
-                    }
-                    Spacer()
-                    Button {} label: {
-                        Image(systemName: "ellipsis")
-                            .font(.system(size: 18))
-                            .foregroundColor(Color(hex: "#8A8A8A"))
-                    }
+        ZStack(alignment: .bottom) {
+            Color(hex: "#121212").ignoresSafeArea()
+            
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 24) {
+                    header
+                    
+                    priceSection
+                    
+                    chartSection
+                    
+                    timeRangeSelector
+                    
+                    actionButtons
+                    
+                    chatBanner
+                    
+                    positionSection
+                    
+                    perpsSection
+                    
+                    stakingSection
+                    
+                    infoSection
+                    
+                    aboutSection
+                    
+                    Spacer(minLength: 120) // Space for floating button
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 20)
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 24) {
-                        // Balance
-                        VStack(spacing: 8) {
-                            Text(token.formattedValue)
-                                .font(.system(size: 38, weight: .bold))
-                                .foregroundColor(.white)
-
-                            HStack(spacing: 8) {
-                                Text(token.formattedChange)
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundColor(token.changeColor)
-
-                                Text(String(format: "%.2f%%", token.changePercent24h))
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(token.changeColor)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 3)
-                                    .background(Capsule().fill(token.changeColor.opacity(0.15)))
-                            }
-
-                            Text(token.formattedAmount)
-                                .font(.system(size: 14))
-                                .foregroundColor(Color(hex: "#6B6B6B"))
-                        }
-                        .padding(.horizontal, 20)
-
-                        // Chart Placeholder
-                        VStack(spacing: 16) {
-                            MiniChartView(
-                                isPositive: token.change24h >= 0,
-                                color: token.changeColor
-                            )
-                            .frame(height: 140)
-                            .padding(.horizontal, 8)
-
-                            // Period Selector
-                            HStack(spacing: 0) {
-                                ForEach(ChartPeriod.allCases, id: \.self) { period in
-                                    Button {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                            selectedPeriod = period
-                                        }
-                                    } label: {
-                                        Text(period.rawValue)
-                                            .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(selectedPeriod == period ? .white : Color(hex: "#6B6B6B"))
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 8)
-                                            .background(
-                                                selectedPeriod == period
-                                                ? Capsule().fill(Color(hex: "#2A2A2A"))
-                                                : Capsule().fill(Color.clear)
-                                            )
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                        }
-
-                        // Action Buttons
-                        HStack(spacing: 12) {
-                            ForEach(["Send", "Receive", "Swap", "Buy"], id: \.self) { action in
-                                Button {} label: {
-                                    VStack(spacing: 6) {
-                                        ZStack {
-                                            Circle()
-                                                .fill(Color(hex: "#232323"))
-                                                .frame(width: 48, height: 48)
-                                            Image(systemName: actionIcon(action))
-                                                .font(.system(size: 18, weight: .medium))
-                                                .foregroundColor(.white)
-                                        }
-                                        Text(action)
-                                            .font(.system(size: 11, weight: .medium))
-                                            .foregroundColor(Color(hex: "#8A8A8A"))
-                                    }
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-
-                        // Stats Card
-                        VStack(spacing: 0) {
-                            statsRow(label: "Price", value: String(format: "$%.2f", token.valueUSD / max(token.amount, 0.0001)))
-                            Divider().background(Color(hex: "#2A2A2A"))
-                            statsRow(label: "Holdings", value: token.formattedAmount)
-                            Divider().background(Color(hex: "#2A2A2A"))
-                            statsRow(label: "Value", value: token.formattedValue)
-                            Divider().background(Color(hex: "#2A2A2A"))
-                            statsRow(label: "24h Change", value: token.formattedChange, valueColor: token.changeColor)
-                        }
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color(hex: "#232323"))
-                        )
-                        .padding(.horizontal, 16)
-
-                        Spacer(minLength: 100)
-                    }
+            }
+            
+            // Sticky Bottom Button
+            VStack {
+                Spacer()
+                Button {
+                } label: {
+                    Text("Acheter")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(Color(hex: "#121212"))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Color(hex: "#A393FA"))
+                        .cornerRadius(28)
                 }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 24)
             }
         }
         .navigationBarHidden(true)
     }
-
-    func actionIcon(_ action: String) -> String {
-        switch action {
-        case "Send": return "arrow.up"
-        case "Receive": return "qrcode"
-        case "Swap": return "arrow.2.squarepath"
-        case "Buy": return "dollarsign"
-        default: return "circle"
-        }
-    }
-
-    func statsRow(label: String, value: String, valueColor: Color = .white) -> some View {
+    
+    // MARK: - Header
+    private var header: some View {
         HStack {
-            Text(label)
-                .font(.system(size: 14))
-                .foregroundColor(Color(hex: "#6B6B6B"))
+            Button {
+                presentationMode.wrappedValue.dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.white)
+            }
+            .frame(width: 44, height: 44, alignment: .leading)
+            
             Spacer()
-            Text(value)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(valueColor)
+            
+            HStack(spacing: 8) {
+                tokenIcon
+                    .frame(width: 32, height: 32)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Text(token.name)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                        if token.isVerified {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(Color(hex: "#8C7AE6"))
+                        }
+                    }
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Color(hex: "#3DD68C"))
+                            .frame(width: 6, height: 6)
+                        Text("186 personnes ici")
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(Color(hex: "#8E8E93"))
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            HStack(spacing: 12) {
+                Button {
+                } label: {
+                    Text("Suivre")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(hex: "#2C2C2E"))
+                        )
+                }
+                
+                Button {
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(.white)
+                }
+            }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.top, 8)
     }
-}
-
-// MARK: - Mini Chart View
-
-struct MiniChartView: View {
-    let isPositive: Bool
-    let color: Color
-    @State private var appeared = false
-
-    // Generate a realistic-looking chart curve
-    private var points: [CGFloat] {
-        let base: [CGFloat] = isPositive
-            ? [0.5, 0.48, 0.52, 0.44, 0.46, 0.40, 0.43, 0.35, 0.38, 0.30, 0.28, 0.20, 0.15, 0.08, 0.05, 0.02]
-            : [0.1, 0.15, 0.12, 0.20, 0.18, 0.25, 0.22, 0.30, 0.28, 0.38, 0.35, 0.44, 0.42, 0.50, 0.55, 0.60]
-        return base
-    }
-
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let h = geo.size.height
-            let pts = points.enumerated().map { i, y -> CGPoint in
-                CGPoint(
-                    x: CGFloat(i) / CGFloat(points.count - 1) * w,
-                    y: h - (y * h)
-                )
-            }
-
-            ZStack {
-                // Fill gradient under curve
-                Path { path in
-                    guard pts.count > 1 else { return }
-                    path.move(to: CGPoint(x: pts[0].x, y: h))
-                    path.addLine(to: pts[0])
-                    for i in 1..<pts.count {
-                        let prev = pts[i - 1]
-                        let curr = pts[i]
-                        let midX = (prev.x + curr.x) / 2
-                        path.addCurve(to: curr, control1: CGPoint(x: midX, y: prev.y), control2: CGPoint(x: midX, y: curr.y))
-                    }
-                    path.addLine(to: CGPoint(x: pts.last!.x, y: h))
-                    path.closeSubpath()
-                }
-                .fill(
-                    LinearGradient(
-                        colors: [color.opacity(0.3), color.opacity(0.0)],
-                        startPoint: .top,
-                        endPoint: .bottom
+    
+    // MARK: - Price Section
+    private var priceSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            let displayPrice = isDragging && dragPrice != nil ? dragPrice! : token.currentPrice
+            
+            Text(String(format: "$%.2f", displayPrice))
+                .font(.system(size: 48, weight: .bold))
+                .foregroundColor(.white)
+            
+            HStack(spacing: 8) {
+                Text(token.formattedChange)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(token.changeColor)
+                
+                Text(token.formattedChangePercent)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(token.changeColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(token.change24h >= 0 ? Color(hex: "#163324") : Color(hex: "#3A1D1D"))
                     )
-                )
-                .opacity(appeared ? 1 : 0)
-                .animation(.easeIn(duration: 0.8), value: appeared)
-
-                // Line
-                Path { path in
-                    guard pts.count > 1 else { return }
-                    path.move(to: pts[0])
-                    for i in 1..<pts.count {
-                        let prev = pts[i - 1]
-                        let curr = pts[i]
-                        let midX = (prev.x + curr.x) / 2
-                        path.addCurve(to: curr, control1: CGPoint(x: midX, y: prev.y), control2: CGPoint(x: midX, y: curr.y))
-                    }
-                }
-                .trim(from: 0, to: appeared ? 1 : 0)
-                .stroke(color, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
-                .animation(.easeInOut(duration: 1.2), value: appeared)
-
-                // End dot
-                if let last = pts.last {
-                    Circle()
-                        .fill(color)
-                        .frame(width: 8, height: 8)
-                        .position(last)
-                        .opacity(appeared ? 1 : 0)
-                        .scaleEffect(appeared ? 1 : 0)
-                        .animation(.spring(response: 0.4, dampingFraction: 0.6).delay(1.1), value: appeared)
-                }
             }
         }
-        .onAppear { appeared = true }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+    }
+    
+    // MARK: - Chart Section
+    private var chartSection: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                // Background Baseline
+                VStack {
+                    Spacer()
+                    Rectangle()
+                        .fill(Color(hex: "#2C2C2E"))
+                        .frame(height: 1)
+                        .overlay(
+                            Rectangle()
+                                .stroke(style: StrokeStyle(lineWidth: 1, dash: [4]))
+                                .foregroundColor(Color(hex: "#4A4A4A"))
+                        )
+                }
+                
+                // The Chart Line
+                Path { path in
+                    let stepX = geometry.size.width / CGFloat(chartData.count - 1)
+                    let maxY = geometry.size.height
+                    
+                    for (index, value) in chartData.enumerated() {
+                        let x = CGFloat(index) * stepX
+                        let y = maxY - (value * maxY)
+                        
+                        if index == 0 {
+                            path.move(to: CGPoint(x: x, y: y))
+                        } else {
+                            path.addLine(to: CGPoint(x: x, y: y))
+                        }
+                    }
+                }
+                .stroke(token.changeColor, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                
+                // Scrubbing Overlay
+                if isDragging {
+                    ZStack {
+                        // Vertical Line
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.5))
+                            .frame(width: 1, height: geometry.size.height)
+                            .position(x: dragLocation.x, y: geometry.size.height / 2)
+                        
+                        // Dot on the line
+                        let stepX = geometry.size.width / CGFloat(chartData.count - 1)
+                        let index = max(0, min(chartData.count - 1, Int(round(dragLocation.x / stepX))))
+                        let dotY = geometry.size.height - (chartData[index] * geometry.size.height)
+                        
+                        Circle()
+                            .fill(token.changeColor)
+                            .frame(width: 10, height: 10)
+                            .overlay(Circle().stroke(Color(hex: "#121212"), lineWidth: 2))
+                            .position(x: dragLocation.x, y: dotY)
+                        
+                        // Time label
+                        Text("00:20")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white)
+                            .position(x: dragLocation.x, y: -20)
+                    }
+                }
+            }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        isDragging = true
+                        dragLocation = value.location
+                        // Calculate mock price based on position
+                        let stepX = geometry.size.width / CGFloat(chartData.count - 1)
+                        let index = max(0, min(chartData.count - 1, Int(round(dragLocation.x / stepX))))
+                        let valueRatio = chartData[index]
+                        // Mock price logic: base price +- 10%
+                        dragPrice = token.currentPrice * (0.9 + Double(valueRatio) * 0.2)
+                    }
+                    .onEnded { _ in
+                        isDragging = false
+                        dragPrice = nil
+                    }
+            )
+        }
+        .frame(height: 200)
+        .padding(.top, 24)
+        .padding(.horizontal, 16)
+    }
+    
+    // MARK: - Time Range Selector
+    private var timeRangeSelector: some View {
+        HStack(spacing: 0) {
+            ForEach(timeRanges, id: \.self) { range in
+                Text(range)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(selectedTimeRange == range ? .white : Color(hex: "#8E8E93"))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(selectedTimeRange == range ? Color(hex: "#2C2C2E") : Color.clear)
+                    )
+                    .onTapGesture {
+                        withAnimation {
+                            selectedTimeRange = range
+                        }
+                    }
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+    
+    // MARK: - Action Buttons
+    private var actionButtons: some View {
+        HStack(spacing: 12) {
+            detailActionButton(icon: "arrow.up.right", label: "Long", color: "#A393FA")
+            detailActionButton(icon: "arrow.down.right", label: "Court", color: "#A393FA")
+            detailActionButton(icon: "qrcode", label: "Recevoir", color: "#A393FA")
+            detailActionButton(icon: "ellipsis", label: "Plus", color: "#A393FA")
+        }
+        .padding(.horizontal, 16)
+    }
+    
+    private func detailActionButton(icon: String, label: String, color: String) -> some View {
+        Button {
+        } label: {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(Color(hex: color))
+                Text(label)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color(hex: "#EBEBEB"))
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 76)
+            .background(Color(hex: "#1C1C1E"))
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        }
+    }
+    
+    // MARK: - Chat Banner
+    private var chatBanner: some View {
+        HStack {
+            HStack(spacing: -8) {
+                Circle().fill(Color(hex: "#FF8A65")).frame(width: 24, height: 24)
+                Circle().fill(Color(hex: "#4FC3F7")).frame(width: 24, height: 24)
+            }
+            
+            Text("2 dans le chat...")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white)
+                .padding(.leading, 8)
+            
+            Spacer()
+            
+            Button {
+            } label: {
+                Text("Rejoindre le chat")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: "#2C2C2E")))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#181818")))
+        .padding(.horizontal, 16)
+    }
+    
+    // MARK: - Position Section
+    private var positionSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Position")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+            
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    // Valeur
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Valeur")
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(Color(hex: "#8E8E93"))
+                        Text(token.formattedValue)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#1C1C1E")))
+                    
+                    // Solde
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Solde")
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(Color(hex: "#8E8E93"))
+                        Text(token.formattedAmount)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#1C1C1E")))
+                }
+                
+                // 24h Change
+                HStack {
+                    Text("24 h de changement")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(Color(hex: "#8E8E93"))
+                    Spacer()
+                    Text(token.change24h == 0 ? "$0.00" : token.formattedChange)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(token.change24h == 0 ? .white : token.changeColor)
+                }
+                .padding(16)
+                .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#1C1C1E")))
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+    
+    // MARK: - Position Perps
+    private var perpsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Position perps")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+            
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle().fill(Color(hex: "#A393FA").opacity(0.2)).frame(width: 48, height: 48)
+                    Image(systemName: "infinity")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(Color(hex: "#A393FA"))
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Échangez des perps \(token.symbol)")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                    Text("Multipliez votre P&L jusqu'à x20")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(Color(hex: "#8E8E93"))
+                }
+                Spacer()
+            }
+            .padding(16)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#1C1C1E")))
+            .padding(.horizontal, 16)
+        }
+    }
+    
+    // MARK: - Staking Section (Votre enjeu)
+    private var stakingSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Votre enjeu")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+            
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Enjeu avec Phantom")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(.white)
+                    HStack(spacing: 4) {
+                        Text("Gagnez")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white)
+                        Text("6.07%")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(Color(hex: "#3DD68C"))
+                        Text("par an")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                }
+                
+                // Dotted curve
+                Path { path in
+                    path.move(to: CGPoint(x: 0, y: 50))
+                    path.addQuadCurve(to: CGPoint(x: 300, y: 0), control: CGPoint(x: 200, y: 50))
+                }
+                .stroke(Color(hex: "#3DD68C"), style: StrokeStyle(lineWidth: 2, dash: [6]))
+                .frame(height: 60)
+                .padding(.vertical, 8)
+                
+                HStack(spacing: 12) {
+                    Button {
+                    } label: {
+                        Text("Plus d'infor...")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: "#2C2C2E")))
+                    }
+                    Button {
+                    } label: {
+                        Text("Commencez...")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(Color(hex: "#121212"))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: "#3DD68C")))
+                    }
+                }
+            }
+            .padding(16)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#1C1C1E")))
+            .padding(.horizontal, 16)
+        }
+    }
+    
+    // MARK: - Informations Section
+    private var infoSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Informations")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+            
+            VStack(spacing: 0) {
+                infoRow(label: "Nom", value: token.name)
+                Divider().background(Color(hex: "#2C2C2E"))
+                infoRow(label: "Symbole", value: token.symbol)
+                Divider().background(Color(hex: "#2C2C2E"))
+                infoRow(label: "Réseau", value: token.name)
+                Divider().background(Color(hex: "#2C2C2E"))
+                infoRow(label: "Capitalisation du marché", value: token.marketCap)
+                Divider().background(Color(hex: "#2C2C2E"))
+                infoRow(label: "Approvisionnement total", value: token.totalSupply)
+                Divider().background(Color(hex: "#2C2C2E"))
+                infoRow(label: "Approvisionnement circulaire", value: token.circulatingSupply)
+                Divider().background(Color(hex: "#2C2C2E"))
+                infoRow(label: "Créé", value: token.creationDate)
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+    
+    private func infoRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 15, weight: .regular))
+                .foregroundColor(Color(hex: "#8E8E93"))
+            Spacer()
+            Text(value)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.white)
+        }
+        .padding(.vertical, 16)
+    }
+    
+    // MARK: - À Propos Section
+    private var aboutSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("À propos")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+            
+            Text(token.aboutText)
+                .font(.system(size: 15, weight: .regular))
+                .foregroundColor(Color(hex: "#B0B0B0"))
+                .lineSpacing(4)
+            
+            Button {
+            } label: {
+                Text("Afficher plus")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(Color(hex: "#A393FA"))
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+    
+    // MARK: - Utilities
+    @ViewBuilder
+    private var tokenIcon: some View {
+        if let imageUrl = token.imageUrl, let url = URL(string: imageUrl) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .empty:
+                    Circle().fill(Color(hex: "#2A2A2A"))
+                case .success(let image):
+                    image.resizable().scaledToFill().clipShape(Circle())
+                case .failure:
+                    Circle().fill(Color(hex: "#2A2A2A"))
+                @unknown default:
+                    Circle().fill(Color(hex: "#2A2A2A"))
+                }
+            }
+        } else {
+            Circle().fill(token.color)
+        }
     }
 }

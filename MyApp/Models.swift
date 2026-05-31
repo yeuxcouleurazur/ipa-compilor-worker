@@ -23,6 +23,19 @@ struct Token: Identifiable {
     var imageUrl: String?
     var rank: Int?
 
+    // Extended Information
+    var currentPrice: Double {
+        if amount > 0 { return valueUSD / amount }
+        if symbol == "BTC" { return 65430.21 }
+        if symbol == "SOL" { return 82.61 }
+        return 1.0
+    }
+    var marketCap: String = "$47.76B"
+    var totalSupply: String = "627.4M"
+    var circulatingSupply: String = "578.45M"
+    var creationDate: String = "Mar 16, 2020"
+    var aboutText: String = "SOL is the native token of the Solana blockchain. Its technical co-founder, Anatoly Yakovenko, was fed up with blockchains that..."
+
     var formattedValue: String {
         if valueUSD == 0 { return "$0.00" }
         if valueUSD < 0.01 { return "<$0.01" }

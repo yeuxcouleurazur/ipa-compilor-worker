@@ -27,10 +27,6 @@ struct HomeView: View {
                     cashBalanceCard
                         .padding(.top, 24)
 
-                    // Predictions Section
-                    predictionsSection
-                        .padding(.top, 24)
-
                     // Tokens Section
                     tokensSection
                         .padding(.top, 24)
@@ -194,13 +190,13 @@ struct HomeView: View {
             Button {
             } label: {
                 Text("Add Cash")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color(hex: "#EBEBEB")) // Light grey text
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Color(hex: "#221C35")) // Very dark purple/black text
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(hex: "#2C2C2E")) // Dark background
+                            .fill(Color(hex: "#AB9FF2")) // Bright Phantom purple background
                     )
             }
         }
@@ -212,69 +208,13 @@ struct HomeView: View {
         )
     }
 
-    // MARK: - Predictions Section
+                    // Cash Balance Card
+                    cashBalanceCard
+                        .padding(.top, 24)
 
-    private var predictionsSection: some View {
-        VStack(spacing: 8) {
-            // Header
-            HStack {
-                Button {
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("Predictions")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                }
-                Spacer()
-            }
-            .padding(.bottom, 4)
-
-            // Prediction Card
-            HStack(spacing: 12) {
-                // Icon
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(hex: "#A393FA").opacity(0.4))
-                        .frame(width: 40, height: 40)
-                    Image(systemName: "dollarsign")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(Color(hex: "#A393FA"))
-                }
-
-                // Info
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Above $99999...")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.white)
-                    Text("Will Bitcoin be abo...")
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundColor(Color(hex: "#8E8E93"))
-                }
-
-                Spacer()
-
-                // Value
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("+$134.00")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(Color(hex: "#3DD68C"))
-                    Text("Claim Payout")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(Color(hex: "#A393FA"))
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(hex: "#181818")) // Dark card background
-            )
-        }
-    }
+                    // Tokens Section
+                    tokensSection
+                        .padding(.top, 24)
 
     // MARK: - Tokens Section
 
@@ -300,13 +240,16 @@ struct HomeView: View {
             // Token List
             VStack(spacing: 8) { // Smaller spacing between token cards
                 ForEach(Array(viewModel.tokens.enumerated()), id: \.element.id) { index, token in
-                    TokenRowView(token: token)
-                        .opacity(appearAnimation ? 1 : 0)
-                        .offset(y: appearAnimation ? 0 : 20)
-                        .animation(
-                            .easeOut(duration: 0.5).delay(Double(index) * 0.07 + 0.2),
-                            value: appearAnimation
-                        )
+                    NavigationLink(destination: TokenDetailView(token: token)) {
+                        TokenRowView(token: token)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .opacity(appearAnimation ? 1 : 0)
+                    .offset(y: appearAnimation ? 0 : 20)
+                    .animation(
+                        .easeOut(duration: 0.5).delay(Double(index) * 0.07 + 0.2),
+                        value: appearAnimation
+                    )
                 }
             }
         }
@@ -319,16 +262,16 @@ struct TokenRowView: View {
     let token: Token
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 16) {
             // Token Icon
             ZStack {
                 tokenIcon
-                    .frame(width: 44, height: 44)
+                    .frame(width: 48, height: 48)
 
                 if token.symbol == "USDT" || token.symbol == "CLAWD" {
                     RoundedRectangle(cornerRadius: 6)
                         .fill(Color.white)
-                        .frame(width: 18, height: 18)
+                        .frame(width: 20, height: 20)
                         .overlay(
                             GeometryReader { geometry in
                                 let w = geometry.size.width
@@ -361,44 +304,44 @@ struct TokenRowView: View {
                         .offset(x: 14, y: 14)
                 }
             }
-            .frame(width: 44, height: 44)
+            .frame(width: 48, height: 48)
 
             // Token Info
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
                     Text(token.name)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white)
                     
                     if token.isVerified {
                         Image(systemName: "checkmark.seal.fill")
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundColor(Color(hex: "#8C7AE6"))
                     }
                 }
                 
                 Text(token.formattedAmount)
-                    .font(.system(size: 13, weight: .regular))
+                    .font(.system(size: 14, weight: .regular))
                     .foregroundColor(Color(hex: "#8E8E93"))
             }
 
             Spacer()
 
             // Value
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: 4) {
                 Text(token.formattedValue)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
 
                 Text(token.formattedChange)
-                    .font(.system(size: 13, weight: .regular))
+                    .font(.system(size: 14, weight: .regular))
                     .foregroundColor(token.changeColor)
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, 16)
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 18)
                 .fill(Color(hex: "#181818")) // Darker card background, closer to black
         )
     }

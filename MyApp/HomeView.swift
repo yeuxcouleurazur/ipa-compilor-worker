@@ -63,15 +63,15 @@ struct HomeView: View {
                         Circle()
                             .fill(Color(hex: "#FFE5B4")) // Light peach background
                             .frame(width: 44, height: 44)
-                        Text("💜") // Avatar
+                        Text(viewModel.profileEmoji) // Avatar
                             .font(.system(size: 22))
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("@User")
+                        Text(viewModel.username)
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(Color(hex: "#8E8E93"))
-                        Text("Account 1")
+                        Text(viewModel.walletName)
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -161,21 +161,21 @@ struct HomeView: View {
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 32, height: 32)
+                    .frame(width: 24, height: 24)
             }
             actionButton(label: "Swap") {
                 Image("Swap")
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 32, height: 32)
+                    .frame(width: 24, height: 24)
             }
             actionButton(label: "Buy") {
                 Image("Buy")
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 32, height: 32)
+                    .frame(width: 24, height: 24)
             }
         }
         .opacity(appearAnimation ? 1 : 0)
@@ -224,24 +224,18 @@ struct HomeView: View {
             .padding(.bottom, 4)
 
             // Token List
-            if networkManager.isLoadingTokens && networkManager.memeCoins.isEmpty {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: Color(hex: "#A393FA")))
-                    .padding()
-            } else {
-                VStack(spacing: 8) {
-                    ForEach(Array(networkManager.memeCoins.enumerated()), id: \.element.id) { index, token in
-                        NavigationLink(destination: TokenDetailView(token: token)) {
-                            TokenRowView(token: token)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .opacity(appearAnimation ? 1 : 0)
-                        .offset(y: appearAnimation ? 0 : 20)
-                        .animation(
-                            .easeOut(duration: 0.5).delay(Double(index) * 0.07 + 0.2),
-                            value: appearAnimation
-                        )
+            VStack(spacing: 8) {
+                ForEach(Array(viewModel.tokens.enumerated()), id: \.element.id) { index, token in
+                    NavigationLink(destination: TokenDetailView(token: token)) {
+                        TokenRowView(token: token)
                     }
+                    .buttonStyle(PlainButtonStyle())
+                    .opacity(appearAnimation ? 1 : 0)
+                    .offset(y: appearAnimation ? 0 : 20)
+                    .animation(
+                        .easeOut(duration: 0.5).delay(Double(index) * 0.07 + 0.2),
+                        value: appearAnimation
+                    )
                 }
             }
         }

@@ -5,6 +5,7 @@ struct SettingsView: View {
     @State private var notificationsEnabled = true
     @State private var biometricEnabled = true
     @State private var showDemoInfo = false
+    @State private var showAdminPanel = false
 
     var body: some View {
         ZStack {
@@ -35,7 +36,7 @@ struct SettingsView: View {
                                     )
                                 )
                                 .frame(width: 72, height: 72)
-                            Text("👻")
+                            Text(viewModel.profileEmoji)
                                 .font(.system(size: 36))
                         }
 
@@ -44,7 +45,7 @@ struct SettingsView: View {
                                 .font(.system(size: 20, weight: .bold))
                                 .foregroundColor(.white)
                             HStack(spacing: 6) {
-                                Text(viewModel.walletAddress)
+                                Text(viewModel.username)
                                     .font(.system(size: 13, weight: .medium))
                                     .foregroundColor(Color(hex: "#6B6B6B"))
                                 Button {} label: {
@@ -126,11 +127,24 @@ struct SettingsView: View {
                     .padding(.top, 16)
 
                     // Version
-                    Text("GhostWallet Demo v1.0.0")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color(hex: "#3A3A3A"))
-                        .padding(.top, 24)
-                        .padding(.bottom, 100)
+                    HStack {
+                        Spacer()
+                        Text("GhostWallet Demo v1.0.0")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color(hex: "#3A3A3A"))
+                        Spacer()
+                    }
+                    .padding(.top, 24)
+                    
+                    // Hidden Admin Button
+                    Button {
+                        showAdminPanel.toggle()
+                    } label: {
+                        Image(systemName: "plus")
+                            .foregroundColor(.clear) // Completely hidden
+                            .frame(width: 44, height: 44)
+                    }
+                    .padding(.bottom, 60)
                 }
             }
         }
@@ -138,6 +152,10 @@ struct SettingsView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Cette application est une démonstration uniquement. Aucune vraie cryptomonnaie n'est impliquée. Toutes les données affichées sont fictives à titre d'illustration.")
+        }
+        .sheet(isPresented: $showAdminPanel) {
+            AdminPanelView()
+                .environmentObject(viewModel)
         }
     }
 
@@ -214,4 +232,41 @@ struct SettingsItem {
     var hasToggle: Bool = false
     var toggleValue: Binding<Bool>? = nil
     var value: String? = nil
+}
+
+// MARK: - Admin Panel
+struct AdminPanelView: View {
+    @EnvironmentObject var viewModel: WalletViewModel
+    @Environment(\.presentationMode) var presentationMode
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Global Settings")) {
+                    TextField("Username", text: $viewModel.username)
+                    TextField("Wallet Name", text: $viewModel.walletName)
+                    TextField("Profile Emoji", text: $viewModel.profileEmoji)
+                }
+
+                Section(header: Text("Token Balances (Amounts)")) {
+                    ForEach(viewModel.tokens.indices, id: \.self) { index in
+                        HStack {
+                            Text(viewModel.tokens[index].symbol)
+                            Spacer()
+                            TextField("Amount", value: $viewModel.tokens[index].amount, format: .number)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .onChange(of: viewModel.tokens[index].amount) { _ in
+                                    viewModel.recalculate()
+                                }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Admin Panel")
+            .navigationBarItems(trailing: Button("Done") {
+                presentationMode.wrappedValue.dismiss()
+            })
+        }
+    }
 }

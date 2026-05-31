@@ -13,8 +13,10 @@ struct Token: Identifiable {
     let id = UUID()
     let name: String
     let symbol: String
-    let amount: Double
-    let valueUSD: Double
+    var amount: Double
+    var valueUSD: Double {
+        return amount * currentPrice
+    }
     let change24h: Double
     let changePercent24h: Double
     let iconName: String
@@ -26,9 +28,10 @@ struct Token: Identifiable {
 
     // Extended Information
     var currentPrice: Double {
-        if amount > 0 { return valueUSD / amount }
         if symbol == "BTC" { return 65430.21 }
-        if symbol == "SOL" { return 82.61 }
+        if symbol == "SOL" { return 182.61 }
+        if symbol == "USDT" { return 1.00 }
+        if symbol == "CLAWD" { return 0.00031 }
         return 1.0
     }
     var marketCapValue: Double?
@@ -131,8 +134,9 @@ struct Transaction: Identifiable {
 
 class WalletViewModel: ObservableObject {
     @Published var walletName: String = "Account 1"
-    @Published var walletAddress: String = "@blizvix"
-    @Published var totalBalance: Double = 6_423.91
+    @Published var username: String = "@MisterAzur075"
+    @Published var profileEmoji: String = "👻"
+    @Published var totalBalance: Double = 0.0
     @Published var change24h: Double = 559.32
     @Published var changePercent24h: Double = 8.71
     @Published var cashBalance: Double = 653.48
@@ -146,7 +150,6 @@ class WalletViewModel: ObservableObject {
             name: "Solana",
             symbol: "SOL",
             amount: 64.63,
-            valueUSD: 5444.43,
             change24h: 339.73, // arbitrary to make +6.24% work or we just use formatted string
             changePercent24h: 6.24,
             iconName: "solana",
@@ -160,7 +163,6 @@ class WalletViewModel: ObservableObject {
             name: "USDT",
             symbol: "USDT",
             amount: 324.0,
-            valueUSD: 324.0,
             change24h: 0.0,
             changePercent24h: 0.0,
             iconName: "usdt",
@@ -174,7 +176,6 @@ class WalletViewModel: ObservableObject {
             name: "solanaclawd",
             symbol: "CLAWD",
             amount: 6382.52,
-            valueUSD: 2.00,
             change24h: 0.02,
             changePercent24h: 8121.66,
             iconName: "clawd",
@@ -188,7 +189,6 @@ class WalletViewModel: ObservableObject {
             name: "Bitcoin",
             symbol: "BTC",
             amount: 0.0,
-            valueUSD: 0.0,
             change24h: 0.0,
             changePercent24h: 0.0,
             iconName: "bitcoin",
@@ -199,6 +199,15 @@ class WalletViewModel: ObservableObject {
             coinGeckoId: "bitcoin"
         ),
     ]
+
+    init() {
+        recalculate()
+    }
+
+    func recalculate() {
+        tokens.sort { $0.valueUSD > $1.valueUSD }
+        totalBalance = tokens.reduce(0) { $0 + $1.valueUSD }
+    }
 
     @Published var transactions: [Transaction] = [
         Transaction(
@@ -379,11 +388,10 @@ class NetworkManager: ObservableObject {
             do {
                 let decoded = try JSONDecoder().decode([CoinGeckoToken].self, from: data)
                 let tokens = decoded.map { coin in
-                    Token(
+                        Token(
                         name: coin.name,
                         symbol: coin.symbol.uppercased(),
                         amount: 0.0,
-                        valueUSD: coin.current_price ?? 0.0,
                         change24h: coin.price_change_24h ?? 0.0,
                         changePercent24h: coin.price_change_percentage_24h ?? 0.0,
                         iconName: "",

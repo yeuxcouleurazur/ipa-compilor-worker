@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SwapView: View {
+    @EnvironmentObject var viewModel: WalletViewModel
     @StateObject private var networkManager = NetworkManager()
     
     @State private var payAmount: String = "0"
@@ -75,13 +76,12 @@ struct SwapView: View {
                 Circle()
                     .fill(Color(hex: "#FFB09C")) // Peach background
                     .frame(width: 44, height: 44)
-                Image(systemName: "eyeglasses")
+                Text(viewModel.profileEmoji)
                     .font(.system(size: 20))
-                    .foregroundColor(.black)
             }
             
             VStack(alignment: .leading, spacing: 2) {
-                Text("@MisterAzur075")
+                Text(viewModel.username)
                     .font(.system(size: 14, weight: .regular))
                     .foregroundColor(Color(hex: "#8E8E93"))
                 Text("Échanger")
@@ -146,7 +146,7 @@ struct SwapView: View {
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(Color(hex: "#4A4A4A"))
                         Spacer()
-                        tokenSelector(icon: "solana", symbol: "SOL", isSystem: false)
+                        tokenSelector(icon: "solana", symbol: "SOL", isSystem: false, imageUrl: "https://assets.coingecko.com/coins/images/4128/large/solana.png")
                     }
                     
                     HStack {
@@ -171,7 +171,7 @@ struct SwapView: View {
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(Color(hex: "#4A4A4A"))
                         Spacer()
-                        tokenSelector(icon: "usdt", symbol: "USDT", isSystem: false)
+                        tokenSelector(icon: "usdt", symbol: "USDT", isSystem: false, imageUrl: "https://assets.coingecko.com/coins/images/325/large/Tether.png")
                     }
                     
                     HStack {
@@ -202,11 +202,26 @@ struct SwapView: View {
         }
     }
     
-    private func tokenSelector(icon: String, symbol: String, isSystem: Bool) -> some View {
+    private func tokenSelector(icon: String, symbol: String, isSystem: Bool, imageUrl: String? = nil) -> some View {
         Button {
         } label: {
             HStack(spacing: 8) {
-                if isSystem {
+                if let urlString = imageUrl, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            Circle().fill(Color(hex: "#2A2A2A"))
+                        case .success(let image):
+                            image.resizable().scaledToFill()
+                        case .failure:
+                            Circle().fill(Color(hex: "#2A2A2A"))
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                    .frame(width: 24, height: 24)
+                    .clipShape(Circle())
+                } else if isSystem {
                     Image(systemName: icon)
                         .foregroundColor(.white)
                 } else {

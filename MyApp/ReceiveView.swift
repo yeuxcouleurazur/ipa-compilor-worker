@@ -1,256 +1,294 @@
 import SwiftUI
+import CoreImage.CIFilterBuiltins
+
+struct ReceiveNetwork: Identifiable, Hashable {
+    let id = UUID()
+    let name: String
+    let address: String
+    let symbolIcon: String?
+    let initials: String
+    let color: Color
+}
+
+let receiveNetworks: [ReceiveNetwork] = [
+    ReceiveNetwork(name: "Solana", address: "5WebEN...BM8wUn", symbolIcon: "s.square.fill", initials: "S", color: Color(hex: "#14F195")),
+    ReceiveNetwork(name: "Ethereum", address: "0x06a6...8B07", symbolIcon: "diamond.fill", initials: "ETH", color: Color(hex: "#627EEA")),
+    ReceiveNetwork(name: "Bitcoin", address: "bc1q...8x65", symbolIcon: "bitcoinsign.square.fill", initials: "BTC", color: Color(hex: "#F7931A")),
+    ReceiveNetwork(name: "Monad", address: "0x06a6...8B07", symbolIcon: nil, initials: "M", color: Color(hex: "#8A2BE2")),
+    ReceiveNetwork(name: "Base", address: "0x06a6...8B07", symbolIcon: "square.fill", initials: "B", color: Color(hex: "#0052FF")),
+    ReceiveNetwork(name: "Sui", address: "0x3abf...2ab8", symbolIcon: "drop.fill", initials: "SUI", color: Color(hex: "#4DA2FF")),
+    ReceiveNetwork(name: "Polygon", address: "0x06a6...8B07", symbolIcon: "hexagon.fill", initials: "POL", color: Color(hex: "#8247E5")),
+    ReceiveNetwork(name: "HyperEVM", address: "0x06a6...8B07", symbolIcon: nil, initials: "H", color: Color(hex: "#FFFFFF"))
+]
 
 struct ReceiveView: View {
-    @EnvironmentObject var viewModel: WalletViewModel
     @Environment(\.dismiss) var dismiss
-    @State private var copied = false
-    @State private var selectedNetwork: String = "Solana"
-
-    let networks = ["Solana", "Ethereum", "Bitcoin"]
-
+    @State private var selectedNetwork: ReceiveNetwork = receiveNetworks[0]
+    @State private var showNetworkSheet = false
+    
     var body: some View {
         ZStack {
-            Color(hex: "#1A1A1A").ignoresSafeArea()
-
+            Color(hex: "#121212").ignoresSafeArea()
+            
             VStack(spacing: 0) {
-                // Nav
+                // Top Bar
                 HStack {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(width: 36, height: 36)
-                            .background(Circle().fill(Color(hex: "#2A2A2A")))
-                    }
-                    Spacer()
-                    Text("Receive")
-                        .font(.system(size: 18, weight: .bold))
+                    Text("Recevoir")
+                        .font(.system(size: 24, weight: .semibold))
                         .foregroundColor(.white)
                     Spacer()
-                    Button {} label: {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 18))
-                            .foregroundColor(Color(hex: "#8A8A8A"))
+                    Button(action: {
+                        // Scan action
+                    }) {
+                        Image(systemName: "viewfinder")
+                            .font(.system(size: 20))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.trailing, 16)
+                    
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 24)
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 24) {
-                        // Network Picker
-                        HStack(spacing: 8) {
-                            ForEach(networks, id: \.self) { net in
-                                Button {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                        selectedNetwork = net
-                                    }
-                                } label: {
-                                    Text(net)
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundColor(selectedNetwork == net ? .white : Color(hex: "#6B6B6B"))
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            Capsule()
-                                                .fill(selectedNetwork == net ? Color(hex: "#AB9FF2") : Color(hex: "#2A2A2A"))
-                                        )
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 20)
-
-                        // QR Code Card
-                        VStack(spacing: 20) {
-                            // QR Placeholder
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(.white)
-                                    .frame(width: 220, height: 220)
-
-                                // Fake QR pattern
-                                QRCodePlaceholder()
-                                    .frame(width: 196, height: 196)
-
-                                // Center logo
-                                ZStack {
-                                    Circle()
-                                        .fill(.white)
-                                        .frame(width: 48, height: 48)
-                                    Circle()
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [Color(hex: "#AB9FF2"), Color(hex: "#7C5CFC")],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                        )
-                                        .frame(width: 40, height: 40)
-                                    Text("👻")
-                                        .font(.system(size: 20))
-                                }
-                            }
-                            .shadow(color: Color(hex: "#AB9FF2").opacity(0.2), radius: 20, x: 0, y: 8)
-
-                            VStack(spacing: 6) {
-                                Text(viewModel.walletName)
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-
-                                Text("\(selectedNetwork) Network")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(Color(hex: "#AB9FF2"))
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(Capsule().fill(Color(hex: "#AB9FF2").opacity(0.15)))
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 28)
-                        .background(
-                            RoundedRectangle(cornerRadius: 24)
-                                .fill(Color(hex: "#232323"))
-                        )
-                        .padding(.horizontal, 16)
-
-                        // Address Copy
-                        VStack(spacing: 12) {
-                            Text("Your address")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(Color(hex: "#6B6B6B"))
-                                .textCase(.uppercase)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
-                            Button {
-                                UIPasteboard.general.string = viewModel.username
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                    copied = true
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                    withAnimation { copied = false }
-                                }
-                            } label: {
-                                HStack(spacing: 12) {
-                                    Text("7xKp3mFd9...mR9f")
-                                        .font(.system(size: 14, weight: .medium, design: .monospaced))
-                                        .foregroundColor(.white)
-                                        .lineLimit(1)
-                                        .truncationMode(.middle)
-
-                                    Spacer()
-
-                                    HStack(spacing: 6) {
-                                        Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                                            .font(.system(size: 13, weight: .semibold))
-                                        Text(copied ? "Copied!" : "Copy")
-                                            .font(.system(size: 13, weight: .semibold))
-                                    }
-                                    .foregroundColor(copied ? Color(hex: "#3DD68C") : Color(hex: "#AB9FF2"))
-                                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: copied)
-                                }
-                                .padding(16)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .fill(Color(hex: "#232323"))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 14)
-                                                .strokeBorder(
-                                                    copied ? Color(hex: "#3DD68C").opacity(0.4) : Color(hex: "#2A2A2A"),
-                                                    lineWidth: 1
-                                                )
-                                        )
-                                )
-                            }
-                        }
-                        .padding(.horizontal, 16)
-
-                        // Warning
-                        HStack(spacing: 10) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(Color(hex: "#F7931A"))
-                            Text("Only send \(selectedNetwork) assets to this address. Sending other tokens may result in permanent loss.")
-                                .font(.system(size: 12))
-                                .foregroundColor(Color(hex: "#6B6B6B"))
-                        }
-                        .padding(14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(hex: "#F7931A").opacity(0.08))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .strokeBorder(Color(hex: "#F7931A").opacity(0.2), lineWidth: 1)
-                                )
-                        )
-                        .padding(.horizontal, 16)
-
-                        Spacer(minLength: 100)
+                .padding(.top, 20)
+                
+                Spacer().frame(height: 40)
+                
+                // Network Pill Selector
+                Button(action: {
+                    showNetworkSheet = true
+                }) {
+                    HStack(spacing: 8) {
+                        ReceiveNetworkIcon(network: selectedNetwork, size: 20)
+                        Text(selectedNetwork.name)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(Color(hex: "#8E8E93"))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color(hex: "#2C2C2E"))
+                    .cornerRadius(20)
+                }
+                
+                Spacer().frame(height: 40)
+                
+                // QR Code
+                ZStack {
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(Color.white)
+                        .frame(width: 320, height: 320)
+                    
+                    if let qrImage = generateQRCode(from: selectedNetwork.address) {
+                        Image(uiImage: qrImage)
+                            .interpolation(.none)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 280, height: 280)
+                    }
+                    
+                    // Center Logo
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.white)
+                            .frame(width: 60, height: 60)
+                        
+                        ReceiveNetworkIcon(network: selectedNetwork, size: 50)
                     }
                 }
+                
+                Spacer().frame(height: 30)
+                
+                // Address
+                HStack(spacing: 8) {
+                    Text(selectedNetwork.address)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                    
+                    Button(action: {
+                        UIPasteboard.general.string = selectedNetwork.address
+                    }) {
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color(hex: "#8E8E93"))
+                    }
+                }
+                
+                Spacer()
+                
+                // Bottom Section
+                VStack(spacing: 20) {
+                    Text("Utilisez pour recevoir des jetons uniquement sur le\nréseau \(selectedNetwork.name).")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(Color(hex: "#8E8E93"))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                    
+                    HStack(spacing: 16) {
+                        Button(action: {
+                            UIPasteboard.general.string = selectedNetwork.address
+                        }) {
+                            Text("Copier l'adresse")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .background(Color(hex: "#2C2C2E"))
+                                .cornerRadius(16)
+                        }
+                        
+                        Button(action: {
+                            // Share action
+                        }) {
+                            Text("Partager")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .background(Color(hex: "#2C2C2E"))
+                                .cornerRadius(16)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+                .padding(.bottom, 40)
             }
+        }
+        .sheet(isPresented: $showNetworkSheet) {
+            ReceiveNetworkSelectionSheet(selectedNetwork: $selectedNetwork)
         }
         .navigationBarHidden(true)
     }
+    
+    private func generateQRCode(from string: String) -> UIImage? {
+        let context = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        let data = Data(string.utf8)
+        filter.setValue(data, forKey: "inputMessage")
+        
+        if let outputImage = filter.outputImage {
+            let transform = CGAffineTransform(scaleX: 10, y: 10)
+            let scaledImage = outputImage.transformed(by: transform)
+            
+            if let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) {
+                return UIImage(cgImage: cgImage)
+            }
+        }
+        return nil
+    }
 }
 
-// MARK: - QR Code Placeholder (visual only)
-
-struct QRCodePlaceholder: View {
+struct ReceiveNetworkSelectionSheet: View {
+    @Environment(\.dismiss) var dismiss
+    @Binding var selectedNetwork: ReceiveNetwork
+    
     var body: some View {
-        Canvas { context, size in
-            let s = size.width
-            let cell = s / 25
-            // Draw a fake QR-like pattern
-            context.fill(
-                Path(CGRect(x: 0, y: 0, width: s, height: s)),
-                with: .color(.white)
-            )
-            let pattern: [[Int]] = generateFakeQR()
-            for row in 0..<25 {
-                for col in 0..<25 {
-                    if pattern[row][col] == 1 {
-                        let rect = CGRect(
-                            x: CGFloat(col) * cell,
-                            y: CGFloat(row) * cell,
-                            width: cell - 0.5,
-                            height: cell - 0.5
-                        )
-                        context.fill(Path(rect), with: .color(.black))
+        ZStack {
+            Color(hex: "#121212").ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("Modifier le réseau")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.white)
+                    Spacer()
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 20))
+                            .foregroundColor(.white)
                     }
                 }
-            }
-        }
-    }
-
-    func generateFakeQR() -> [[Int]] {
-        var grid = Array(repeating: Array(repeating: 0, count: 25), count: 25)
-        // Top-left finder
-        drawFinder(&grid, row: 0, col: 0)
-        // Top-right finder
-        drawFinder(&grid, row: 0, col: 18)
-        // Bottom-left finder
-        drawFinder(&grid, row: 18, col: 0)
-        // Random data modules
-        var rng: UInt64 = 0xDEADBEEF
-        for row in 0..<25 {
-            for col in 0..<25 {
-                if grid[row][col] == 0 {
-                    rng = rng &* 6364136223846793005 &+ 1442695040888963407
-                    grid[row][col] = Int((rng >> 33) & 1)
+                .padding(20)
+                
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(receiveNetworks) { network in
+                            Button(action: {
+                                selectedNetwork = network
+                                dismiss()
+                            }) {
+                                HStack(spacing: 16) {
+                                    ReceiveNetworkIcon(network: network, size: 48)
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(network.name)
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        Text(network.address)
+                                            .font(.system(size: 14, weight: .regular))
+                                            .foregroundColor(Color(hex: "#8E8E93"))
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    HStack(spacing: 12) {
+                                        Button(action: {
+                                            // Show QR
+                                            selectedNetwork = network
+                                            dismiss()
+                                        }) {
+                                            Image(systemName: "qrcode")
+                                                .font(.system(size: 16))
+                                                .foregroundColor(Color(hex: "#8E8E93"))
+                                                .frame(width: 36, height: 36)
+                                                .background(Color(hex: "#2C2C2E"))
+                                                .cornerRadius(8)
+                                        }
+                                        Button(action: {
+                                            UIPasteboard.general.string = network.address
+                                        }) {
+                                            Image(systemName: "doc.on.doc")
+                                                .font(.system(size: 16))
+                                                .foregroundColor(Color(hex: "#8E8E93"))
+                                                .frame(width: 36, height: 36)
+                                                .background(Color(hex: "#2C2C2E"))
+                                                .cornerRadius(8)
+                                        }
+                                    }
+                                }
+                                .padding(16)
+                                .background(Color(hex: "#1C1C1E"))
+                                .cornerRadius(20)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
                 }
             }
         }
-        return grid
     }
+}
 
-    func drawFinder(_ grid: inout [[Int]], row: Int, col: Int) {
-        for r in 0..<7 {
-            for c in 0..<7 {
-                let onBorder = r == 0 || r == 6 || c == 0 || c == 6
-                let onInner = r >= 2 && r <= 4 && c >= 2 && c <= 4
-                grid[row + r][col + c] = (onBorder || onInner) ? 1 : 0
+struct ReceiveNetworkIcon: View {
+    let network: ReceiveNetwork
+    let size: CGFloat
+    
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.25)
+                .fill(Color.white)
+            if let icon = network.symbolIcon {
+                Image(systemName: icon)
+                    .font(.system(size: size * 0.6))
+                    .foregroundColor(network.color)
+            } else {
+                Text(network.initials)
+                    .font(.system(size: size * 0.4, weight: .bold))
+                    .foregroundColor(network.color)
             }
         }
+        .frame(width: size, height: size)
     }
 }

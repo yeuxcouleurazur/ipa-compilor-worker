@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = WalletViewModel()
@@ -120,7 +120,7 @@ struct DemoBanner: View {
                     .foregroundColor(Color(hex: "#AB9FF2"))
                     .font(.system(size: 14))
 
-                Text("âš¡ DEMO MODE â€” DonnÃ©es fictives Ã  titre d'illustration")
+                Text("⚡ DEMO MODE — Données fictives à titre d'illustration")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.white)
 
@@ -661,9 +661,9 @@ struct ChatsView: View {
                             }
                         }
                         
-                        // MARK: - Récent
+                        // MARK: - R�cent
                         VStack(alignment: .leading, spacing: 16) {
-                            Text("Récent")
+                            Text("R�cent")
                                 .font(.system(size: 20, weight: .semibold))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 20)
@@ -684,7 +684,7 @@ struct ChatsView: View {
                                         .offset(y: 20)
                                 }
                                 
-                                Text("Aucuns chats à afficher pour le moment.")
+                                Text("Aucuns chats � afficher pour le moment.")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(Color(hex: "#8E8E93"))
                             }

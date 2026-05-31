@@ -5,6 +5,7 @@ struct HomeView: View {
     @StateObject private var networkManager = NetworkManager()
     @State private var balanceVisible = true
     @State private var appearAnimation = false
+    @State private var showReceiveSheet = false
 
     var body: some View {
         ZStack {
@@ -160,25 +161,25 @@ struct HomeView: View {
 
     private var actionButtons: some View {
         HStack(spacing: 12) {
-            actionButton(label: "Receive") {
+            actionButton(label: "Receive", action: { showReceiveSheet = true }) {
                 Image(systemName: "qrcode")
                     .font(.system(size: 26, weight: .bold))
             }
-            actionButton(label: "Send") {
+            actionButton(label: "Send", action: {}) {
                 Image("Send")
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 28, height: 28)
             }
-            actionButton(label: "Swap") {
+            actionButton(label: "Swap", action: {}) {
                 Image("Swap")
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 28, height: 28)
             }
-            actionButton(label: "Buy") {
+            actionButton(label: "Buy", action: {}) {
                 Image("Buy")
                     .renderingMode(.template)
                     .resizable()
@@ -189,10 +190,14 @@ struct HomeView: View {
         .opacity(appearAnimation ? 1 : 0)
         .offset(y: appearAnimation ? 0 : 10)
         .animation(.easeOut(duration: 0.6).delay(0.1), value: appearAnimation)
+        .sheet(isPresented: $showReceiveSheet) {
+            ReceiveView()
+        }
     }
 
-    private func actionButton<Icon: View>(label: String, @ViewBuilder icon: () -> Icon) -> some View {
+    private func actionButton<Icon: View>(label: String, action: @escaping () -> Void, @ViewBuilder icon: () -> Icon) -> some View {
         Button {
+            action()
         } label: {
             VStack(spacing: 8) {
                 icon()

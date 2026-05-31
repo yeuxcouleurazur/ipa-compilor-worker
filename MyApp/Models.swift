@@ -120,10 +120,10 @@ struct Transaction: Identifiable {
         }
         var label: String {
             switch self {
-            case .send: return "EnvoyÃ©"
-            case .receive: return "ReÃ§u"
-            case .swap: return "Ã‰changÃ©"
-            case .buy: return "AchetÃ©"
+            case .send: return "EnvoyÃƒÂ©"
+            case .receive: return "ReÃƒÂ§u"
+            case .swap: return "Ãƒâ€°changÃƒÂ©"
+            case .buy: return "AchetÃƒÂ©"
             case .interaction: return "Interaction application"
             }
         }
@@ -142,9 +142,15 @@ struct Transaction: Identifiable {
 // MARK: - ViewModel
 
 class WalletViewModel: ObservableObject {
-    @Published var walletName: String = "Account 1"
-    @Published var username: String = "@MisterAzur075"
-    @Published var profileEmoji: String = "ðŸ‘»"
+    @Published var walletName: String = "" {
+        didSet { UserDefaults.standard.set(walletName, forKey: "walletName") }
+    }
+    @Published var username: String = "" {
+        didSet { UserDefaults.standard.set(username, forKey: "username") }
+    }
+    @Published var profileEmoji: String = "" {
+        didSet { UserDefaults.standard.set(profileEmoji, forKey: "profileEmoji") }
+    }
     @Published var totalBalance: Double = 0.0
     @Published var change24h: Double = 559.32
     @Published var changePercent24h: Double = 8.71
@@ -154,67 +160,84 @@ class WalletViewModel: ObservableObject {
     @Published var isRefreshing: Bool = false
     @Published var showDemoOverlay: Bool = true
 
-    @Published var tokens: [Token] = [
-        Token(
-            name: "Solana",
-            symbol: "SOL",
-            amount: 64.63,
-            change24h: 339.73, // arbitrary to make +6.24% work or we just use formatted string
-            changePercent24h: 6.24,
-            iconName: "solana",
-            color: Color(hex: "#9945FF"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/4128/large/solana.png",
-            rank: nil,
-            coinGeckoId: "solana"
-        ),
-        Token(
-            name: "USDT",
-            symbol: "USDT",
-            amount: 324.0,
-            change24h: 0.0,
-            changePercent24h: 0.0,
-            iconName: "usdt",
-            color: Color(hex: "#26A17B"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/325/large/Tether.png",
-            rank: nil,
-            coinGeckoId: "tether"
-        ),
-        Token(
-            name: "solanaclawd",
-            symbol: "CLAWD",
-            amount: 6382.52,
-            change24h: 0.02,
-            changePercent24h: 8121.66,
-            iconName: "clawd",
-            color: Color(hex: "#5C2E91"),
-            isVerified: false,
-            imageUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png", // Will be replaced by local asset or fallback
-            rank: nil,
-            coinGeckoId: nil
-        ),
-        Token(
-            name: "Bitcoin",
-            symbol: "BTC",
-            amount: 0.0,
-            change24h: 0.0,
-            changePercent24h: 0.0,
-            iconName: "bitcoin",
-            color: Color(hex: "#F7931A"),
-            isVerified: true,
-            imageUrl: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
-            rank: nil,
-            coinGeckoId: "bitcoin"
-        ),
-    ]
+    @Published var tokens: [Token] = []
 
     private var marketTimer: Timer?
 
     init() {
+        self.walletName = UserDefaults.standard.string(forKey: "walletName") ?? "Account 1"
+        self.username = UserDefaults.standard.string(forKey: "username") ?? "@MisterAzur075"
+        self.profileEmoji = UserDefaults.standard.string(forKey: "profileEmoji") ?? "ðŸ‘»"
+
+        if let data = UserDefaults.standard.data(forKey: "savedTokens"),
+           let decoded = try? JSONDecoder().decode([Token].self, from: data) {
+            self.tokens = decoded
+        } else {
+            self.tokens = [
+                Token(
+                    name: "Solana",
+                    symbol: "SOL",
+                    amount: 64.63,
+                    change24h: 339.73,
+                    changePercent24h: 6.24,
+                    iconName: "solana",
+                    colorHex: "#9945FF",
+                    isVerified: true,
+                    imageUrl: "https://assets.coingecko.com/coins/images/4128/large/solana.png",
+                    rank: nil,
+                    coinGeckoId: "solana"
+                ),
+                Token(
+                    name: "USDT",
+                    symbol: "USDT",
+                    amount: 324.0,
+                    change24h: 0.0,
+                    changePercent24h: 0.0,
+                    iconName: "usdt",
+                    colorHex: "#26A17B",
+                    isVerified: true,
+                    imageUrl: "https://assets.coingecko.com/coins/images/325/large/Tether.png",
+                    rank: nil,
+                    coinGeckoId: "tether"
+                ),
+                Token(
+                    name: "solanaclawd",
+                    symbol: "CLAWD",
+                    amount: 6382.52,
+                    change24h: 0.02,
+                    changePercent24h: 8121.66,
+                    iconName: "clawd",
+                    colorHex: "#5C2E91",
+                    isVerified: false,
+                    imageUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png", // Will be replaced by local asset or fallback
+                    rank: nil,
+                    coinGeckoId: nil
+                ),
+                Token(
+                    name: "Bitcoin",
+                    symbol: "BTC",
+                    amount: 0.0,
+                    change24h: 0.0,
+                    changePercent24h: 0.0,
+                    iconName: "bitcoin",
+                    colorHex: "#F7931A",
+                    isVerified: true,
+                    imageUrl: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
+                    rank: nil,
+                    coinGeckoId: "bitcoin"
+                )
+            ]
+        }
+
         updateBalances()
         sortTokens()
         startMarketSimulation()
+    }
+
+    func saveTokens() {
+        if let encoded = try? JSONEncoder().encode(tokens) {
+            UserDefaults.standard.set(encoded, forKey: "savedTokens")
+        }
     }
 
     private func startMarketSimulation() {
@@ -228,7 +251,7 @@ class WalletViewModel: ObservableObject {
         for i in 0..<tokens.count {
             let token = tokens[i]
             if token.amount > 0 {
-                // Fluctuate price by Â±0.1% to create live market feel
+                // Fluctuate price by Ã‚Â±0.1% to create live market feel
                 let noise = Double.random(in: -0.001...0.001)
                 let currentVal = token.valueUSD
                 let diff = currentVal * noise
@@ -285,7 +308,7 @@ class WalletViewModel: ObservableObject {
             valueUSD: 202100,
             date: Date(),
             address: "0xd90e...f31b",
-            status: "RÃ©ussite",
+            status: "RÃƒÂ©ussite",
             network: "Ethereum",
             tokenImageUrl: "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png"
         ),
@@ -296,7 +319,7 @@ class WalletViewModel: ObservableObject {
             valueUSD: 0,
             date: Date().addingTimeInterval(-1800),
             address: "Inconnu",
-            status: "RÃ©ussite",
+            status: "RÃƒÂ©ussite",
             network: "Ethereum",
             tokenImageUrl: nil
         ),
@@ -307,7 +330,7 @@ class WalletViewModel: ObservableObject {
             valueUSD: 0,
             date: Date().addingTimeInterval(-3600),
             address: "Inconnu",
-            status: "RÃ©ussite",
+            status: "RÃƒÂ©ussite",
             network: "Solana",
             tokenImageUrl: nil
         ),
@@ -318,7 +341,7 @@ class WalletViewModel: ObservableObject {
             valueUSD: 0,
             date: Date().addingTimeInterval(-86400),
             address: "Inconnu",
-            status: "RÃ©ussite",
+            status: "RÃƒÂ©ussite",
             network: "Solana",
             tokenImageUrl: nil
         )
@@ -561,7 +584,7 @@ class NetworkManager: ObservableObject {
                         change24h: coin.price_change_24h ?? 0.0,
                         changePercent24h: coin.price_change_percentage_24h ?? 0.0,
                         iconName: "",
-                        color: .clear,
+                        colorHex: "#00000000",
                         isVerified: false,
                         imageUrl: coin.image,
                         rank: nil,
@@ -626,5 +649,6 @@ struct CryptoIconSmall: View {
         .frame(width: 20, height: 20)
     }
 }
+
 
 

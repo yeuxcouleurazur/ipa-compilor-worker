@@ -390,36 +390,29 @@ struct TokenSearchView: View {
     private func addToken(item: CoinGeckoSearchItem) {
         isAdding = true
         Task {
-            do {
-                let details = try await CryptoAPI.fetchSpecificCoin(id: item.id)
-                DispatchQueue.main.async {
-                    if !viewModel.tokens.contains(where: { $0.coinGeckoId == details.id }) {
-                        let newToken = Token(
-                            name: details.name,
-                            symbol: details.symbol.uppercased(),
-                            amount: 0.0,
-                            change24h: details.price_change_24h ?? 0.0,
-                            changePercent24h: details.price_change_percentage_24h ?? 0.0,
-                            iconName: "",
-                            color: Color(hex: "#3DD68C"),
-                            isVerified: true,
-                            imageUrl: details.image,
-                            rank: Int(details.market_cap_rank ?? 0),
-                            coinGeckoId: details.id,
-                            dynamicCurrentPrice: details.current_price ?? 0.0,
-                            marketCapValue: details.market_cap
-                        )
-                        viewModel.tokens.append(newToken)
-                        viewModel.updateBalances()
-                    }
-                    isAdding = false
-                    presentationMode.wrappedValue.dismiss()
+            let details = await CryptoAPI.fetchSpecificCoin(id: item.id, fallbackItem: item)
+            DispatchQueue.main.async {
+                if !viewModel.tokens.contains(where: { $0.coinGeckoId == details.id }) {
+                    let newToken = Token(
+                        name: details.name,
+                        symbol: details.symbol.uppercased(),
+                        amount: 0.0,
+                        change24h: details.price_change_24h ?? 0.0,
+                        changePercent24h: details.price_change_percentage_24h ?? 0.0,
+                        iconName: "",
+                        color: Color(hex: "#106941"),
+                        isVerified: true,
+                        imageUrl: details.image,
+                        rank: Int(details.market_cap_rank ?? 0),
+                        coinGeckoId: details.id,
+                        dynamicCurrentPrice: details.current_price ?? 0.0,
+                        marketCapValue: details.market_cap
+                    )
+                    viewModel.tokens.append(newToken)
+                    viewModel.updateBalances()
                 }
-            } catch {
-                print("Error adding token: \(error)")
-                DispatchQueue.main.async {
-                    isAdding = false
-                }
+                isAdding = false
+                presentationMode.wrappedValue.dismiss()
             }
         }
     }

@@ -171,7 +171,7 @@ struct TokenDetailView: View {
                     .padding(.vertical, 4)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(token.change24h >= 0 ? Color(hex: "#3DD68C") : Color(hex: "#FF453A")) // Solid background
+                            .fill(token.change24h >= 0 ? Color(hex: "#106941") : Color(hex: "#FF453A")) // Solid background
                     )
             }
         }

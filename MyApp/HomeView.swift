@@ -171,7 +171,7 @@ struct HomeView: View {
                         .renderingMode(.template)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 26, height: 26)
+                        .frame(width: 40, height: 40)
                         .foregroundColor(Color(hex: "#A393FA"))
                 }
                 Text(label)

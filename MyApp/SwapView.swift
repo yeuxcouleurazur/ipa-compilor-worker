@@ -1,5 +1,10 @@
 import SwiftUI
 
+enum SwapSide {
+    case pay
+    case receive
+}
+
 struct SwapView: View {
     @EnvironmentObject var viewModel: WalletViewModel
     @StateObject private var networkManager = NetworkManager()
@@ -7,6 +12,12 @@ struct SwapView: View {
     @State private var payAmount: String = "0"
     @State private var receiveAmount: String = "0"
     @State private var appearAnimation = false
+    
+    @State private var paySymbol: String = "SOL"
+    @State private var receiveSymbol: String = "Cash"
+    
+    @State private var showTokenSelection = false
+    @State private var selectingSide: SwapSide = .pay
     
     var body: some View {
         ZStack {
@@ -66,6 +77,13 @@ struct SwapView: View {
             withAnimation(.easeOut(duration: 0.6)) {
                 appearAnimation = true
             }
+        }
+        .sheet(isPresented: $showTokenSelection) {
+            TokenSelectionSheet(
+                side: selectingSide,
+                selectedTokenSymbol: selectingSide == .pay ? $paySymbol : $receiveSymbol
+            )
+            .environmentObject(viewModel)
         }
     }
     
@@ -131,18 +149,6 @@ struct SwapView: View {
         }
     }
     
-    private func reviewButton() -> some View {
-        Button(action: {}) {
-            Text("Review Order")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color(hex: "#AB9FF2"))
-                .cornerRadius(30)
-        }
-    }
-    
     // MARK: - Swap Card
     private var swapCard: some View {
         ZStack {
@@ -158,12 +164,12 @@ struct SwapView: View {
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(Color(hex: "#4A4A4A"))
                         Spacer()
-                        tokenSelector(icon: "solana", symbol: "SOL", isSystem: false, imageUrl: "https://assets.coingecko.com/coins/images/4128/large/solana.png")
+                        tokenSelectorButton(for: paySymbol, side: .pay)
                     }
                     
                     HStack {
                         Spacer()
-                        Text("0 SOL")
+                        Text("0 \(paySymbol)")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(Color(hex: "#8E8E93"))
                     }
@@ -183,12 +189,12 @@ struct SwapView: View {
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(Color(hex: "#4A4A4A"))
                         Spacer()
-                        tokenSelector(icon: "usdt", symbol: "USDT", isSystem: false, imageUrl: "https://assets.coingecko.com/coins/images/325/large/Tether.png")
+                        tokenSelectorButton(for: receiveSymbol, side: .receive)
                     }
                     
                     HStack {
                         Spacer()
-                        Text("0 USDT")
+                        Text(receiveSymbol == "Cash" ? "$0.00" : "0 \(receiveSymbol)")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(Color(hex: "#8E8E93"))
                     }
@@ -200,6 +206,9 @@ struct SwapView: View {
             
             // Swap Arrow Button
             Button {
+                let temp = paySymbol
+                paySymbol = receiveSymbol
+                receiveSymbol = temp
             } label: {
                 ZStack {
                     Circle()
@@ -214,42 +223,42 @@ struct SwapView: View {
         }
     }
     
-    private func tokenSelector(icon: String, symbol: String, isSystem: Bool, imageUrl: String? = nil) -> some View {
+    private func tokenSelectorButton(for symbol: String, side: SwapSide) -> some View {
         Button {
+            selectingSide = side
+            showTokenSelection = true
         } label: {
             HStack(spacing: 8) {
-                if let urlString = imageUrl, let url = URL(string: urlString) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .empty:
-                            Circle().fill(Color(hex: "#2A2A2A"))
-                        case .success(let image):
-                            image.resizable().scaledToFill()
-                        case .failure:
-                            Circle().fill(Color(hex: "#2A2A2A"))
-                        @unknown default:
-                            EmptyView()
+                if symbol == "Cash" {
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: "#E0FF4F")) // Bright yellow
+                            .frame(width: 24, height: 24)
+                        Image(systemName: "ghost.fill")
+                            .foregroundColor(.black)
+                            .font(.system(size: 12))
+                    }
+                } else if let token = viewModel.tokens.first(where: { $0.symbol == symbol }) {
+                    if let urlString = token.imageUrl, let url = URL(string: urlString) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .empty: Circle().fill(Color(hex: "#2A2A2A"))
+                            case .success(let image): image.resizable().scaledToFill()
+                            case .failure: Circle().fill(Color(hex: "#2A2A2A"))
+                            @unknown default: EmptyView()
+                            }
                         }
-                    }
-                    .frame(width: 24, height: 24)
-                    .clipShape(Circle())
-                } else if isSystem {
-                    Image(systemName: icon)
-                        .foregroundColor(.white)
-                } else {
-                    if icon == "solana" {
-                        Image(systemName: "s.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(Color(hex: "#14F195"))
-                    } else if icon == "usdt" {
-                        Image(systemName: "t.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(Color(hex: "#26A17B"))
+                        .frame(width: 24, height: 24)
+                        .clipShape(Circle())
                     } else {
-                        Image(systemName: icon)
-                            .foregroundColor(.white)
+                        Circle()
+                            .fill(token.color)
+                            .frame(width: 24, height: 24)
                     }
+                } else {
+                    Circle().fill(Color.gray).frame(width: 24, height: 24)
                 }
+                
                 Text(symbol)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
@@ -311,6 +320,193 @@ struct SwapView: View {
             .background(Color(hex: "#1C1C1E"))
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
+    }
+}
+
+// MARK: - Token Selection Sheet
+struct TokenSelectionSheet: View {
+    @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var viewModel: WalletViewModel
+    
+    let side: SwapSide
+    @Binding var selectedTokenSymbol: String
+    
+    @State private var searchText = ""
+    let networks = ["Solana", "Ethereum", "Bitcoin", "Monad", "Base", "Sui"]
+    @State private var selectedNetwork = "Solana"
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color(hex: "#121212").ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Search
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(Color(hex: "#8E8E93"))
+                        TextField("Rechercher", text: $searchText)
+                            .foregroundColor(.white)
+                    }
+                    .padding(12)
+                    .background(Color(hex: "#1C1C1E"))
+                    .cornerRadius(12)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 16)
+                    
+                    // Network Pills
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            Spacer().frame(width: 8)
+                            ForEach(networks, id: \.self) { network in
+                                Button {
+                                    selectedNetwork = network
+                                } label: {
+                                    Text(network)
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(selectedNetwork == network ? .black : .white)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .fill(selectedNetwork == network ? Color(hex: "#A393FA") : Color(hex: "#1C1C1E"))
+                                        )
+                                }
+                            }
+                            Spacer().frame(width: 8)
+                        }
+                    }
+                    .padding(.bottom, 16)
+                    
+                    // Token List
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 12) {
+                            // Cash Row
+                            Button {
+                                selectedTokenSymbol = "Cash"
+                                presentationMode.wrappedValue.dismiss()
+                            } label: {
+                                HStack(spacing: 16) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color(hex: "#E0FF4F")) // Bright yellow
+                                            .frame(width: 48, height: 48)
+                                        Image(systemName: "ghost.fill")
+                                            .foregroundColor(.black)
+                                            .font(.system(size: 20))
+                                    }
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Solde Cash")
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(Color(hex: "#8E8E93"))
+                                        Text("$0.00")
+                                            .font(.system(size: 18, weight: .bold))
+                                            .foregroundColor(.white)
+                                    }
+                                    Spacer()
+                                }
+                                .padding(16)
+                                .background(Color(hex: "#1C1C1E"))
+                                .cornerRadius(16)
+                            }
+                            
+                            Divider().background(Color(hex: "#2A2A2A")).padding(.vertical, 8)
+                            
+                            // Normal Tokens
+                            ForEach(viewModel.tokens) { token in
+                                Button {
+                                    selectedTokenSymbol = token.symbol
+                                    presentationMode.wrappedValue.dismiss()
+                                } label: {
+                                    tokenSelectionRow(token: token)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 24)
+                    }
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    HStack {
+                        Text(side == .pay ? "Vous payez" : "Vous recevez")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+                        Spacer()
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        presentationMode.wrappedValue.dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func tokenSelectionRow(token: Token) -> some View {
+        HStack(spacing: 16) {
+            ZStack(alignment: .bottomTrailing) {
+                if let imageUrl = token.imageUrl, let url = URL(string: imageUrl) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty: Circle().fill(Color(hex: "#2A2A2A"))
+                        case .success(let image): image.resizable().scaledToFill()
+                        case .failure: Circle().fill(Color(hex: "#2A2A2A"))
+                        @unknown default: EmptyView()
+                        }
+                    }
+                    .frame(width: 48, height: 48)
+                    .clipShape(Circle())
+                } else {
+                    Circle()
+                        .fill(token.color)
+                        .frame(width: 48, height: 48)
+                }
+                
+                // Network badge (mock based on name)
+                ZStack {
+                    Circle().fill(Color.black).frame(width: 18, height: 18)
+                    Image(systemName: "s.circle.fill") 
+                        .font(.system(size: 14))
+                        .foregroundColor(Color(hex: "#14F195"))
+                }
+                .offset(x: 2, y: 2)
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Text(token.name)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                    if token.isVerified {
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundColor(Color(hex: "#A393FA"))
+                            .font(.system(size: 14))
+                    }
+                }
+                Text("0 \(token.symbol)")
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundColor(Color(hex: "#8E8E93"))
+            }
+            
+            Spacer()
+            
+            Image(systemName: "info.circle")
+                .foregroundColor(Color(hex: "#8E8E93"))
+                .font(.system(size: 20))
+        }
+        .padding(16)
+        .background(Color(hex: "#1C1C1E"))
+        .cornerRadius(16)
     }
 }
 

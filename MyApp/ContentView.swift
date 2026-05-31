@@ -44,7 +44,7 @@ struct MainWalletView: View {
                         .environmentObject(viewModel)
                         .tag(WalletViewModel.Tab.swap)
 
-                    ActivityView()
+                    ChatsView()
                         .environmentObject(viewModel)
                         .tag(WalletViewModel.Tab.activity)
 

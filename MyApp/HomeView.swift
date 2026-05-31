@@ -137,8 +137,8 @@ struct HomeView: View {
             // 24h Change
             HStack(spacing: 8) {
                 Text(viewModel.formattedChange)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(viewModel.change24h >= 0 ? Color(hex: "#3DD68C") : Color(hex: "#FF453A"))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(viewModel.change24h >= 0 ? Color(hex: "#1FAD66") : Color(hex: "#FF453A"))
 
                 Text(viewModel.formattedChangePercent)
                     .font(.system(size: 13, weight: .bold))
@@ -147,7 +147,7 @@ struct HomeView: View {
                     .padding(.vertical, 4)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(viewModel.change24h >= 0 ? Color(hex: "#106941") : Color(hex: "#FF453A")) // Solid background
+                            .fill(viewModel.change24h >= 0 ? Color(hex: "#1FAD66") : Color(hex: "#FF453A")) // Solid background
                     )
                 Spacer()
             }

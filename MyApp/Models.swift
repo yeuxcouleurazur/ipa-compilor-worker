@@ -129,10 +129,10 @@ struct Transaction: Identifiable {
         var color: Color {
             switch self {
             case .send: return Color(hex: "#FF6464")
-            case .receive: return Color(hex: "#106941")
+            case .receive: return Color(hex: "#1FAD66")
             case .swap: return Color(hex: "#AB9FF2")
-            case .buy: return Color(hex: "#106941")
-            case .interaction: return Color(hex: "#106941")
+            case .buy: return Color(hex: "#1FAD66")
+            case .interaction: return Color(hex: "#1FAD66")
             }
         }
     }

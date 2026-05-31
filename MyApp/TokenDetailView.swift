@@ -86,9 +86,9 @@ struct TokenDetailView: View {
                     .font(.system(size: 20, weight: .medium))
                     .foregroundColor(.white)
             }
-            .frame(width: 44, height: 44, alignment: .leading)
+            .frame(width: 28, height: 44, alignment: .leading)
             
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 tokenIcon
                     .frame(width: 32, height: 32)
                 
@@ -105,9 +105,9 @@ struct TokenDetailView: View {
                     }
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(Color(hex: "#3DD68C"))
+                            .fill(Color(hex: "#1FAD66")) // Kept green consistent
                             .frame(width: 6, height: 6)
-                        Text("186 personnes ici")
+                        Text("\(peopleCount) personnes ici")
                             .font(.system(size: 13, weight: .regular))
                             .foregroundColor(Color(hex: "#8E8E93"))
                     }
@@ -171,7 +171,7 @@ struct TokenDetailView: View {
                     .padding(.vertical, 4)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(token.change24h >= 0 ? Color(hex: "#106941") : Color(hex: "#FF453A")) // Solid background
+                            .fill(token.change24h >= 0 ? Color(hex: "#1FAD66") : Color(hex: "#FF453A")) // Solid background
                     )
             }
         }
@@ -250,7 +250,7 @@ struct TokenDetailView: View {
                             .position(x: dragLocation.x, y: dotY)
                         
                         // Time label
-                        Text("00:20")
+                        Text(dragTimeString(for: index))
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.white)
                             .position(x: dragLocation.x, y: -20)
@@ -613,21 +613,66 @@ struct TokenDetailView: View {
     // MARK: - Utilities
     @ViewBuilder
     private var tokenIcon: some View {
-        if let imageUrl = token.imageUrl, let url = URL(string: imageUrl) {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .empty:
-                    Circle().fill(Color(hex: "#2A2A2A"))
-                case .success(let image):
-                    image.resizable().scaledToFill().clipShape(Circle())
-                case .failure:
-                    Circle().fill(Color(hex: "#2A2A2A"))
-                @unknown default:
-                    Circle().fill(Color(hex: "#2A2A2A"))
+        Group {
+            if let urlStr = token.imageUrl, let url = URL(string: urlStr) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty: Circle().fill(Color.gray.opacity(0.3))
+                    case .success(let image): image.resizable().scaledToFit()
+                    case .failure: Image(token.iconName).resizable().scaledToFit()
+                    @unknown default: EmptyView()
+                    }
                 }
+            } else {
+                Image(token.iconName).resizable().scaledToFit()
             }
-        } else {
-            Circle().fill(token.color)
+        }
+        .clipShape(Circle())
+    }
+    
+    private var peopleCount: Int {
+        var hasher = Hasher()
+        hasher.combine(token.symbol)
+        return abs(hasher.finalize()) % 9500 + 120
+    }
+    
+    private func dragTimeString(for index: Int) -> String {
+        let count = max(1, apiChartData.count - 1)
+        let ratio = Double(index) / Double(count)
+        
+        let now = Date()
+        var dateToFormat = now
+        
+        switch selectedTimeRange {
+        case "1H":
+            dateToFormat = now.addingTimeInterval(-3600 * (1.0 - ratio))
+            let f = DateFormatter()
+            f.dateFormat = "HH:mm"
+            return f.string(from: dateToFormat)
+        case "1J":
+            dateToFormat = now.addingTimeInterval(-86400 * (1.0 - ratio))
+            let f = DateFormatter()
+            f.dateFormat = "HH:mm"
+            return f.string(from: dateToFormat)
+        case "1S":
+            dateToFormat = now.addingTimeInterval(-86400 * 7 * (1.0 - ratio))
+            let f = DateFormatter()
+            f.dateFormat = "dd MMM"
+            return f.string(from: dateToFormat)
+        case "1M":
+            dateToFormat = now.addingTimeInterval(-86400 * 30 * (1.0 - ratio))
+            let f = DateFormatter()
+            f.dateFormat = "dd MMM"
+            return f.string(from: dateToFormat)
+        case "1A":
+            dateToFormat = now.addingTimeInterval(-86400 * 365 * (1.0 - ratio))
+            let f = DateFormatter()
+            f.dateFormat = "MMM yyyy"
+            return f.string(from: dateToFormat)
+        default:
+            let f = DateFormatter()
+            f.dateFormat = "HH:mm"
+            return f.string(from: dateToFormat)
         }
     }
     

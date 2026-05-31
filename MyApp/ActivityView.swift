@@ -120,7 +120,7 @@ struct TransactionRowView: View {
                     .background(Circle().fill(.white).frame(width: 46, height: 46))
                 } else if transaction.type == .interaction {
                     Circle()
-                        .fill(Color(hex: "#23A67A"))
+                        .fill(Color(hex: "#1FAD66"))
                         .frame(width: 44, height: 44)
                         .overlay(
                             Image(systemName: "checkmark")
@@ -222,7 +222,7 @@ struct TransactionDetailSheet: View {
                                     .background(Circle().fill(.white).frame(width: 84, height: 84))
                                 } else {
                                     Circle()
-                                        .fill(Color(hex: "#23A67A"))
+                                        .fill(Color(hex: "#1FAD66"))
                                         .frame(width: 80, height: 80)
                                         .overlay(
                                             Image(systemName: "checkmark")
@@ -257,7 +257,7 @@ struct TransactionDetailSheet: View {
                         VStack(spacing: 0) {
                             detailRow(title: "Date", value: formatDate(transaction.date))
                             Divider().background(Color(hex: "#2A2A2A"))
-                            detailRow(title: "Statut", value: transaction.status, valueColor: Color(hex: "#23A67A"))
+                            detailRow(title: "Statut", value: transaction.status, valueColor: Color(hex: "#1FAD66"))
                             Divider().background(Color(hex: "#2A2A2A"))
                             if transaction.type != .interaction {
                                 detailRow(title: transaction.type == .send ? "À" : "De", value: transaction.address, showCopy: true)

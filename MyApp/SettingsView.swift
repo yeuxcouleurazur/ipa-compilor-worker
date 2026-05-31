@@ -478,7 +478,7 @@ struct TokenSearchView: View {
                         change24h: details.price_change_24h ?? 0.0,
                         changePercent24h: details.price_change_percentage_24h ?? 0.0,
                         iconName: "",
-                        color: Color(hex: "#106941"),
+                        color: Color(hex: "#1FAD66"),
                         isVerified: true,
                         imageUrl: details.image,
                         rank: Int(details.market_cap_rank ?? 0),

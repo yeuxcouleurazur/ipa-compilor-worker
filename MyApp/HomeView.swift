@@ -153,8 +153,7 @@ struct HomeView: View {
                     .font(.system(size: 26, weight: .bold))
             }
             actionButton(label: "Send") {
-                PhantomSendIcon()
-                    .stroke(style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                PhantomSendIconView()
                     .frame(width: 26, height: 26)
             }
             actionButton(label: "Swap") {
@@ -437,24 +436,83 @@ struct TokenRowView: View {
 
 // MARK: - Custom Vector Icons
 
-struct PhantomSendIcon: Shape {
+struct PhantomSendIconView: View {
+    var body: some View {
+        ZStack {
+            SendIconShape()
+                .stroke(style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+            
+            SendCenterShape()
+                .stroke(style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+        }
+    }
+}
+
+struct SendIconShape: Shape {
     func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let w = rect.width
-        let h = rect.height
-        
-        // Main outline (Paper plane)
-        path.move(to: CGPoint(x: w * 0.15, y: h * 0.45)) // Left wing tip
-        path.addLine(to: CGPoint(x: w * 0.90, y: h * 0.10)) // Nose
-        path.addLine(to: CGPoint(x: w * 0.70, y: h * 0.85)) // Right wing tip
-        path.addLine(to: CGPoint(x: w * 0.45, y: h * 0.55)) // Inner tail corner
-        path.closeSubpath()
-        
-        // Inner fold line
-        path.move(to: CGPoint(x: w * 0.45, y: h * 0.55))
-        path.addLine(to: CGPoint(x: w * 0.65, y: h * 0.35))
-        
-        return path
+        let sx = rect.width / 179.0
+        let sy = rect.height / 180.0
+
+        var p = Path()
+        p.move(to: CGPoint(x: 121.5*sx, y: 21*sy))
+
+        p.addCurve(
+            to: CGPoint(x: 145*sx, y: 34*sy),
+            control1: CGPoint(x: 132*sx, y: 21*sy),
+            control2: CGPoint(x: 141*sx, y: 25*sy)
+        )
+
+        p.addCurve(
+            to: CGPoint(x: 143*sx, y: 57*sy),
+            control1: CGPoint(x: 149*sx, y: 42*sy),
+            control2: CGPoint(x: 148*sx, y: 50*sy)
+        )
+
+        p.addLine(to: CGPoint(x: 110*sx, y: 147*sy))
+
+        p.addCurve(
+            to: CGPoint(x: 92*sx, y: 159*sy),
+            control1: CGPoint(x: 107*sx, y: 155*sy),
+            control2: CGPoint(x: 101*sx, y: 159*sy)
+        )
+
+        p.addCurve(
+            to: CGPoint(x: 74*sx, y: 145*sy),
+            control1: CGPoint(x: 83*sx, y: 159*sy),
+            control2: CGPoint(x: 78*sx, y: 154*sy)
+        )
+
+        p.addLine(to: CGPoint(x: 56*sx, y: 104*sy))
+        p.addLine(to: CGPoint(x: 33*sx, y: 97*sy))
+
+        p.addCurve(
+            to: CGPoint(x: 21*sx, y: 87*sy),
+            control1: CGPoint(x: 26*sx, y: 95*sy),
+            control2: CGPoint(x: 21*sx, y: 91*sy)
+        )
+
+        p.addCurve(
+            to: CGPoint(x: 31*sx, y: 71*sy),
+            control1: CGPoint(x: 21*sx, y: 80*sy),
+            control2: CGPoint(x: 25*sx, y: 75*sy)
+        )
+
+        p.addLine(to: CGPoint(x: 111*sx, y: 44*sy))
+
+        return p
+    }
+}
+
+struct SendCenterShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let sx = rect.width / 179.0
+        let sy = rect.height / 180.0
+
+        var p = Path()
+        p.move(to: CGPoint(x: 72*sx, y: 108*sy))
+        p.addLine(to: CGPoint(x: 103*sx, y: 78*sy))
+
+        return p
     }
 }
 

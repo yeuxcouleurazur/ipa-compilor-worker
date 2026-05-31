@@ -249,15 +249,15 @@ struct AdminPanelView: View {
                 }
 
                 Section(header: Text("Token Balances (Amounts)")) {
-                    ForEach(viewModel.tokens.indices, id: \.self) { index in
+                    ForEach($viewModel.tokens) { $token in
                         HStack {
-                            Text(viewModel.tokens[index].symbol)
+                            Text(token.symbol)
                             Spacer()
-                            TextField("Amount", value: $viewModel.tokens[index].amount, format: .number)
+                            TextField("Amount", value: $token.amount, format: .number)
                                 .keyboardType(.decimalPad)
                                 .multilineTextAlignment(.trailing)
-                                .onChange(of: viewModel.tokens[index].amount) { _ in
-                                    viewModel.recalculate()
+                                .onChange(of: token.amount) { _ in
+                                    viewModel.updateBalances()
                                 }
                         }
                     }
@@ -265,6 +265,7 @@ struct AdminPanelView: View {
             }
             .navigationTitle("Admin Panel")
             .navigationBarItems(trailing: Button("Done") {
+                viewModel.sortTokens()
                 presentationMode.wrappedValue.dismiss()
             })
         }

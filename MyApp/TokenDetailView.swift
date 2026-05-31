@@ -190,7 +190,7 @@ struct TokenDetailView: View {
         let range = maxPrice - minPrice
         guard range > 0 else { return apiChartData.map { _ in 0.5 } }
         
-        return apiChartData.map { CGFloat(($0 - minPrice) / range) }
+        return apiChartData.map { CGFloat(($0 - minPrice) / range) * 0.8 + 0.1 } // 10% padding top and bottom
     }
     
     private var chartSection: some View {

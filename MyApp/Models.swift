@@ -201,12 +201,21 @@ class WalletViewModel: ObservableObject {
     ]
 
     init() {
-        recalculate()
+        updateBalances()
+        sortTokens()
     }
 
     func recalculate() {
-        tokens.sort { $0.valueUSD > $1.valueUSD }
+        updateBalances()
+        sortTokens()
+    }
+    
+    func updateBalances() {
         totalBalance = tokens.reduce(0) { $0 + $1.valueUSD }
+    }
+    
+    func sortTokens() {
+        tokens.sort { $0.valueUSD > $1.valueUSD }
     }
 
     @Published var transactions: [Transaction] = [

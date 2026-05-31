@@ -41,6 +41,14 @@ struct HomeView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 100)
             }
+            .refreshable {
+                viewModel.isRefreshing = true
+                viewModel.recalculate()
+                networkManager.fetchMemeCoins()
+                networkManager.fetchPredictions()
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                viewModel.isRefreshing = false
+            }
         }
         .onAppear {
             networkManager.fetchMemeCoins()

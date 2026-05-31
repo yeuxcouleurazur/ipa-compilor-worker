@@ -440,10 +440,10 @@ struct PhantomSendIconView: View {
     var body: some View {
         ZStack {
             SendIconShape()
-                .stroke(style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                .stroke(style: StrokeStyle(lineWidth: 2.0, lineCap: .round, lineJoin: .round))
             
             SendCenterShape()
-                .stroke(style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                .stroke(style: StrokeStyle(lineWidth: 2.0, lineCap: .round))
         }
     }
 }
@@ -498,6 +498,7 @@ struct SendIconShape: Shape {
         )
 
         p.addLine(to: CGPoint(x: 111*sx, y: 44*sy))
+        p.closeSubpath()
 
         return p
     }

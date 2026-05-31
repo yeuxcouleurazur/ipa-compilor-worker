@@ -153,7 +153,10 @@ struct HomeView: View {
                     .font(.system(size: 26, weight: .bold))
             }
             actionButton(label: "Send") {
-                PhantomSendIconView()
+                Image("Send")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
                     .frame(width: 26, height: 26)
             }
             actionButton(label: "Swap") {

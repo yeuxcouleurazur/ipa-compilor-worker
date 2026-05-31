@@ -316,3 +316,108 @@ class CryptoAPI {
         return decoded.prices.compactMap { $0.last }
     }
 }
+
+// MARK: - API Models
+
+struct CoinGeckoToken: Codable {
+    let id: String
+    let symbol: String
+    let name: String
+    let image: String
+    let current_price: Double?
+    let price_change_24h: Double?
+    let price_change_percentage_24h: Double?
+}
+
+struct PolymarketEvent: Codable {
+    let id: String
+    let title: String
+    let image: String?
+    let volume: Double?
+}
+
+struct PredictionModel: Identifiable {
+    let id = UUID()
+    let title: String
+    let image: String?
+    let volumeText: String
+}
+
+class NetworkManager: ObservableObject {
+    @Published var memeCoins: [Token] = []
+    @Published var predictions: [PredictionModel] = []
+    @Published var isLoadingTokens: Bool = false
+    @Published var isLoadingPredictions: Bool = false
+    
+    func fetchMemeCoins() {
+        isLoadingTokens = true
+        let urlString = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&category=meme-token&order=market_cap_desc&per_page=15&page=1"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            defer { DispatchQueue.main.async { self?.isLoadingTokens = false } }
+            guard let data = data, error == nil else {
+                print("Error fetching meme coins: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+            
+            do {
+                let decoded = try JSONDecoder().decode([CoinGeckoToken].self, from: data)
+                let tokens = decoded.map { coin in
+                    Token(
+                        name: coin.name,
+                        symbol: coin.symbol.uppercased(),
+                        amount: 0.0,
+                        valueUSD: coin.current_price ?? 0.0,
+                        change24h: coin.price_change_24h ?? 0.0,
+                        changePercent24h: coin.price_change_percentage_24h ?? 0.0,
+                        iconName: "",
+                        color: .clear,
+                        isVerified: true,
+                        imageUrl: coin.image,
+                        rank: nil,
+                        coinGeckoId: coin.id
+                    )
+                }
+                DispatchQueue.main.async {
+                    self?.memeCoins = tokens
+                }
+            } catch {
+                print("Error decoding meme coins: \(error)")
+            }
+        }.resume()
+    }
+    
+    func fetchPredictions() {
+        isLoadingPredictions = true
+        let urlString = "https://gamma-api.polymarket.com/events?limit=10&active=true&closed=false"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            defer { DispatchQueue.main.async { self?.isLoadingPredictions = false } }
+            guard let data = data, error == nil else { return }
+            
+            do {
+                let decoded = try JSONDecoder().decode([PolymarketEvent].self, from: data)
+                let predictionsList = decoded.map { event in
+                    PredictionModel(
+                        title: event.title,
+                        image: event.image,
+                        volumeText: event.volume != nil ? String(format: "$%.1fM vol", event.volume! / 1_000_000) : "$1.2M vol"
+                    )
+                }
+                DispatchQueue.main.async {
+                    self?.predictions = predictionsList
+                }
+            } catch {
+                print("Error decoding predictions: \(error)")
+            }
+        }.resume()
+    }
+}

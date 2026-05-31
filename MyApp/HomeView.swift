@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct HomeView: View {
-    @EnvironmentObject var viewModel: WalletViewModel
+    @StateObject private var viewModel = WalletViewModel()
+    @StateObject private var networkManager = NetworkManager()
     @State private var balanceVisible = true
     @State private var appearAnimation = false
 
@@ -38,9 +39,12 @@ struct HomeView: View {
                     Spacer(minLength: 100)
                 }
                 .padding(.horizontal, 16)
+                .padding(.bottom, 100)
             }
         }
         .onAppear {
+            networkManager.fetchMemeCoins()
+            networkManager.fetchPredictions()
             withAnimation(.easeOut(duration: 0.6)) {
                 appearAnimation = true
             }
@@ -217,18 +221,24 @@ struct HomeView: View {
             .padding(.bottom, 4)
 
             // Token List
-            VStack(spacing: 8) { // Smaller spacing between token cards
-                ForEach(Array(viewModel.tokens.enumerated()), id: \.element.id) { index, token in
-                    NavigationLink(destination: TokenDetailView(token: token)) {
-                        TokenRowView(token: token)
+            if networkManager.isLoadingTokens && networkManager.memeCoins.isEmpty {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: Color(hex: "#A393FA")))
+                    .padding()
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(Array(networkManager.memeCoins.enumerated()), id: \.element.id) { index, token in
+                        NavigationLink(destination: TokenDetailView(token: token)) {
+                            TokenRowView(token: token)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .opacity(appearAnimation ? 1 : 0)
+                        .offset(y: appearAnimation ? 0 : 20)
+                        .animation(
+                            .easeOut(duration: 0.5).delay(Double(index) * 0.07 + 0.2),
+                            value: appearAnimation
+                        )
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .opacity(appearAnimation ? 1 : 0)
-                    .offset(y: appearAnimation ? 0 : 20)
-                    .animation(
-                        .easeOut(duration: 0.5).delay(Double(index) * 0.07 + 0.2),
-                        value: appearAnimation
-                    )
                 }
             }
         }
@@ -247,39 +257,60 @@ struct HomeView: View {
                 Spacer()
             }
             
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    predictionCard(title: "Pro Football Champion?", volume: "$91M vol", imageColor: "#4A90E2", icon: "football.fill")
-                    predictionCard(title: "Who will Trump nominate...", volume: "$26.5M vol", imageColor: "#D0021B", icon: "person.fill")
-                    predictionCard(title: "Fed rate cut in 2024?", volume: "$7.7M vol", imageColor: "#7ED321", icon: "building.columns.fill")
+            if networkManager.isLoadingPredictions && networkManager.predictions.isEmpty {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: Color(hex: "#A393FA")))
+                    .frame(height: 140)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(networkManager.predictions) { prediction in
+                            predictionCard(prediction: prediction)
+                        }
+                    }
                 }
             }
         }
     }
     
-    private func predictionCard(title: String, volume: String, imageColor: String, icon: String) -> some View {
+    private func predictionCard(prediction: PredictionModel) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(hex: imageColor))
+                    .fill(Color(hex: "#2A2A2A"))
                     .frame(width: 48, height: 48)
-                Image(systemName: icon)
-                    .foregroundColor(.white)
-                    .font(.system(size: 24))
+                
+                if let imgStr = prediction.image, let url = URL(string: imgStr) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView().tint(.white)
+                        case .success(let image):
+                            image.resizable().scaledToFill().frame(width: 48, height: 48).clipShape(RoundedRectangle(cornerRadius: 12))
+                        case .failure:
+                            Image(systemName: "chart.pie.fill").foregroundColor(.white).font(.system(size: 24))
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                } else {
+                    Image(systemName: "chart.pie.fill").foregroundColor(.white).font(.system(size: 24))
+                }
             }
             Spacer()
-            Text(title)
+            Text(prediction.title)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.white)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
-            Text(volume)
+            Text(prediction.volumeText)
                 .font(.system(size: 12, weight: .regular))
                 .foregroundColor(Color(hex: "#8E8E93"))
         }
         .padding(16)
-        .frame(width: 150, height: 160, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: "#1C1C1E")))
+        .frame(width: 140, height: 150, alignment: .leading)
+        .background(Color(hex: "#1C1C1E"))
+        .clipShape(RoundedRectangle(cornerRadius: 18))
     }
     
     // MARK: - Perps Section

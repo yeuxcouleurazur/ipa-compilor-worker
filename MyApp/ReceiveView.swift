@@ -123,7 +123,7 @@ struct ReceiveView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
 
                             Button {
-                                UIPasteboard.general.string = viewModel.walletAddress
+                                UIPasteboard.general.string = viewModel.username
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                                     copied = true
                                 }

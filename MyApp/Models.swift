@@ -17,8 +17,8 @@ struct Token: Identifiable {
     var valueUSD: Double {
         return amount * currentPrice
     }
-    let change24h: Double
-    let changePercent24h: Double
+    var change24h: Double
+    var changePercent24h: Double
     let iconName: String
     let color: Color
     let isVerified: Bool
@@ -208,9 +208,50 @@ class WalletViewModel: ObservableObject {
         ),
     ]
 
+    private var marketTimer: Timer?
+
     init() {
         updateBalances()
         sortTokens()
+        startMarketSimulation()
+    }
+
+    private func startMarketSimulation() {
+        marketTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+            self?.simulateMarketFluctuation()
+        }
+    }
+
+    private func simulateMarketFluctuation() {
+        var didChange = false
+        for i in 0..<tokens.count {
+            let token = tokens[i]
+            if token.amount > 0 {
+                // Fluctuate price by ±0.1% to create live market feel
+                let noise = Double.random(in: -0.001...0.001)
+                let currentVal = token.valueUSD
+                let diff = currentVal * noise
+                
+                // We reflect this fluctuation by adjusting the 24h change slightly, 
+                // and modifying the dynamicCurrentPrice if it exists, otherwise amount.
+                // It's a visual simulation to make the balance move.
+                if tokens[i].dynamicCurrentPrice != nil {
+                    tokens[i].dynamicCurrentPrice! *= (1.0 + noise)
+                } else {
+                    tokens[i].amount *= (1.0 + noise)
+                }
+                
+                tokens[i].change24h += diff
+                let oldTotal = tokens[i].valueUSD - tokens[i].change24h
+                if oldTotal > 0 {
+                    tokens[i].changePercent24h = (tokens[i].change24h / oldTotal) * 100
+                }
+                didChange = true
+            }
+        }
+        if didChange {
+            recalculate()
+        }
     }
 
     func recalculate() {

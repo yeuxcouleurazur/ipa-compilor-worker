@@ -8,17 +8,18 @@ struct ReceiveNetwork: Identifiable, Hashable {
     let symbolIcon: String?
     let initials: String
     let color: Color
+    var imageUrl: String?
 }
 
 let receiveNetworks: [ReceiveNetwork] = [
-    ReceiveNetwork(name: "Solana", address: "5WebEN...BM8wUn", symbolIcon: "s.square.fill", initials: "S", color: Color(hex: "#14F195")),
-    ReceiveNetwork(name: "Ethereum", address: "0x06a6...8B07", symbolIcon: "diamond.fill", initials: "ETH", color: Color(hex: "#627EEA")),
-    ReceiveNetwork(name: "Bitcoin", address: "bc1q...8x65", symbolIcon: "bitcoinsign.square.fill", initials: "BTC", color: Color(hex: "#F7931A")),
-    ReceiveNetwork(name: "Monad", address: "0x06a6...8B07", symbolIcon: nil, initials: "M", color: Color(hex: "#8A2BE2")),
-    ReceiveNetwork(name: "Base", address: "0x06a6...8B07", symbolIcon: "square.fill", initials: "B", color: Color(hex: "#0052FF")),
-    ReceiveNetwork(name: "Sui", address: "0x3abf...2ab8", symbolIcon: "drop.fill", initials: "SUI", color: Color(hex: "#4DA2FF")),
-    ReceiveNetwork(name: "Polygon", address: "0x06a6...8B07", symbolIcon: "hexagon.fill", initials: "POL", color: Color(hex: "#8247E5")),
-    ReceiveNetwork(name: "HyperEVM", address: "0x06a6...8B07", symbolIcon: nil, initials: "H", color: Color(hex: "#FFFFFF"))
+    ReceiveNetwork(name: "Solana", address: "5WebEN...BM8wUn", symbolIcon: nil, initials: "SOL", color: Color(hex: "#14F195"), imageUrl: "https://assets.coingecko.com/coins/images/4128/large/solana.png"),
+    ReceiveNetwork(name: "Ethereum", address: "0x06a6...8B07", symbolIcon: nil, initials: "ETH", color: Color(hex: "#627EEA"), imageUrl: "https://assets.coingecko.com/coins/images/279/large/ethereum.png"),
+    ReceiveNetwork(name: "Bitcoin", address: "bc1q...8x65", symbolIcon: nil, initials: "BTC", color: Color(hex: "#F7931A"), imageUrl: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png"),
+    ReceiveNetwork(name: "Monad", address: "0x06a6...8B07", symbolIcon: nil, initials: "MONAD", color: Color(hex: "#8A2BE2"), imageUrl: "https://raw.githubusercontent.com/monad-foundation/monad-brand-assets/main/Monad_Logo/Monad_Logo_purple.png"),
+    ReceiveNetwork(name: "Base", address: "0x06a6...8B07", symbolIcon: nil, initials: "BASE", color: Color(hex: "#0052FF"), imageUrl: "https://assets.coingecko.com/coins/images/279/large/ethereum.png"), // Base is an ETH L2
+    ReceiveNetwork(name: "Sui", address: "0x3abf...2ab8", symbolIcon: nil, initials: "SUI", color: Color(hex: "#4DA2FF"), imageUrl: "https://assets.coingecko.com/coins/images/26375/large/sui_asset.jpeg"),
+    ReceiveNetwork(name: "Polygon", address: "0x06a6...8B07", symbolIcon: nil, initials: "POL", color: Color(hex: "#8247E5"), imageUrl: "https://assets.coingecko.com/coins/images/4713/large/matic-token-icon.png"),
+    ReceiveNetwork(name: "HyperEVM", address: "0x06a6...8B07", symbolIcon: nil, initials: "H", color: Color(hex: "#FFFFFF"), imageUrl: nil)
 ]
 
 struct ReceiveView: View {
@@ -279,6 +280,32 @@ struct ReceiveNetworkIcon: View {
         ZStack {
             RoundedRectangle(cornerRadius: size * 0.25)
                 .fill(Color.white)
+            
+            if let imageUrl = network.imageUrl, let url = URL(string: imageUrl) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView().tint(.black)
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: size * 0.7, height: size * 0.7)
+                    case .failure:
+                        fallbackIcon
+                    @unknown default:
+                        fallbackIcon
+                    }
+                }
+            } else {
+                fallbackIcon
+            }
+        }
+        .frame(width: size, height: size)
+    }
+    
+    private var fallbackIcon: some View {
+        Group {
             if let icon = network.symbolIcon {
                 Image(systemName: icon)
                     .font(.system(size: size * 0.6))
@@ -289,6 +316,5 @@ struct ReceiveNetworkIcon: View {
                     .foregroundColor(network.color)
             }
         }
-        .frame(width: size, height: size)
     }
 }

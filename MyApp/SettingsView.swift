@@ -479,7 +479,7 @@ struct TokenSearchView: View {
                         changePercent24h: details.price_change_percentage_24h ?? 0.0,
                         iconName: "",
                         color: Color(hex: "#1FAD66"),
-                        isVerified: true,
+                        isVerified: false,
                         imageUrl: details.image,
                         rank: Int(details.market_cap_rank ?? 0),
                         coinGeckoId: details.id,

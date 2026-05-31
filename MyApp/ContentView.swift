@@ -208,6 +208,81 @@ struct PhantomCardInnerShapes: Shape {
     }
 }
 
+// MARK: - Custom Tab Bar
+
+struct CustomTabBar: View {
+    @Binding var selectedTab: WalletViewModel.Tab
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(WalletViewModel.Tab.allCases, id: \.self) { tab in
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        selectedTab = tab
+                    }
+                } label: {
+                    VStack(spacing: 4) {
+                        tabIcon(for: tab, isSelected: selectedTab == tab)
+                            .foregroundColor(selectedTab == tab ? (tab == .home ? Color(hex: "#AB9FF2") : .white) : Color(hex: "#6B6B6B"))
+                            .scaleEffect(selectedTab == tab ? 1.05 : 1.0)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+        .background(
+            Rectangle()
+                .fill(Color(hex: "#121212"))
+                .overlay(
+                    Rectangle()
+                        .frame(height: 0.5)
+                        .foregroundColor(Color(hex: "#2A2A2A")),
+                    alignment: .top
+                )
+                .ignoresSafeArea(edges: .bottom)
+        )
+    }
+
+    @ViewBuilder
+    func tabIcon(for tab: WalletViewModel.Tab, isSelected: Bool) -> some View {
+        switch tab {
+        case .home:
+            Image(systemName: isSelected ? "house.fill" : "house")
+                .font(.system(size: 22, weight: isSelected ? .semibold : .regular))
+        case .wallet:
+            PhantomCardView()
+                .frame(width: 26, height: 26)
+        case .swap:
+            Image(systemName: "arrow.left.arrow.right")
+                .font(.system(size: 22, weight: isSelected ? .semibold : .regular))
+        case .activity:
+            PhantomChatView()
+                .frame(width: 28, height: 28)
+        case .browser:
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 22, weight: isSelected ? .semibold : .regular))
+        }
+    }
+}
+
+// MARK: - Demo Banner
+
+struct DemoBanner: View {
+    @Binding var isVisible: Bool
+    @State private var appear = false
+
+    var body: some View {
+        VStack {
+            HStack(spacing: 10) {
+                Image(systemName: "info.circle.fill")
+                    .foregroundColor(Color(hex: "#AB9FF2"))
+                    .font(.system(size: 14))
+
+                Text("⚡ DEMO MODE — Données fictives à titre d'illustration")
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.white)
 
                 Spacer()
@@ -246,8 +321,6 @@ struct PhantomCardInnerShapes: Shape {
         }
     }
 }
-
-
 // MARK: - Appended Views for compilation
 
 

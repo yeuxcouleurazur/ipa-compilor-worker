@@ -319,7 +319,7 @@ struct AdminPanelView: View {
         guard let tokenIndex = viewModel.tokens.firstIndex(where: { $0.id == targetId }) else { return }
         
         let token = viewModel.tokens[tokenIndex]
-        let usdValue = amountDouble * token.dynamicCurrentPrice
+        let usdValue = amountDouble * token.currentPrice
         
         // Add transaction
         let tx = Transaction(

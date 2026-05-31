@@ -220,6 +220,14 @@ class WalletViewModel: ObservableObject {
     
     func updateBalances() {
         totalBalance = tokens.reduce(0) { $0 + $1.valueUSD }
+        change24h = tokens.reduce(0) { $0 + $1.change24h }
+        
+        let previousTotal = totalBalance - change24h
+        if previousTotal > 0 {
+            changePercent24h = (change24h / previousTotal) * 100
+        } else {
+            changePercent24h = 0
+        }
     }
     
     func sortTokens() {
@@ -511,7 +519,7 @@ class NetworkManager: ObservableObject {
                         changePercent24h: coin.price_change_percentage_24h ?? 0.0,
                         iconName: "",
                         color: .clear,
-                        isVerified: true,
+                        isVerified: false,
                         imageUrl: coin.image,
                         rank: nil,
                         coinGeckoId: coin.id,

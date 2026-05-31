@@ -31,7 +31,18 @@ struct Token: Identifiable {
         if symbol == "SOL" { return 82.61 }
         return 1.0
     }
-    var marketCap: String = "$47.76B"
+    var marketCapValue: Double?
+    var marketCap: String {
+        guard let mc = marketCapValue else { return "$47.76B" }
+        if mc >= 1_000_000_000 {
+            return String(format: "$%.1fB", mc / 1_000_000_000)
+        } else if mc >= 1_000_000 {
+            return String(format: "$%.0fM", mc / 1_000_000)
+        } else if mc >= 1_000 {
+            return String(format: "$%.0fK", mc / 1_000)
+        }
+        return String(format: "$%.0f", mc)
+    }
     var totalSupply: String = "627.4M"
     var circulatingSupply: String = "578.45M"
     var creationDate: String = "Mar 16, 2020"
@@ -325,6 +336,7 @@ struct CoinGeckoToken: Codable {
     let name: String
     let image: String
     let current_price: Double?
+    let market_cap: Double?
     let price_change_24h: Double?
     let price_change_percentage_24h: Double?
 }
@@ -379,7 +391,8 @@ class NetworkManager: ObservableObject {
                         isVerified: true,
                         imageUrl: coin.image,
                         rank: nil,
-                        coinGeckoId: coin.id
+                        coinGeckoId: coin.id,
+                        marketCapValue: coin.market_cap
                     )
                 }
                 DispatchQueue.main.async {

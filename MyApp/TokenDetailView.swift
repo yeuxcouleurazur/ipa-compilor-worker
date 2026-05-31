@@ -320,8 +320,8 @@ struct TokenDetailView: View {
     // MARK: - Action Buttons
     private var actionButtons: some View {
         HStack(spacing: 12) {
-            detailActionButton(icon: "arrow.trend.up", label: "Long", color: "#A393FA")
-            detailActionButton(icon: "arrow.trend.down", label: "Court", color: "#A393FA")
+            detailActionButton(icon: "Long", label: "Long", color: "#A393FA", isSystem: false)
+            detailActionButton(icon: "Court", label: "Court", color: "#A393FA", isSystem: false)
             detailActionButton(icon: "qrcode", label: "Recevoir", color: "#A393FA")
             detailActionButton(icon: "ellipsis", label: "Plus", color: "#A393FA")
         }
@@ -341,13 +341,22 @@ struct TokenDetailView: View {
         }
     }
     
-    private func detailActionButton(icon: String, label: String, color: String) -> some View {
+    private func detailActionButton(icon: String, label: String, color: String, isSystem: Bool = true) -> some View {
         Button {
         } label: {
             VStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(Color(hex: color))
+                if isSystem {
+                    Image(systemName: icon)
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(Color(hex: color))
+                } else {
+                    Image(icon)
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                        .foregroundColor(Color(hex: color))
+                }
                 Text(label)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(Color(hex: "#EBEBEB"))

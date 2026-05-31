@@ -171,8 +171,11 @@ struct HomeView: View {
                     .frame(width: 32, height: 32)
             }
             actionButton(label: "Buy") {
-                Image(systemName: "dollarsign")
-                    .font(.system(size: 26, weight: .bold))
+                Image("Buy")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 32, height: 32)
             }
         }
         .opacity(appearAnimation ? 1 : 0)

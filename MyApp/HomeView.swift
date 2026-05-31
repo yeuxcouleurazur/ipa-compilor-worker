@@ -166,13 +166,14 @@ struct HomeView: View {
                     Image(systemName: icon)
                         .font(.system(size: 26, weight: .bold))
                         .foregroundColor(Color(hex: "#A393FA")) // Purple icons
-                        .frame(width: 34, height: 34)
+                        .frame(width: 26, height: 26)
                 } else {
                     Image(icon)
                         .renderingMode(.template)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 34, height: 34)
+                        .frame(width: 26, height: 26)
+                        .scaleEffect(2.2) // Massive scale to overcome internal PNG padding
                         .foregroundColor(Color(hex: "#A393FA"))
                 }
                 Text(label)

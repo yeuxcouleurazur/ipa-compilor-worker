@@ -434,3 +434,21 @@ class NetworkManager: ObservableObject {
         }.resume()
     }
 }
+
+// MARK: - Shared UI Components
+import SwiftUI
+
+struct CryptoIconSmall: View {
+    let symbol: String
+    
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color(hex: "#2A2A2A"))
+            Text(symbol.prefix(1).uppercased())
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.white)
+        }
+        .frame(width: 20, height: 20)
+    }
+}

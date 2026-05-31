@@ -238,6 +238,10 @@ struct SettingsItem {
 struct AdminPanelView: View {
     @EnvironmentObject var viewModel: WalletViewModel
     @Environment(\.presentationMode) var presentationMode
+    
+    @State private var simSelectedTokenId: UUID? = nil
+    @State private var simType: Transaction.TransactionType = .receive
+    @State private var simAmount: String = ""
 
     var body: some View {
         NavigationView {
@@ -272,6 +276,32 @@ struct AdminPanelView: View {
                         }
                     }
                 }
+                
+                Section(header: Text("Simulate Transaction")) {
+                    if !viewModel.tokens.isEmpty {
+                        Picker("Token", selection: Binding(
+                            get: { simSelectedTokenId ?? viewModel.tokens.first!.id },
+                            set: { simSelectedTokenId = $0 }
+                        )) {
+                            ForEach(viewModel.tokens) { token in
+                                Text(token.symbol).tag(token.id)
+                            }
+                        }
+                    }
+                    Picker("Type", selection: $simType) {
+                        Text("Receive").tag(Transaction.TransactionType.receive)
+                        Text("Send").tag(Transaction.TransactionType.send)
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    
+                    TextField("Amount", text: $simAmount)
+                        .keyboardType(.decimalPad)
+                    
+                    Button("Trigger Simulation") {
+                        simulateTransaction()
+                    }
+                    .disabled(simAmount.isEmpty || viewModel.tokens.isEmpty)
+                }
             }
             .navigationTitle("Admin Panel")
             .navigationBarItems(trailing: Button("Done") {
@@ -279,6 +309,46 @@ struct AdminPanelView: View {
                 presentationMode.wrappedValue.dismiss()
             })
         }
+    }
+    
+    private func simulateTransaction() {
+        guard !viewModel.tokens.isEmpty,
+              let amountDouble = Double(simAmount.replacingOccurrences(of: ",", with: ".")) else { return }
+        
+        let targetId = simSelectedTokenId ?? viewModel.tokens.first!.id
+        guard let tokenIndex = viewModel.tokens.firstIndex(where: { $0.id == targetId }) else { return }
+        
+        let token = viewModel.tokens[tokenIndex]
+        let usdValue = amountDouble * token.dynamicCurrentPrice
+        
+        // Add transaction
+        let tx = Transaction(
+            type: simType,
+            token: token.symbol,
+            amount: amountDouble,
+            valueUSD: usdValue,
+            date: Date(),
+            address: simType == .send ? "0xSim...ulated" : "0xExt...ernal",
+            status: "Réussite",
+            network: "Ethereum", // Mock network
+            tokenImageUrl: token.imageUrl
+        )
+        
+        viewModel.transactions.insert(tx, at: 0)
+        
+        // Update balance if needed
+        if simType == .receive {
+            viewModel.tokens[tokenIndex].amount += amountDouble
+        } else if simType == .send {
+            viewModel.tokens[tokenIndex].amount = max(0, viewModel.tokens[tokenIndex].amount - amountDouble)
+        }
+        
+        viewModel.updateBalances()
+        
+        simAmount = ""
+        // Optional: show a small alert or haptic feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
     }
 }
 
@@ -291,6 +361,7 @@ struct TokenSearchView: View {
     @State private var searchResults: [CoinGeckoSearchItem] = []
     @State private var isSearching = false
     @State private var isAdding = false
+    @State private var showSuccessAlert = false
 
     var body: some View {
         VStack {
@@ -351,6 +422,13 @@ struct TokenSearchView: View {
             .listStyle(PlainListStyle())
         }
         .navigationTitle("Add Token")
+        .alert("Succès", isPresented: $showSuccessAlert) {
+            Button("OK", role: .cancel) {
+                presentationMode.wrappedValue.dismiss()
+            }
+        } message: {
+            Text("Le token a été ajouté à votre portefeuille avec succès !")
+        }
         .overlay(
             Group {
                 if isAdding {
@@ -412,7 +490,7 @@ struct TokenSearchView: View {
                     viewModel.updateBalances()
                 }
                 isAdding = false
-                presentationMode.wrappedValue.dismiss()
+                showSuccessAlert = true
             }
         }
     }

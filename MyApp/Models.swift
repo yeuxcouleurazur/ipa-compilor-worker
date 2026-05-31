@@ -102,31 +102,37 @@ struct Transaction: Identifiable {
     let valueUSD: Double
     let date: Date
     let address: String
+    let status: String
+    let network: String
+    let tokenImageUrl: String?
 
     enum TransactionType {
-        case send, receive, swap, buy
+        case send, receive, swap, buy, interaction
         var icon: String {
             switch self {
             case .send: return "arrow.up.right"
-            case .receive: return "arrow.down.left"
+            case .receive: return "arrow.down"
             case .swap: return "arrow.2.squarepath"
             case .buy: return "dollarsign"
+            case .interaction: return "checkmark"
             }
         }
         var label: String {
             switch self {
-            case .send: return "Sent"
-            case .receive: return "Received"
-            case .swap: return "Swapped"
-            case .buy: return "Bought"
+            case .send: return "Envoyé"
+            case .receive: return "Reçu"
+            case .swap: return "Échangé"
+            case .buy: return "Acheté"
+            case .interaction: return "Interaction application"
             }
         }
         var color: Color {
             switch self {
             case .send: return Color(hex: "#FF6464")
-            case .receive: return Color(hex: "#3DD68C")
+            case .receive: return Color(hex: "#106941")
             case .swap: return Color(hex: "#AB9FF2")
-            case .buy: return Color(hex: "#3DD68C")
+            case .buy: return Color(hex: "#106941")
+            case .interaction: return Color(hex: "#106941")
             }
         }
     }
@@ -223,35 +229,47 @@ class WalletViewModel: ObservableObject {
     @Published var transactions: [Transaction] = [
         Transaction(
             type: .receive,
-            token: "BTC",
-            amount: 1.5,
-            valueUSD: 102_000,
+            token: "ETH",
+            amount: 100,
+            valueUSD: 202100,
+            date: Date(),
+            address: "0xd90e...f31b",
+            status: "Réussite",
+            network: "Ethereum",
+            tokenImageUrl: "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png"
+        ),
+        Transaction(
+            type: .interaction,
+            token: "",
+            amount: 0,
+            valueUSD: 0,
+            date: Date().addingTimeInterval(-1800),
+            address: "Inconnu",
+            status: "Réussite",
+            network: "Ethereum",
+            tokenImageUrl: nil
+        ),
+        Transaction(
+            type: .interaction,
+            token: "",
+            amount: 0,
+            valueUSD: 0,
             date: Date().addingTimeInterval(-3600),
-            address: "3Fv8...kL2m"
+            address: "Inconnu",
+            status: "Réussite",
+            network: "Solana",
+            tokenImageUrl: nil
         ),
         Transaction(
-            type: .send,
-            token: "SOL",
-            amount: 50,
-            valueUSD: 4_200,
+            type: .interaction,
+            token: "",
+            amount: 0,
+            valueUSD: 0,
             date: Date().addingTimeInterval(-86400),
-            address: "9pKr...nT4j"
-        ),
-        Transaction(
-            type: .swap,
-            token: "ETH → SOL",
-            amount: 2,
-            valueUSD: 3_960,
-            date: Date().addingTimeInterval(-172800),
-            address: ""
-        ),
-        Transaction(
-            type: .buy,
-            token: "BTC",
-            amount: 0.25,
-            valueUSD: 17_000,
-            date: Date().addingTimeInterval(-259200),
-            address: ""
+            address: "Inconnu",
+            status: "Réussite",
+            network: "Solana",
+            tokenImageUrl: nil
         )
     ]
 

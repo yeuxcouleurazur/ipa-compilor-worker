@@ -171,7 +171,8 @@ struct HomeView: View {
                         .renderingMode(.template)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 40, height: 40)
+                        .frame(width: 24, height: 24)
+                        .scaleEffect(1.8) // Scale up visually to ignore transparent padding
                         .foregroundColor(Color(hex: "#A393FA"))
                 }
                 Text(label)

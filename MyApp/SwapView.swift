@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 enum SwapSide {
     case pay
@@ -14,7 +14,7 @@ struct SwapView: View {
     @State private var appearAnimation = false
     
     @State private var paySymbol: String = "SOL"
-    @State private var receiveSymbol: String = "Cash"
+    @State private var receiveSymbol: String = "Phantom"
     
     @State private var showTokenSelection = false
     @State private var selectingSide: SwapSide = .pay
@@ -102,7 +102,7 @@ struct SwapView: View {
                 Text(viewModel.username)
                     .font(.system(size: 14, weight: .regular))
                     .foregroundColor(Color(hex: "#8E8E93"))
-                Text("Ã‰changer")
+                Text("Ãƒâ€°changer")
                     .font(.system(size: 24, weight: .bold))
                     .foregroundColor(.white)
             }
@@ -194,7 +194,7 @@ struct SwapView: View {
                     
                     HStack {
                         Spacer()
-                        Text(receiveSymbol == "Cash" ? "\(viewModel.currency)0.00" : "0 \(receiveSymbol)")
+                        Text(receiveSymbol == "Phantom" ? "\(viewModel.currency)0.00" : "0 \(receiveSymbol)")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(Color(hex: "#8E8E93"))
                     }
@@ -224,7 +224,7 @@ struct SwapView: View {
             showTokenSelection = true
         } label: {
             HStack(spacing: 8) {
-                if symbol == "Cash" {
+                if symbol == "Phantom" {
                     ZStack {
                         Circle()
                             .fill(Color(hex: "#E0FF4F")) // Bright yellow
@@ -380,9 +380,9 @@ struct TokenSelectionSheet: View {
                     // Token List
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 12) {
-                            // Cash Row
+                            // Phantom Row
                             Button {
-                                selectedTokenSymbol = "Cash"
+                                selectedTokenSymbol = "Phantom"
                                 presentationMode.wrappedValue.dismiss()
                             } label: {
                                 HStack(spacing: 16) {
@@ -399,7 +399,7 @@ struct TokenSelectionSheet: View {
                                     }
                                     
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("Solde Cash")
+                                        Text("Phantom")
                                             .font(.system(size: 13, weight: .medium))
                                             .foregroundColor(Color(hex: "#8E8E93"))
                                         Text("\(viewModel.currency)0.00")
@@ -476,9 +476,12 @@ struct TokenSelectionSheet: View {
                 // Network badge (mock based on name)
                 ZStack {
                     Circle().fill(Color.black).frame(width: 18, height: 18)
-                    Image(systemName: "s.circle.fill") 
-                        .font(.system(size: 14))
-                        .foregroundColor(Color(hex: "#14F195"))
+                    Image("solana")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundColor(.white)
+                        .frame(width: 10, height: 10)
                 }
                 .offset(x: 2, y: 2)
             }
@@ -549,9 +552,12 @@ struct SwapTokenRowView: View {
                     Circle()
                         .fill(Color.black)
                         .frame(width: 16, height: 16)
-                    Image(systemName: "s.circle.fill")
-                        .foregroundColor(Color(hex: "#14F195"))
-                        .font(.system(size: 14))
+                    Image("solana")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundColor(.white)
+                        .frame(width: 10, height: 10)
                 }
                 .offset(x: 2, y: 2)
             }
@@ -621,4 +627,5 @@ struct SwapTokenRowView: View {
         }
     }
 }
+
 

@@ -151,7 +151,10 @@ class WalletViewModel: ObservableObject {
     @Published var profileEmoji: String = "" {
         didSet { UserDefaults.standard.set(profileEmoji, forKey: "profileEmoji") }
     }
-    @Published var currency: String = "" {
+    @Published var currency: String = {
+        let saved = UserDefaults.standard.string(forKey: "currency")
+        return (saved?.isEmpty ?? true) ? "$" : saved!
+    }() {
         didSet { UserDefaults.standard.set(currency, forKey: "currency") }
     }
     var currencyCode: String {

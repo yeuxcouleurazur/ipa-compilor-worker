@@ -65,7 +65,7 @@ struct SendView: View {
                                                         Text(token.symbol)
                                                             .font(.system(size: 14, weight: .bold))
                                                             .foregroundColor(selectedToken == token.symbol ? .white : Color(hex: "#8A8A8A"))
-                                                        Text(token.formattedValue)
+                                                        Text("\(viewModel.currency)\(token.formattedValue)")
                                                             .font(.system(size: 11))
                                                             .foregroundColor(Color(hex: "#6B6B6B"))
                                                     }
@@ -285,4 +285,5 @@ struct SendView: View {
         }
     }
 }
+
 

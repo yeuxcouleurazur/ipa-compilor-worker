@@ -412,7 +412,7 @@ struct TokenRowView: View {
 
             // Value
             VStack(alignment: .trailing, spacing: 4) {
-                Text(token.formattedValue)
+                Text("\(viewModel.currency)\(token.formattedValue)")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
 
@@ -590,5 +590,6 @@ struct PhantomSwapIcon: Shape {
         return path
     }
 }
+
 
 

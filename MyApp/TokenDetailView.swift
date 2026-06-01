@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 import UIKit
 
 struct TokenDetailView: View {
@@ -415,7 +415,7 @@ struct TokenDetailView: View {
                         Text("Valeur")
                             .font(.system(size: 13, weight: .regular))
                             .foregroundColor(Color(hex: "#8E8E93"))
-                        Text(token.formattedValue)
+                        Text("\(viewModel.currency)\(token.formattedValue)")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                     }
@@ -471,10 +471,10 @@ struct TokenDetailView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Ã‰changez des perps \(token.symbol)")
+                    Text("Ãƒâ€°changez des perps \(token.symbol)")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white)
-                    Text("Multipliez votre P&L jusqu'Ã  x20")
+                    Text("Multipliez votre P&L jusqu'ÃƒÂ  x20")
                         .font(.system(size: 14, weight: .regular))
                         .foregroundColor(Color(hex: "#8E8E93"))
                 }
@@ -562,15 +562,15 @@ struct TokenDetailView: View {
                 Divider().background(Color(hex: "#2C2C2E"))
                 infoRow(label: "Symbole", value: token.symbol)
                 Divider().background(Color(hex: "#2C2C2E"))
-                infoRow(label: "RÃ©seau", value: token.name)
+                infoRow(label: "RÃƒÂ©seau", value: token.name)
                 Divider().background(Color(hex: "#2C2C2E"))
-                infoRow(label: "Capitalisation du marchÃ©", value: token.marketCap)
+                infoRow(label: "Capitalisation du marchÃƒÂ©", value: token.marketCap)
                 Divider().background(Color(hex: "#2C2C2E"))
                 infoRow(label: "Approvisionnement total", value: token.totalSupply)
                 Divider().background(Color(hex: "#2C2C2E"))
                 infoRow(label: "Approvisionnement circulaire", value: token.circulatingSupply)
                 Divider().background(Color(hex: "#2C2C2E"))
-                infoRow(label: "CrÃ©Ã©", value: token.creationDate)
+                infoRow(label: "CrÃƒÂ©ÃƒÂ©", value: token.creationDate)
             }
             .padding(.horizontal, 16)
         }
@@ -589,10 +589,10 @@ struct TokenDetailView: View {
         .padding(.vertical, 16)
     }
     
-    // MARK: - Ã€ Propos Section
+    // MARK: - Ãƒâ‚¬ Propos Section
     private var aboutSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Ã€ propos")
+            Text("Ãƒâ‚¬ propos")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white)
             
@@ -708,4 +708,5 @@ struct TokenDetailView: View {
         }
     }
 }
+
 

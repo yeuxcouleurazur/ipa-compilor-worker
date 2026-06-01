@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 
 enum SwapSide {
     case pay
@@ -516,6 +516,7 @@ struct TokenSelectionSheet: View {
 
 // MARK: - SwapTokenRowView
 struct SwapTokenRowView: View {
+    @EnvironmentObject var viewModel: WalletViewModel
     let token: Token
     let rank: Int
     
@@ -583,7 +584,7 @@ struct SwapTokenRowView: View {
             
             // Price & Change
             VStack(alignment: .trailing, spacing: 4) {
-                Text(token.formattedValue)
+                Text("\(viewModel.currency)\(token.formattedValue)")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
                 Text(token.formattedChangePercent)
@@ -627,5 +628,6 @@ struct SwapTokenRowView: View {
         }
     }
 }
+
 
 

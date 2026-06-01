@@ -1,8 +1,9 @@
-﻿import SwiftUI
+import SwiftUI
 import UIKit
 
 struct TokenDetailView: View {
     @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var viewModel: WalletViewModel
     let token: Token
     
     @State private var selectedTimeRange: String = "1J"

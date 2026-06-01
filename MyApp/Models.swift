@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 import Combine
 
 // MARK: - Models
@@ -428,7 +428,7 @@ class CryptoAPI {
         let prices: [[Double]]
     }
 
-    static func fetchChartData(coinId: String, days: String) async throws -> [Double] {
+    static func fetchChartData(coinId: String, currency: String = "usd", days: String) async throws -> [Double] {
         let urlString = "https://api.coingecko.com/api/v3/coins/\(coinId)/market_chart?vs_currency=\(currency)&days=\(days)"
         guard let url = URL(string: urlString) else { throw URLError(.badURL) }
         
@@ -565,7 +565,7 @@ class NetworkManager: ObservableObject {
     @Published var isLoadingTokens: Bool = false
     @Published var isLoadingPredictions: Bool = false
     
-    func fetchMemeCoins() {
+    func fetchMemeCoins(currency: String = "usd") {
         isLoadingTokens = true
         let urlString = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=\(currency)&category=meme-token&order=market_cap_desc&per_page=15&page=1"
         guard let url = URL(string: urlString) else { return }

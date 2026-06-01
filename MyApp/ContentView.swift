@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = WalletViewModel()
@@ -714,6 +714,7 @@ struct ChatsView: View {
 }
 
 struct TrendingCardView: View {
+    @EnvironmentObject var viewModel: WalletViewModel
     let tokens: [Token]
     
     private func formatMarketCap(_ mc: Double?) -> String {

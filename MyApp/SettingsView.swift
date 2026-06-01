@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var viewModel: WalletViewModel
@@ -255,6 +255,11 @@ struct AdminPanelView: View {
                 Section(header: Text("Token Balances (Amounts)")) {
                     ForEach($viewModel.tokens) { $token in
                         TokenEditRow(token: $token) { viewModel.recalculate() }
+                    }
+                    .onDelete { indexSet in
+                        viewModel.tokens.remove(atOffsets: indexSet)
+                        viewModel.recalculate()
+                        viewModel.saveTokens()
                     }
                 }
                 

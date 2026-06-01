@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct BuyView: View {
     @EnvironmentObject var viewModel: WalletViewModel
@@ -112,7 +112,7 @@ struct BuyView: View {
                                             customAmount = ""
                                         }
                                     } label: {
-                                        Text("$\(amt)")
+                                        Text("\(viewModel.currency)\(amt)")
                                             .font(.system(size: 14, weight: .semibold))
                                             .foregroundColor(selectedAmount == amt && customAmount.isEmpty ? .white : Color(hex: "#8A8A8A"))
                                             .frame(maxWidth: .infinity)
@@ -225,7 +225,7 @@ struct BuyView: View {
 
                 // Buy CTA
                 VStack(spacing: 8) {
-                    Text("Powered by MoonPay · DEMO")
+                    Text("Powered by MoonPay Â· DEMO")
                         .font(.system(size: 11))
                         .foregroundColor(Color(hex: "#3A3A3A"))
 
@@ -269,12 +269,12 @@ struct BuyView: View {
                 Color.black.opacity(0.6).ignoresSafeArea()
                     .transition(.opacity)
                 VStack(spacing: 20) {
-                    Text("🎉")
+                    Text("ðŸŽ‰")
                         .font(.system(size: 64))
                     Text("Purchase Successful!")
                         .font(.system(size: 24, weight: .bold))
                         .foregroundColor(.white)
-                    Text("$\(displayAmount) of \(selectedToken) will arrive shortly")
+                    Text("\(viewModel.currency)\(displayAmount) of \(selectedToken) will arrive shortly")
                         .font(.system(size: 15))
                         .foregroundColor(Color(hex: "#6B6B6B"))
                         .multilineTextAlignment(.center)
@@ -295,3 +295,4 @@ struct BuyView: View {
         .navigationBarHidden(true)
     }
 }
+

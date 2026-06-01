@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct CollectiblesView: View {
     @EnvironmentObject var viewModel: WalletViewModel
@@ -28,7 +28,7 @@ struct CollectiblesView: View {
                         Text(viewModel.username)
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(Color(hex: "#8E8E93"))
-                        Text("Espèces")
+                        Text("EspÃ¨ces")
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -51,7 +51,7 @@ struct CollectiblesView: View {
                         Text("Solde")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(Color(hex: "#8E8E93"))
-                        Text("$0.00")
+                        Text("\(viewModel.currency)0.00")
                             .font(.system(size: 38, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -69,7 +69,7 @@ struct CollectiblesView: View {
                 
                 // MARK: - Add Cash Section
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Ajouter des espèces")
+                    Text("Ajouter des espÃ¨ces")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 20)
@@ -105,12 +105,12 @@ struct CollectiblesView: View {
                                 .font(.system(size: 17, weight: .bold))
                                 .foregroundColor(Color(hex: "#EBEBEB"))
                             
-                            Text("Instantané • Aucuns frais sur les stablecoins")
+                            Text("InstantanÃ© â€¢ Aucuns frais sur les stablecoins")
                                 .font(.system(size: 14, weight: .regular))
                                 .foregroundColor(Color(hex: "#8E8E93"))
                         }
                         
-                        Text("Aucun jeton à vendre")
+                        Text("Aucun jeton Ã  vendre")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(Color(hex: "#6B6B6B"))
                             .padding(.horizontal, 14)
@@ -134,3 +134,4 @@ struct CollectiblesView: View {
         }
     }
 }
+

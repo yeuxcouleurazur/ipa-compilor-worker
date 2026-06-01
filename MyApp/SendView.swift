@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct SendView: View {
     @EnvironmentObject var viewModel: WalletViewModel
@@ -162,7 +162,7 @@ struct SendView: View {
 
                                     if let usdValue = Double(amount), let t = selectedTokenData, t.amount > 0 {
                                         let usd = usdValue * (t.valueUSD / t.amount)
-                                        Text("≈ \(String(format: "$%.2f", usd))")
+                                        Text("â‰ˆ \(String(format: "\(viewModel.currency)%.2f", usd))")
                                             .font(.system(size: 14))
                                             .foregroundColor(Color(hex: "#6B6B6B"))
                                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -285,3 +285,4 @@ struct SendView: View {
         }
     }
 }
+

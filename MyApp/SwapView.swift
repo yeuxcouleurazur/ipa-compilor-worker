@@ -102,7 +102,7 @@ struct SwapView: View {
                 Text(viewModel.username)
                     .font(.system(size: 14, weight: .regular))
                     .foregroundColor(Color(hex: "#8E8E93"))
-                Text("Échanger")
+                Text("Ã‰changer")
                     .font(.system(size: 24, weight: .bold))
                     .foregroundColor(.white)
             }
@@ -162,7 +162,7 @@ struct SwapView: View {
                     HStack {
                         Text(payAmount)
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(Color(hex: "#4A4A4A"))
+                            .foregroundColor(payAmount == "0" ? Color(hex: "#6B6B6B") : .white)
                         Spacer()
                         tokenSelectorButton(for: paySymbol, side: .pay)
                     }
@@ -187,14 +187,14 @@ struct SwapView: View {
                     HStack {
                         Text(receiveAmount)
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(Color(hex: "#4A4A4A"))
+                            .foregroundColor(receiveAmount == "0" ? Color(hex: "#6B6B6B") : .white)
                         Spacer()
                         tokenSelectorButton(for: receiveSymbol, side: .receive)
                     }
                     
                     HStack {
                         Spacer()
-                        Text(receiveSymbol == "Cash" ? "$0.00" : "0 \(receiveSymbol)")
+                        Text(receiveSymbol == "Cash" ? "\(viewModel.currency)0.00" : "0 \(receiveSymbol)")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(Color(hex: "#8E8E93"))
                     }
@@ -210,15 +210,10 @@ struct SwapView: View {
                 paySymbol = receiveSymbol
                 receiveSymbol = temp
             } label: {
-                ZStack {
-                    Circle()
-                        .fill(Color(hex: "#A393FA"))
-                        .frame(width: 44, height: 44)
-                    PhantomSwapIcon()
-                        .stroke(style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
-                        .frame(width: 24, height: 24)
-                        .foregroundColor(.white)
-                }
+                Image("Swap")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 44, height: 44)
             }
         }
     }
@@ -234,9 +229,12 @@ struct SwapView: View {
                         Circle()
                             .fill(Color(hex: "#E0FF4F")) // Bright yellow
                             .frame(width: 24, height: 24)
-                        Image(systemName: "ghost.fill")
+                        Image("PhantomLogo-White")
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
                             .foregroundColor(.black)
-                            .font(.system(size: 12))
+                            .frame(width: 14, height: 14)
                     }
                 } else if let token = viewModel.tokens.first(where: { $0.symbol == symbol }) {
                     if let urlString = token.imageUrl, let url = URL(string: urlString) {
@@ -392,16 +390,19 @@ struct TokenSelectionSheet: View {
                                         Circle()
                                             .fill(Color(hex: "#E0FF4F")) // Bright yellow
                                             .frame(width: 48, height: 48)
-                                        Image(systemName: "ghost.fill")
+                                        Image("PhantomLogo-White")
+                                            .renderingMode(.template)
+                                            .resizable()
+                                            .scaledToFit()
                                             .foregroundColor(.black)
-                                            .font(.system(size: 20))
+                                            .frame(width: 28, height: 28)
                                     }
                                     
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("Solde Cash")
                                             .font(.system(size: 13, weight: .medium))
                                             .foregroundColor(Color(hex: "#8E8E93"))
-                                        Text("$0.00")
+                                        Text("\(viewModel.currency)0.00")
                                             .font(.system(size: 18, weight: .bold))
                                             .foregroundColor(.white)
                                     }
@@ -620,3 +621,4 @@ struct SwapTokenRowView: View {
         }
     }
 }
+

@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var viewModel: WalletViewModel
@@ -45,14 +45,14 @@ struct HomeView: View {
             .refreshable {
                 viewModel.isRefreshing = true
                 viewModel.recalculate()
-                networkManager.fetchMemeCoins()
+                networkManager.fetchMemeCoins(currency: viewModel.currencyCode)
                 networkManager.fetchPredictions()
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 viewModel.isRefreshing = false
             }
         }
         .onAppear {
-            networkManager.fetchMemeCoins()
+            networkManager.fetchMemeCoins(currency: viewModel.currencyCode)
             networkManager.fetchPredictions()
             withAnimation(.easeOut(duration: 0.6)) {
                 appearAnimation = true
@@ -122,13 +122,13 @@ struct HomeView: View {
                     let decimalPart = parts.count > 1 ? ".\(parts[1])" : ""
                     let formattedInteger = integerPart.count > 3 ? "\(integerPart.prefix(integerPart.count - 3)),\(integerPart.suffix(3))" : integerPart
                     
-                    Text("$\(formattedInteger)\(decimalPart)")
+                    Text("\(viewModel.currency)\(formattedInteger)\(decimalPart)")
                         .font(.system(size: 46, weight: .bold))
                         .foregroundColor(.white)
                         .minimumScaleFactor(0.6)
                         .lineLimit(1)
                 } else {
-                    Text("••••••••")
+                    Text("â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢")
                         .font(.system(size: 46, weight: .bold))
                         .foregroundColor(.white)
                 }
@@ -458,7 +458,7 @@ struct TokenRowView: View {
         case "BTC":
             ZStack {
                 Circle().fill(Color(hex: "#F7931A"))
-                Text("₿")
+                Text("â‚¿")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.white)
             }
@@ -590,3 +590,5 @@ struct PhantomSwapIcon: Shape {
         return path
     }
 }
+
+

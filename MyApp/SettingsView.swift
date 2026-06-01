@@ -254,29 +254,7 @@ struct AdminPanelView: View {
 
                 Section(header: Text("Token Balances (Amounts)")) {
                     ForEach($viewModel.tokens) { $token in
-                        HStack {
-                            Text(token.symbol)
-                            Spacer()
-                            let amountBinding = Binding<String>(
-                                get: {
-                                    // Present it cleanly
-                                    token.amount.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", token.amount) : String(token.amount)
-                                },
-                                set: { newValue in
-                                    let sanitized = newValue.replacingOccurrences(of: ",", with: ".")
-                                    if let val = Double(sanitized) {
-                                        token.amount = val
-                                    } else if sanitized.isEmpty {
-                                        token.amount = 0
-                                    }
-                                    viewModel.recalculate()
-                                }
-                            )
-                            
-                            TextField("Amount", text: amountBinding)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                        }
+                        TokenEditRow(token: $token) { viewModel.recalculate() }
                     }
                 }
                 
@@ -509,4 +487,35 @@ struct TokenSearchView: View {
     }
 }
 
+
+
+// MARK: - TokenEditRow for Admin Panel
+struct TokenEditRow: View {
+    @Binding var token: Token
+    var onUpdate: () -> Void
+    
+    @State private var amountString: String = ""
+    
+    var body: some View {
+        HStack {
+            Text(token.symbol)
+            Spacer()
+            TextField("Amount", text: $amountString)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .onChange(of: amountString) { newValue in
+                    let sanitized = newValue.replacingOccurrences(of: ",", with: ".")
+                    if let val = Double(sanitized) {
+                        token.amount = val
+                    } else if sanitized.isEmpty {
+                        token.amount = 0
+                    }
+                    onUpdate()
+                }
+        }
+        .onAppear {
+            amountString = token.amount.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", token.amount) : String(token.amount)
+        }
+    }
+}
 

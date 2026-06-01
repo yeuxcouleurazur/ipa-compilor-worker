@@ -717,15 +717,15 @@ struct TrendingCardView: View {
     let tokens: [Token]
     
     private func formatMarketCap(_ mc: Double?) -> String {
-        guard let mc = mc, mc > 0 else { return "$-- MC" }
+        guard let mc = mc, mc > 0 else { return "\(viewModel.currency)-- MC" }
         if mc >= 1_000_000_000 {
-            return String(format: "$%.1fB MC", mc / 1_000_000_000)
+            return String(format: "\(viewModel.currency)%.1fB MC", mc / 1_000_000_000)
         } else if mc >= 1_000_000 {
-            return String(format: "$%.1fM MC", mc / 1_000_000)
+            return String(format: "\(viewModel.currency)%.1fM MC", mc / 1_000_000)
         } else if mc >= 1_000 {
-            return String(format: "$%.1fK MC", mc / 1_000)
+            return String(format: "\(viewModel.currency)%.1fK MC", mc / 1_000)
         } else {
-            return String(format: "$%.0f MC", mc)
+            return String(format: "\(viewModel.currency)%.0f MC", mc)
         }
     }
     
@@ -799,4 +799,5 @@ struct TrendingCardView: View {
         .cornerRadius(24)
     }
 }
+
 

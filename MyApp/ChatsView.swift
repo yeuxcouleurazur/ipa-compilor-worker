@@ -1,26 +1,26 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct ChatsView: View {
     @EnvironmentObject var viewModel: WalletViewModel
     
     // Mock Data for Trending
-    let trendingCards = [
+    var trendingCards: [[ChatToken]] { [
         [
-            ChatToken(name: "ROLANDO", mc: "$768K MC", users: 36, image: "person.circle.fill", color: "#E03C31"),
-            ChatToken(name: "EROSION", mc: "$245K MC", users: 17, image: "globe", color: "#2775CA"),
-            ChatToken(name: "SPCX", mc: "$7.7M MC", users: 15, image: "xmark.circle.fill", color: "#FFFFFF")
+            ChatToken(name: "ROLANDO", mc: "\(viewModel.currency)768K MC", users: 36, image: "person.circle.fill", color: "#E03C31"),
+            ChatToken(name: "EROSION", mc: "\(viewModel.currency)245K MC", users: 17, image: "globe", color: "#2775CA"),
+            ChatToken(name: "SPCX", mc: "\(viewModel.currency)7.7M MC", users: 15, image: "xmark.circle.fill", color: "#FFFFFF")
         ],
         [
-            ChatToken(name: "BULL", mc: "$3.5M MC", users: 14, image: "hare.fill", color: "#B37A4C"),
-            ChatToken(name: "$HACHI", mc: "$2.8M MC", users: 8, image: "pawprint.fill", color: "#F3BA2F"),
-            ChatToken(name: "10m", mc: "$276K MC", users: 7, image: "circle.circle.fill", color: "#A393FA")
+            ChatToken(name: "BULL", mc: "\(viewModel.currency)3.5M MC", users: 14, image: "hare.fill", color: "#B37A4C"),
+            ChatToken(name: "$HACHI", mc: "\(viewModel.currency)2.8M MC", users: 8, image: "pawprint.fill", color: "#F3BA2F"),
+            ChatToken(name: "10m", mc: "\(viewModel.currency)276K MC", users: 7, image: "circle.circle.fill", color: "#A393FA")
         ],
         [
-            ChatToken(name: "SHIKOKU", mc: "$1.1M MC", users: 4, image: "pawprint.fill", color: "#F3BA2F"),
-            ChatToken(name: "SOL", mc: "$48B MC", users: 4, image: "s.circle.fill", color: "#14F195"),
-            ChatToken(name: "BTCBANK", mc: "$289K MC", users: 1, image: "bitcoinsign.circle.fill", color: "#F7931A")
+            ChatToken(name: "SHIKOKU", mc: "\(viewModel.currency)1.1M MC", users: 4, image: "pawprint.fill", color: "#F3BA2F"),
+            ChatToken(name: "SOL", mc: "\(viewModel.currency)48B MC", users: 4, image: "s.circle.fill", color: "#14F195"),
+            ChatToken(name: "BTCBANK", mc: "\(viewModel.currency)289K MC", users: 1, image: "bitcoinsign.circle.fill", color: "#F7931A")
         ]
-    ]
+    ] }
     
     var body: some View {
         ZStack {
@@ -73,9 +73,9 @@ struct ChatsView: View {
                             }
                         }
                         
-                        // MARK: - Récent
+                        // MARK: - RÃ©cent
                         VStack(alignment: .leading, spacing: 16) {
-                            Text("Récent")
+                            Text("RÃ©cent")
                                 .font(.system(size: 20, weight: .semibold))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 20)
@@ -96,7 +96,7 @@ struct ChatsView: View {
                                         .offset(y: 20)
                                 }
                                 
-                                Text("Aucuns chats à afficher pour le moment.")
+                                Text("Aucuns chats Ã  afficher pour le moment.")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(Color(hex: "#8E8E93"))
                             }
@@ -166,3 +166,6 @@ struct TrendingCardView: View {
         .cornerRadius(24)
     }
 }
+
+
+

@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 import UIKit
 
 struct TokenDetailView: View {
@@ -148,7 +148,7 @@ struct TokenDetailView: View {
             let displayPrice = isDragging && dragPrice != nil ? dragPrice! : token.currentPrice
             
             HStack {
-                Text(String(format: "$%.2f", displayPrice))
+                Text(String(format: "\(viewModel.currency)%.2f", displayPrice))
                     .font(.system(size: 48, weight: .bold))
                     .foregroundColor(.white)
                 
@@ -442,7 +442,7 @@ struct TokenDetailView: View {
                         .font(.system(size: 14, weight: .regular))
                         .foregroundColor(Color(hex: "#8E8E93"))
                     Spacer()
-                    Text(token.change24h == 0 ? "$0.00" : token.formattedChange)
+                    Text(token.change24h == 0 ? "\(viewModel.currency)0.00" : token.formattedChange)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(token.change24h == 0 ? .white : token.changeColor)
                 }
@@ -470,10 +470,10 @@ struct TokenDetailView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Échangez des perps \(token.symbol)")
+                    Text("Ã‰changez des perps \(token.symbol)")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white)
-                    Text("Multipliez votre P&L jusqu'à x20")
+                    Text("Multipliez votre P&L jusqu'Ã  x20")
                         .font(.system(size: 14, weight: .regular))
                         .foregroundColor(Color(hex: "#8E8E93"))
                 }
@@ -561,15 +561,15 @@ struct TokenDetailView: View {
                 Divider().background(Color(hex: "#2C2C2E"))
                 infoRow(label: "Symbole", value: token.symbol)
                 Divider().background(Color(hex: "#2C2C2E"))
-                infoRow(label: "Réseau", value: token.name)
+                infoRow(label: "RÃ©seau", value: token.name)
                 Divider().background(Color(hex: "#2C2C2E"))
-                infoRow(label: "Capitalisation du marché", value: token.marketCap)
+                infoRow(label: "Capitalisation du marchÃ©", value: token.marketCap)
                 Divider().background(Color(hex: "#2C2C2E"))
                 infoRow(label: "Approvisionnement total", value: token.totalSupply)
                 Divider().background(Color(hex: "#2C2C2E"))
                 infoRow(label: "Approvisionnement circulaire", value: token.circulatingSupply)
                 Divider().background(Color(hex: "#2C2C2E"))
-                infoRow(label: "Créé", value: token.creationDate)
+                infoRow(label: "CrÃ©Ã©", value: token.creationDate)
             }
             .padding(.horizontal, 16)
         }
@@ -588,10 +588,10 @@ struct TokenDetailView: View {
         .padding(.vertical, 16)
     }
     
-    // MARK: - À Propos Section
+    // MARK: - Ã€ Propos Section
     private var aboutSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("À propos")
+            Text("Ã€ propos")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white)
             
@@ -707,3 +707,4 @@ struct TokenDetailView: View {
         }
     }
 }
+

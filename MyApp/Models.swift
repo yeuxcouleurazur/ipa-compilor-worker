@@ -39,15 +39,15 @@ struct Token: Identifiable, Codable {
     }
     var marketCapValue: Double?
     var marketCap: String {
-        guard let mc = marketCapValue else { return "$47.76B" }
+        guard let mc = marketCapValue else { return "47.76B" }
         if mc >= 1_000_000_000 {
-            return String(format: "$%.1fB", mc / 1_000_000_000)
+            return String(format: "%.1fB", mc / 1_000_000_000)
         } else if mc >= 1_000_000 {
-            return String(format: "$%.0fM", mc / 1_000_000)
+            return String(format: "%.0fM", mc / 1_000_000)
         } else if mc >= 1_000 {
-            return String(format: "$%.0fK", mc / 1_000)
+            return String(format: "%.0fK", mc / 1_000)
         }
-        return String(format: "$%.0f", mc)
+        return String(format: "%.0f", mc)
     }
     var totalSupply: String = "627.4M"
     var circulatingSupply: String = "578.45M"
@@ -55,9 +55,9 @@ struct Token: Identifiable, Codable {
     var aboutText: String = "SOL is the native token of the Solana blockchain. Its technical co-founder, Anatoly Yakovenko, was fed up with blockchains that..."
 
     var formattedValue: String {
-        if valueUSD == 0 { return "$0.00" }
+        if valueUSD == 0 { return "0.00" }
         if valueUSD < 0.01 { return "<$0.01" }
-        return String(format: "$%.2f", valueUSD)
+        return String(format: "%.2f", valueUSD)
     }
 
     var formattedAmount: String {
@@ -79,7 +79,7 @@ struct Token: Identifiable, Codable {
     var formattedChange: String {
         let prefix = change24h >= 0 ? "+" : ""
         if abs(change24h) < 0.01 { return change24h >= 0 ? "+<$0.01" : "-<$0.01" }
-        return "\(prefix)\(String(format: "$%.2f", change24h))"
+        return "\(prefix)\(String(format: "%.2f", change24h))"
     }
 
     var changeColor: Color {
@@ -150,6 +150,12 @@ class WalletViewModel: ObservableObject {
     }
     @Published var profileEmoji: String = "" {
         didSet { UserDefaults.standard.set(profileEmoji, forKey: "profileEmoji") }
+    }
+    @Published var currency: String = "" {
+        didSet { UserDefaults.standard.set(currency, forKey: "currency") }
+    }
+    var currencyCode: String {
+        return currency == "€" ? "eur" : "usd"
     }
     @Published var totalBalance: Double = 0.0
     @Published var change24h: Double = 559.32
@@ -348,12 +354,12 @@ class WalletViewModel: ObservableObject {
     ]
 
     var formattedTotalBalance: String {
-        String(format: "$%.2f", totalBalance)
+        String(format: "%.2f", totalBalance)
     }
 
     var formattedChange: String {
         let prefix = change24h >= 0 ? "+" : ""
-        return "\(prefix)\(String(format: "$%.2f", change24h))"
+        return "\(prefix)\(String(format: "%.2f", change24h))"
     }
 
     var formattedChangePercent: String {
@@ -423,7 +429,7 @@ class CryptoAPI {
     }
 
     static func fetchChartData(coinId: String, days: String) async throws -> [Double] {
-        let urlString = "https://api.coingecko.com/api/v3/coins/\(coinId)/market_chart?vs_currency=usd&days=\(days)"
+        let urlString = "https://api.coingecko.com/api/v3/coins/\(coinId)/market_chart?vs_currency=\(currency)&days=\(days)"
         guard let url = URL(string: urlString) else { throw URLError(.badURL) }
         
         var request = URLRequest(url: url)
@@ -474,8 +480,8 @@ class CryptoAPI {
         return decoded.coins
     }
     
-    static func fetchSpecificCoin(id: String, fallbackItem: CoinGeckoSearchItem) async -> CoinGeckoToken {
-        let urlString = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=\(id)"
+    static func fetchSpecificCoin(id: String, currency: String = "usd", fallbackItem: CoinGeckoSearchItem) async -> CoinGeckoToken {
+        let urlString = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=\(currency)&ids=\(id)"
         guard let url = URL(string: urlString) else { return createFallbackToken(item: fallbackItem) }
         
         var request = URLRequest(url: url)
@@ -561,7 +567,7 @@ class NetworkManager: ObservableObject {
     
     func fetchMemeCoins() {
         isLoadingTokens = true
-        let urlString = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&category=meme-token&order=market_cap_desc&per_page=15&page=1"
+        let urlString = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=\(currency)&category=meme-token&order=market_cap_desc&per_page=15&page=1"
         guard let url = URL(string: urlString) else { return }
         
         var request = URLRequest(url: url)
@@ -649,6 +655,8 @@ struct CryptoIconSmall: View {
         .frame(width: 20, height: 20)
     }
 }
+
+
 
 
 

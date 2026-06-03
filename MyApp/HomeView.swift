@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var viewModel: WalletViewModel
@@ -23,6 +23,10 @@ struct HomeView: View {
 
                     // Action Buttons
                     actionButtons
+                        .padding(.top, 24)
+                        
+                    // Cash Balance Card
+                    cashBalanceCard
                         .padding(.top, 24)
 
                     // Tokens Section
@@ -215,6 +219,45 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Cash Balance Card
+
+    private var cashBalanceCard: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Solde Cash")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color(hex: "#8E8E93"))
+                Text(String(format: "\(viewModel.currency)%.2f", viewModel.cashBalance))
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white)
+            }
+
+            Spacer()
+
+            Button {
+            } label: {
+                Text("Add Cash")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 9)
+                    .background(
+                        Capsule()
+                            .fill(Color(hex: "#A393FA"))
+                    )
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(hex: "#1C1C1E"))
+        )
+        .opacity(appearAnimation ? 1 : 0)
+        .offset(y: appearAnimation ? 0 : 10)
+        .animation(.easeOut(duration: 0.6).delay(0.15), value: appearAnimation)
+    }
+
     // MARK: - Tokens Section
 
     private var tokensSection: some View {
@@ -342,6 +385,7 @@ struct HomeView: View {
 // MARK: - Token Row
 
 struct TokenRowView: View {
+    @EnvironmentObject var viewModel: WalletViewModel
     let token: Token
 
     var body: some View {

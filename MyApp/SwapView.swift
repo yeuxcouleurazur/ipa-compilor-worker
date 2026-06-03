@@ -232,9 +232,10 @@ struct SwapView: View {
                         Image("PhantomLogo-White")
                             .renderingMode(.template)
                             .resizable()
-                            .scaledToFit()
+                            .scaledToFill()
+                            .frame(width: 14, height: 14, alignment: .leading)
+                            .clipped()
                             .foregroundColor(.black)
-                            .frame(width: 14, height: 14)
                     }
                 } else if let token = viewModel.tokens.first(where: { $0.symbol == symbol }) {
                     if let urlString = token.imageUrl, let url = URL(string: urlString) {
@@ -393,9 +394,10 @@ struct TokenSelectionSheet: View {
                                         Image("PhantomLogo-White")
                                             .renderingMode(.template)
                                             .resizable()
-                                            .scaledToFit()
+                                            .scaledToFill()
+                                            .frame(width: 24, height: 24, alignment: .leading)
+                                            .clipped()
                                             .foregroundColor(.black)
-                                            .frame(width: 28, height: 28)
                                     }
                                     
                                     VStack(alignment: .leading, spacing: 4) {

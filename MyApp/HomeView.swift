@@ -132,7 +132,7 @@ struct HomeView: View {
                         .minimumScaleFactor(0.6)
                         .lineLimit(1)
                 } else {
-                    Text("â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢")
+                    Text("Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢")
                         .font(.system(size: 46, weight: .bold))
                         .foregroundColor(.white)
                 }
@@ -224,7 +224,7 @@ struct HomeView: View {
     private var cashBalanceCard: some View {
         HStack {
             VStack(alignment: .leading, spacing: 3) {
-                Text("Solde Cash")
+                Text("Cash Balance")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(Color(hex: "#8E8E93"))
                 Text(String(format: "\(viewModel.currency)%.2f", viewModel.cashBalance))
@@ -238,12 +238,12 @@ struct HomeView: View {
             } label: {
                 Text("Add Cash")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "#2F1166"))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 9)
                     .background(
                         Capsule()
-                            .fill(Color(hex: "#A393FA"))
+                            .fill(Color(hex: "#D8C6FE"))
                     )
             }
         }
@@ -502,7 +502,7 @@ struct TokenRowView: View {
         case "BTC":
             ZStack {
                 Circle().fill(Color(hex: "#F7931A"))
-                Text("â‚¿")
+                Text("Ã¢â€šÂ¿")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.white)
             }
@@ -634,6 +634,7 @@ struct PhantomSwapIcon: Shape {
         return path
     }
 }
+
 
 
 

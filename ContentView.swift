@@ -117,7 +117,7 @@ struct RootView: View {
     @StateObject private var appState = AppState()
 
     var body: some View {
-        ZStack(alignment: .bottom) {
+        Group {
             if hasCompletedOnboarding {
                 ContentView()
                     .environmentObject(appState)
@@ -129,10 +129,13 @@ struct RootView: View {
                     }
                 }
             }
-
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             SafetyNoticeBar()
                 .padding(.horizontal, 14)
-                .padding(.bottom, 8)
+                .padding(.top, 6)
+                .padding(.bottom, 6)
+                .background(.clear)
         }
         .animation(.smooth(duration: 0.55), value: hasCompletedOnboarding)
     }
@@ -214,7 +217,7 @@ struct OnboardingView: View {
             PremiumBackdrop()
 
             VStack(alignment: .leading, spacing: 24) {
-                Spacer()
+                Spacer(minLength: 12)
 
                 ZStack {
                     RoundedRectangle(cornerRadius: 34, style: .continuous)
@@ -233,7 +236,8 @@ struct OnboardingView: View {
 
                 VStack(alignment: .leading, spacing: 12) {
                     Text("MyApp")
-                        .font(.system(size: 58, weight: .semibold))
+                        .font(.system(size: 48, weight: .semibold))
+                        .minimumScaleFactor(0.82)
                     Text("Analyse visuelle connectée, prudente et structurée.")
                         .font(.title3)
                         .foregroundStyle(.secondary)
@@ -266,8 +270,7 @@ struct OnboardingView: View {
                 }
                 .buttonStyle(.plain)
 
-                Spacer()
-                    .frame(height: 72)
+                Spacer(minLength: 56)
             }
             .padding(24)
             .opacity(appeared ? 1 : 0)
@@ -331,7 +334,7 @@ struct CameraAnalysisView: View {
                     controls
                 }
                 .padding(.horizontal, 16)
-                .padding(.bottom, 74)
+                .padding(.bottom, 18)
             }
             .navigationTitle("Analyse")
             .navigationBarTitleDisplayMode(.inline)

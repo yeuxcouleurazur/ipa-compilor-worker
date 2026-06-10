@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>MyApp</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.example.MyApp</string>
+	<key>CFBundleName</key>
+	<string>MyApp</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>NSCameraUsageDescription</key>
+	<string>MyApp utilise la caméra pour envoyer des images à l'API IA configurée par l'utilisateur.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>MyApp utilise le microphone uniquement pendant les captures vidéo courtes.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>MyApp permet de sélectionner une image afin de l'analyser via l'API IA configurée.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
+</dict>
+</plist>

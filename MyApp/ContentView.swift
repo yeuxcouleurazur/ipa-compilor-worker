@@ -250,7 +250,7 @@ struct CustomTabBar: View {
     func tabIcon(for tab: WalletViewModel.Tab, isSelected: Bool) -> some View {
         switch tab {
         case .home:
-            Image(systemName: isSelected ? "house.fill" : "house")
+            Image(systemName: "house")
                 .font(.system(size: 22, weight: isSelected ? .semibold : .regular))
         case .wallet:
             PhantomCardView()

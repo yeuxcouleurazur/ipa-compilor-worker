@@ -165,10 +165,6 @@ struct HomeView: View {
 
     private var actionButtons: some View {
         HStack(spacing: 12) {
-            actionButton(label: "Receive", action: { showReceiveSheet = true }) {
-                Image(systemName: "qrcode")
-                    .font(.system(size: 26, weight: .bold))
-            }
             actionButton(label: "Send", action: {}) {
                 Image("Send")
                     .renderingMode(.template)
@@ -182,6 +178,10 @@ struct HomeView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 28, height: 28)
+            }
+            actionButton(label: "Receive", action: { showReceiveSheet = true }) {
+                Image(systemName: "qrcode")
+                    .font(.system(size: 26, weight: .bold))
             }
             actionButton(label: "Buy", action: {}) {
                 Image("Buy")
@@ -267,7 +267,7 @@ struct HomeView: View {
                 Button {
                 } label: {
                     HStack(spacing: 4) {
-                        Text("Tokens")
+                        Text("Token")
                             .font(.system(size: 22, weight: .bold))
                             .foregroundColor(.white)
                         Image(systemName: "chevron.right")

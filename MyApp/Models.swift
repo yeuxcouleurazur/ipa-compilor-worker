@@ -77,13 +77,13 @@ struct Token: Identifiable, Codable {
     }
 
     var formattedChange: String {
-        let prefix = change24h >= 0 ? "+" : ""
+        let prefix = change24h >= 0 ? "+$" : "-$"
         if abs(change24h) < 0.01 { return change24h >= 0 ? "+<$0.01" : "-<$0.01" }
-        return "\(prefix)\(String(format: "%.2f", change24h))"
+        return "\(prefix)\(String(format: "%.2f", abs(change24h)))"
     }
 
     var changeColor: Color {
-        change24h >= 0 ? Color(hex: "#3DD68C") : Color(hex: "#FF6464")
+        change24h >= 0 ? Color(hex: "#16C58B") : Color(hex: "#E14343")
     }
 }
 
@@ -361,8 +361,8 @@ class WalletViewModel: ObservableObject {
     }
 
     var formattedChange: String {
-        let prefix = change24h >= 0 ? "+" : ""
-        return "\(prefix)\(String(format: "%.2f", change24h))"
+        let prefix = change24h >= 0 ? "+$" : "-$"
+        return "\(prefix)\(String(format: "%.2f", abs(change24h)))"
     }
 
     var formattedChangePercent: String {
@@ -371,7 +371,7 @@ class WalletViewModel: ObservableObject {
     }
 
     var changeColor: Color {
-        change24h >= 0 ? Color(hex: "#3DD68C") : Color(hex: "#FF6464")
+        change24h >= 0 ? Color(hex: "#16C58B") : Color(hex: "#E14343")
     }
 
     enum Tab: String, CaseIterable {

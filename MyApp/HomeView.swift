@@ -251,7 +251,7 @@ struct HomeView: View {
         .padding(.vertical, 20)
         .background(
             RoundedRectangle(cornerRadius: 18)
-                .fill(Color(hex: "#141414"))
+                .fill(Color(hex: "#1C1C1E")) // Match action buttons background
         )
         .opacity(appearAnimation ? 1 : 0)
         .offset(y: appearAnimation ? 0 : 10)
@@ -469,7 +469,7 @@ struct TokenRowView: View {
         .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 18)
-                .fill(Color(hex: "#181818")) // Darker card background, closer to black
+                .fill(Color(hex: "#1C1C1E")) // Match action buttons background
         )
     }
 

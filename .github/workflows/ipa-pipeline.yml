@@ -15,7 +15,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          WORKSPACE_FILE=$(find . -maxdepth 2 -name "*.xcworkspace" -type d | head -n 1)
+          WORKSPACE_FILE=$(find . -maxdepth 2 -name "*.xcworkspace" ! -path "*.xcodeproj/*" -type d | head -n 1)
           PROJECT_FILE=$(find . -maxdepth 2 -name "*.xcodeproj" -type d | head -n 1)
           
           if [ -n "$WORKSPACE_FILE" ]; then
@@ -40,10 +40,10 @@ jobs:
           xcodebuild $TARGET_ARG "$TARGET_FILE" \
             -scheme "$SCHEME_NAME" \
             -configuration Release \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
             build \
-            CONFIGURATION_BUILD_DIR="$(pwd)/build/Release-iphoneos" \
+            CONFIGURATION_BUILD_DIR="$(pwd)/build/Release-iphonesimulator" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             AD_HOC_CODE_SIGNING_ALLOWED=YES
@@ -66,7 +66,7 @@ jobs:
             exit 1
           fi
 
-          if [ "false" = "true" ]; then
+          if [ "true" = "true" ]; then
             cd "$(dirname "$APP_PATH")"
             zip -r "$GITHUB_WORKSPACE/Project-Simulator.zip" "$(basename "$APP_PATH")"
           else
@@ -79,4 +79,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Project-Real-Unsigned
-          path: Project-Unsigned.ipa
+          path: Project-Simulator.zip

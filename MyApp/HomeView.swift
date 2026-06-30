@@ -228,7 +228,7 @@ struct HomeView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(Color(hex: "#8E8E93"))
                 Text(String(format: "\(viewModel.currency)%.2f", viewModel.cashBalance))
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 24, weight: .bold))
                     .foregroundColor(.white)
             }
 
@@ -239,19 +239,19 @@ struct HomeView: View {
                 Text("Add Cash")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(Color(hex: "#2F1166"))
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
                     .background(
-                        Capsule()
+                        RoundedRectangle(cornerRadius: 12)
                             .fill(Color(hex: "#D8C6FE"))
                     )
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 18)
+        .padding(.vertical, 20)
         .background(
             RoundedRectangle(cornerRadius: 18)
-                .fill(Color(hex: "#181818"))
+                .fill(Color(hex: "#141414"))
         )
         .opacity(appearAnimation ? 1 : 0)
         .offset(y: appearAnimation ? 0 : 10)

@@ -147,7 +147,7 @@ struct HomeView: View {
 
                 Text(viewModel.formattedChangePercent)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(Color(hex: "#121212")) // Black text
+                    .foregroundColor(.white) // White text
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
@@ -238,12 +238,12 @@ struct HomeView: View {
             } label: {
                 Text("Add Cash")
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(Color(hex: "#2F1166"))
+                    .foregroundColor(Color(hex: "#121212")) // Dark text for the first image
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(hex: "#D8C6FE"))
+                            .fill(Color(hex: "#A393FA")) // Purple background for the first image
                     )
             }
         }

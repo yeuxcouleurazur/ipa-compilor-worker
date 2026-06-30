@@ -147,7 +147,7 @@ struct HomeView: View {
 
                 Text(viewModel.formattedChangePercent)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.white) // White text
+                    .foregroundColor(Color(hex: "#121212")) // Black text
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(

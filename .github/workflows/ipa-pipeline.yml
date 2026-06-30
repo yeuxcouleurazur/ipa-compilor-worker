@@ -40,10 +40,8 @@ jobs:
           xcodebuild $TARGET_ARG "$TARGET_FILE" \
             -scheme "$SCHEME_NAME" \
             -configuration Release \
-            -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
             build \
-            CONFIGURATION_BUILD_DIR="$(pwd)/build/Release-iphonesimulator" \
+            CONFIGURATION_BUILD_DIR="$(pwd)/build/Release" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             AD_HOC_CODE_SIGNING_ALLOWED=YES
@@ -66,7 +64,7 @@ jobs:
             exit 1
           fi
 
-          if [ "true" = "true" ]; then
+          if [ "false" = "true" ]; then
             cd "$(dirname "$APP_PATH")"
             zip -r "$GITHUB_WORKSPACE/Project-Simulator.zip" "$(basename "$APP_PATH")"
           else
@@ -79,4 +77,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Project-Real-Unsigned
-          path: Project-Simulator.zip
+          path: Project-Unsigned.ipa
